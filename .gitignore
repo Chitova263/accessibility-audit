@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# IDE
+.idea/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Audit output
+audit-results/
+*.audit.json
+
+# OS
+Thumbs.db
