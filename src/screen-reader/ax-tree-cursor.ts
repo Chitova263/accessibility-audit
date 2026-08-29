@@ -43,7 +43,7 @@ export function flattenAxTree(nodes: AXNode[]): AXNode[] {
  * disambiguating repeated names/roles by always searching forward
  * from the last matched index.
  */
-export class NvdaAxCursor {
+export class AxTreeCursor {
     private flat: AXNode[] = [];
     private cursorIndex = -1;
 

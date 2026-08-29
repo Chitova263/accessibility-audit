@@ -7,7 +7,7 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
-import { NvdaAxCursor } from '../../nvda-ax-cursor';
+import { AxTreeCursor } from '../../ax-tree-cursor';
 
 async function getOuterHtml(cdpSession: CDPSession, backendDOMNodeId: number): Promise<string> {
     try {
@@ -48,7 +48,7 @@ export class ArrowNavigationStrategy implements INavigationStrategy {
         accessibilityTree: Protocol.Accessibility.getFullAXTreeReturnValue,
         cdpSession: CDPSession
     ): Promise<StrategyResult> {
-        const cursor = new NvdaAxCursor(accessibilityTree.nodes);
+        const cursor = new AxTreeCursor(accessibilityTree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
         // Track content to detect end of document

@@ -7,7 +7,7 @@ import type {
 } from '../browse-mode-strategies/navigation-strategy';
 import type { CDPSession, Page } from 'playwright';
 import { delay, type IScreenReader } from '../../screen-reader';
-import { NvdaAxCursor } from '../../nvda-ax-cursor';
+import { AxTreeCursor } from '../../ax-tree-cursor';
 
 /**
  * Get the backendNodeId of the currently focused element via CDP.
@@ -81,7 +81,7 @@ export class TabNavigationStrategy implements INavigationStrategy {
         await delay(2000);
         await sr.clearSpokenPhraseLog();
 
-        const cursor = new NvdaAxCursor(accessibilityTree.nodes);
+        const cursor = new AxTreeCursor(accessibilityTree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
         // Track seen elements to detect when we've completed a full cycle

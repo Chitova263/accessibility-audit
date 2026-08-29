@@ -5,24 +5,6 @@
  */
 
 // =============================================================================
-// Audit (high-level API)
-// =============================================================================
-export { auditPage, quickAudit, type AuditConfig, type AuditResult } from './audit';
-
-// =============================================================================
-// LLM Client
-// =============================================================================
-export {
-    createAnthropicClient,
-    LlmError,
-    type LlmClient,
-    type LlmRequest,
-    type LlmResponse,
-    type LlmErrorCode,
-    type AnthropicClientConfig,
-} from './llm/client';
-
-// =============================================================================
 // Prompt Builder
 // =============================================================================
 export {
