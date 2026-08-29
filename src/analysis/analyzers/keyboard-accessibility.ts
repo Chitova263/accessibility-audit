@@ -1,16 +1,19 @@
 /**
  * Analyzer: Keyboard Accessibility
- * 
+ *
  * Detects interactive elements that are not keyboard accessible
  * by comparing browse mode results (B/K keys) with focus mode (Tab).
- * 
+ *
  * If an element is reachable via quick navigation but not via Tab,
  * it may not be properly keyboard accessible.
- * 
+ *
  * Maps to WCAG 2.1.1 (Keyboard).
  */
 
-import type { StrategyResult, NavigationStep } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type {
+    StrategyResult,
+    NavigationStep,
+} from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
 
 type KeyboardIssue = 'button-not-in-tab-order' | 'link-not-in-tab-order';
@@ -34,9 +37,7 @@ interface ElementSignature {
     strategyType: string;
 }
 
-export function analyzeKeyboardAccessibility(
-    strategyResults: StrategyResult[]
-): KeyboardAccessibilityAnalyzerResult {
+export function analyzeKeyboardAccessibility(strategyResults: StrategyResult[]): KeyboardAccessibilityAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<KeyboardIssue, number> = {
         'button-not-in-tab-order': 0,
@@ -82,7 +83,7 @@ export function analyzeKeyboardAccessibility(
     // Check: Buttons in browse mode but not in tab order
     for (const button of buttonsByBrowse) {
         const signature = createSignature(button.step);
-        
+
         if (!elementsInTabOrder.has(signature) && !isLikelyInTabOrder(button, elementsInTabOrder)) {
             byIssue['button-not-in-tab-order']++;
             violations.push(createNotInTabOrderViolation(button, 'button'));
@@ -92,7 +93,7 @@ export function analyzeKeyboardAccessibility(
     // Check: Links in browse mode but not in tab order
     for (const link of linksByBrowse) {
         const signature = createSignature(link.step);
-        
+
         if (!elementsInTabOrder.has(signature) && !isLikelyInTabOrder(link, elementsInTabOrder)) {
             byIssue['link-not-in-tab-order']++;
             violations.push(createNotInTabOrderViolation(link, 'link'));

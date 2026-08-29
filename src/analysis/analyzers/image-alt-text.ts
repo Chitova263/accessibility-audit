@@ -1,10 +1,10 @@
 /**
  * Analyzer: Image Alt Text
- * 
+ *
  * Detects image alt text issues:
  * - Filename used as alt text (e.g., "IMG_1234.jpg")
  * - Suspicious auto-generated alt text patterns
- * 
+ *
  * Maps to WCAG 1.1.1 (Non-text Content).
  */
 
@@ -20,9 +20,9 @@ const FILENAME_PATTERNS = [
     /^photo[_-]?\d*\.(jpe?g|png|gif|webp|svg|bmp)$/i,
     /^image[_-]?\d*\.(jpe?g|png|gif|webp|svg|bmp)$/i,
     /^screenshot[_-]?\d*\.(jpe?g|png|gif|webp|svg|bmp)$/i,
-    /^[a-f0-9]{8,}\.(jpe?g|png|gif|webp|svg|bmp)$/i,  // Hash-based filenames
-    /^\d{10,}\.(jpe?g|png|gif|webp|svg|bmp)$/i,       // Timestamp filenames
-    /^[a-z0-9_-]+\.(jpe?g|png|gif|webp|svg|bmp)$/i,   // Generic filename pattern
+    /^[a-f0-9]{8,}\.(jpe?g|png|gif|webp|svg|bmp)$/i, // Hash-based filenames
+    /^\d{10,}\.(jpe?g|png|gif|webp|svg|bmp)$/i, // Timestamp filenames
+    /^[a-z0-9_-]+\.(jpe?g|png|gif|webp|svg|bmp)$/i, // Generic filename pattern
 ];
 
 /** Patterns for common stock photo IDs */
@@ -56,9 +56,7 @@ interface ImageInfo {
     axNode: unknown;
 }
 
-export function analyzeImageAltText(
-    strategyResults: StrategyResult[]
-): ImageAltTextAnalyzerResult {
+export function analyzeImageAltText(strategyResults: StrategyResult[]): ImageAltTextAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<ImageIssue, number> = {
         'filename-as-alt': 0,
@@ -71,13 +69,14 @@ export function analyzeImageAltText(
         for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {
             const step = result.navigationSteps[stepIndex]!;
             const node = step.axNode;
-            
+
             if (!node) continue;
-            
+
             // Check for image role or img in HTML
-            const isImage = node.role?.value === 'img' || 
-                           node.role?.value === 'image' ||
-                           step.htmlSnippet?.toLowerCase().includes('<img');
+            const isImage =
+                node.role?.value === 'img' ||
+                node.role?.value === 'image' ||
+                step.htmlSnippet?.toLowerCase().includes('<img');
 
             if (!isImage) continue;
 
@@ -102,7 +101,7 @@ export function analyzeImageAltText(
     // Check: Filename as alt text
     for (const image of uniqueImages) {
         const name = image.name.trim();
-        
+
         if (isFilenameAlt(name) || isStockPhotoId(name)) {
             byIssue['filename-as-alt']++;
             violations.push(createFilenameAltViolation(image));
@@ -120,11 +119,11 @@ export function analyzeImageAltText(
 }
 
 function isFilenameAlt(text: string): boolean {
-    return FILENAME_PATTERNS.some(pattern => pattern.test(text));
+    return FILENAME_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 function isStockPhotoId(text: string): boolean {
-    return STOCK_PHOTO_PATTERNS.some(pattern => pattern.test(text));
+    return STOCK_PHOTO_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 function deduplicateImages(images: ImageInfo[]): ImageInfo[] {

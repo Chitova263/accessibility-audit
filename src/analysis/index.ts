@@ -41,5 +41,34 @@ export type { AriaHiddenFocusableAnalyzerResult } from './analyzers/aria-hidden-
 export { analyzeNavigationSize } from './analyzers/navigation-size';
 export type { NavigationSizeAnalyzerResult } from './analyzers/navigation-size';
 
+export { analyzeContentGrouping } from './analyzers/content-grouping';
+export type { ContentGroupingAnalyzerResult, ContentGroupingOptions } from './analyzers/content-grouping';
+
 export { analyzeWithAxeCore } from './analyzers/axe-core';
 export type { AxeCoreAnalyzerResult, AxeViolation, AxeToolDetails } from './analyzers/axe-core';
+
+// Arrow Navigation specific analyzers
+export {
+    analyzeStepsToMainContent,
+    analyzeReadingOrderLandmarkSequence,
+    analyzeExcessiveRepetition,
+    analyzeContentDensityPerRegion,
+    analyzeIsolatedInteractiveElements,
+    analyzeArrowNavigation,
+} from './analyzers/arrow-navigation';
+export type {
+    StepsToMainContentResult,
+    StepsToMainContentSummary,
+    ReadingOrderLandmarkSequenceResult,
+    ReadingOrderLandmarkSequenceSummary,
+    ExcessiveRepetitionResult,
+    ExcessiveRepetitionSummary,
+    RepetitionInfo,
+    ContentDensityPerRegionResult,
+    ContentDensityPerRegionSummary,
+    RegionDensity,
+    IsolatedInteractiveElementResult,
+    IsolatedInteractiveElementSummary,
+    IsolatedElement,
+    ArrowNavigationAnalysisResult,
+} from './analyzers/arrow-navigation';

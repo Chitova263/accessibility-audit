@@ -1,10 +1,10 @@
 /**
  * Analyzer: Landmark Structure
- * 
+ *
  * Detects landmark issues:
  * - Duplicate landmarks without unique names
  * - Missing essential landmarks (main)
- * 
+ *
  * Maps to WCAG 1.3.1 (Info and Relationships).
  */
 
@@ -38,9 +38,7 @@ interface LandmarkInfo {
     axNode: unknown;
 }
 
-export function analyzeLandmarkStructure(
-    strategyResults: StrategyResult[]
-): LandmarkStructureAnalyzerResult {
+export function analyzeLandmarkStructure(strategyResults: StrategyResult[]): LandmarkStructureAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<LandmarkIssue, number> = {
         'duplicate-landmark': 0,
@@ -52,13 +50,13 @@ export function analyzeLandmarkStructure(
 
     for (const result of strategyResults) {
         const strategyType = result.meta.type ?? result.meta.name;
-        
+
         if (strategyType !== 'landmark') continue;
 
         for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {
             const step = result.navigationSteps[stepIndex]!;
             const node = step.axNode;
-            
+
             if (!node) continue;
 
             const role = node.role?.value ?? '';
@@ -78,11 +76,11 @@ export function analyzeLandmarkStructure(
         }
     }
 
-    const landmarkRoles = landmarks.map(l => l.role);
+    const landmarkRoles = landmarks.map((l) => l.role);
 
     // Check: Missing essential landmarks
     for (const essential of ESSENTIAL_LANDMARKS) {
-        const hasLandmark = landmarks.some(l => l.role === essential);
+        const hasLandmark = landmarks.some((l) => l.role === essential);
         if (!hasLandmark && landmarks.length > 0) {
             byIssue['missing-main-landmark']++;
             violations.push(createMissingLandmarkViolation(essential, landmarks[0]!));
@@ -90,13 +88,13 @@ export function analyzeLandmarkStructure(
     }
 
     // Check: Duplicate landmarks without unique names
-    const landmarkGroups = groupBy(landmarks, l => l.role);
-    
+    const landmarkGroups = groupBy(landmarks, (l) => l.role);
+
     for (const [role, group] of Object.entries(landmarkGroups)) {
         if (group.length <= 1) continue;
 
         // Check if all have unique names
-        const names = group.map(l => l.name.trim().toLowerCase());
+        const names = group.map((l) => l.name.trim().toLowerCase());
         const duplicateNames = findDuplicates(names);
 
         if (duplicateNames.length > 0) {
@@ -137,9 +135,7 @@ function findDuplicates(arr: string[]): string[] {
     for (const item of arr) {
         counts.set(item, (counts.get(item) ?? 0) + 1);
     }
-    return [...counts.entries()]
-        .filter(([, count]) => count > 1)
-        .map(([item]) => item);
+    return [...counts.entries()].filter(([, count]) => count > 1).map(([item]) => item);
 }
 
 function createToolDetails(landmark: LandmarkInfo): NvdaToolDetails {

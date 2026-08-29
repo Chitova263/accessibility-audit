@@ -6,7 +6,8 @@
     "main": "index.js",
     "scripts": {
         "typecheck": "tsc --noEmit",
-        "start": "tsx src/index.ts"
+        "start": "tsx src/index.ts",
+        "formart": "prettier --write ."
     },
     "private": true,
     "devDependencies": {
@@ -19,6 +20,8 @@
         "@axe-core/playwright": "^4.13.0",
         "@guidepup/guidepup": "^0.33.2",
         "axe-core": "^4.13.0",
-        "playwright": "^1.62.1"
+        "node-html-parser": "^9.0.2",
+        "playwright": "^1.62.1",
+        "zod": "^4.5.2"
     }
 }

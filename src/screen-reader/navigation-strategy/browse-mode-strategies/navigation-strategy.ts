@@ -6,6 +6,7 @@ export interface StrategyMetadata {
     description: string;
     type?:
         | 'tab'
+        | 'arrow'
         | 'heading'
         | 'landmark'
         | 'button'
@@ -23,6 +24,7 @@ export interface NavigationStrategyConfig {
 }
 
 export interface NavigationStep {
+    index: number;
     identifier: string;
     spokenPhrases: string[];
     itemText: string;
@@ -44,6 +46,7 @@ export interface StrategyResult {
         | 'end-of-buttons'
         | 'end-of-links'
         | 'end-of-heading-level'
+        | 'end-of-document'
         | 'focus-trapped'
         | 'focus-cycle-complete';
 }

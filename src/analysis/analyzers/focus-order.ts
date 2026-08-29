@@ -1,17 +1,20 @@
 /**
  * Analyzer: Focus Order
- * 
+ *
  * Detects focus order anomalies where the tab order significantly
  * differs from the visual/DOM order, potentially confusing users.
- * 
+ *
  * Maps to WCAG 2.4.3 (Focus Order).
- * 
+ *
  * Note: This is a heuristic analysis since we infer DOM position from
  * the order elements appear in the HTML. True visual position would
  * require layout information.
  */
 
-import type { StrategyResult, NavigationStep } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type {
+    StrategyResult,
+    NavigationStep,
+} from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
 
 export interface FocusOrderAnalyzerResult {
@@ -27,15 +30,12 @@ interface FocusableElement {
     name: string;
     role: string;
     htmlSnippet: string | null;
-    tabIndex: number;  // Position in tab order (0-based)
-    domPosition: number | null;  // Estimated position in DOM/page HTML
+    tabIndex: number; // Position in tab order (0-based)
+    domPosition: number | null; // Estimated position in DOM/page HTML
     step: NavigationStep;
 }
 
-export function analyzeFocusOrder(
-    strategyResults: StrategyResult[],
-    pageHtml?: string
-): FocusOrderAnalyzerResult {
+export function analyzeFocusOrder(strategyResults: StrategyResult[], pageHtml?: string): FocusOrderAnalyzerResult {
     const violations: NvdaViolation[] = [];
 
     // Collect tab order from tab strategy
@@ -70,7 +70,7 @@ export function analyzeFocusOrder(
         }
     }
 
-    const tabOrderSequence = focusableElements.map(el => el.name || `(${el.role})`);
+    const tabOrderSequence = focusableElements.map((el) => el.name || `(${el.role})`);
 
     // Analyze for anomalies
     if (pageHtml) {
@@ -108,7 +108,7 @@ function detectDomOrderAnomalies(elements: FocusableElement[]): FocusOrderAnomal
     const anomalies: FocusOrderAnomaly[] = [];
 
     // Filter to elements with known DOM positions
-    const withPositions = elements.filter(el => el.domPosition !== null);
+    const withPositions = elements.filter((el) => el.domPosition !== null);
 
     for (let i = 1; i < withPositions.length; i++) {
         const current = withPositions[i]!;
@@ -117,7 +117,8 @@ function detectDomOrderAnomalies(elements: FocusableElement[]): FocusOrderAnomal
         const domJump = current.domPosition! - previous.domPosition!;
 
         // Backwards jump in DOM order (focus moved up the page)
-        if (domJump < -1000) {  // Threshold: significant backwards movement
+        if (domJump < -1000) {
+            // Threshold: significant backwards movement
             anomalies.push({
                 element: current,
                 previousElement: previous,
@@ -128,7 +129,8 @@ function detectDomOrderAnomalies(elements: FocusableElement[]): FocusOrderAnomal
 
         // Large forward jump (skipped significant portion of page)
         // This is less concerning but might indicate issues
-        if (domJump > 5000) {  // Threshold: jumped over large section
+        if (domJump > 5000) {
+            // Threshold: jumped over large section
             anomalies.push({
                 element: current,
                 previousElement: previous,

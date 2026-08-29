@@ -1,9 +1,9 @@
 /**
  * Analyzer: Focus Trap
- * 
+ *
  * Detects keyboard focus traps where users cannot escape
  * using standard keyboard navigation.
- * 
+ *
  * Maps to WCAG 2.1.2 (No Keyboard Trap).
  */
 
@@ -18,15 +18,13 @@ export interface FocusTrapAnalyzerResult {
     };
 }
 
-export function analyzeFocusTraps(
-    strategyResults: StrategyResult[]
-): FocusTrapAnalyzerResult {
+export function analyzeFocusTraps(strategyResults: StrategyResult[]): FocusTrapAnalyzerResult {
     const violations: NvdaViolation[] = [];
     let tabStrategiesChecked = 0;
 
     for (const result of strategyResults) {
         const strategyType = result.meta.type ?? result.meta.name;
-        
+
         if (strategyType !== 'tab') continue;
 
         tabStrategiesChecked++;

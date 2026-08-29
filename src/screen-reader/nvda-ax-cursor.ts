@@ -77,7 +77,7 @@ export class NvdaAxCursor {
     /**
      * Given the phrase NVDA just spoke, find the next matching node after
      * the current cursor position and advance the cursor to it.
-     * 
+     *
      * @param spokenPhrase - The phrase NVDA spoke (from lastSpokenPhrase or itemText)
      * @param role - Optional role to filter by (e.g. 'heading', 'link', 'button')
      * @returns The matched node and its index, or null if no match found
@@ -105,9 +105,35 @@ export class NvdaAxCursor {
     }
 
     /**
+     * Find the next node matching the spoken phrase, without filtering by role.
+     * Used for arrow key navigation which can land on any element type.
+     *
+     * @param spokenPhrase - The phrase NVDA spoke
+     * @returns The matched node and its index, or null if no match found
+     */
+    matchNextAny(spokenPhrase: string): MatchResult | null {
+        const normalizedPhrase = spokenPhrase.toLowerCase();
+
+        const index = this.flat.findIndex((n, i) => {
+            // Only search forward from current position
+            if (i <= this.cursorIndex) return false;
+            // Match by name (any role)
+            // @ts-ignore
+            const name = n.name?.value as string | undefined;
+            if (!name) return false;
+            return normalizedPhrase.includes(name.toLowerCase());
+        });
+
+        if (index === -1) return null;
+
+        this.cursorIndex = index;
+        return { node: this.flat[index]!, index };
+    }
+
+    /**
      * Find the next node with a specific role after the current cursor position.
      * Useful for heading/landmark navigation where NVDA announces the role.
-     * 
+     *
      * @param spokenPhrase - The phrase NVDA spoke
      * @param roles - Array of roles to match (e.g. ['heading'] for H key navigation)
      * @returns The matched node and its index, or null if no match found
@@ -135,7 +161,7 @@ export class NvdaAxCursor {
     /**
      * Find the next node with an exact role after the current cursor position.
      * Does NOT require a name match — useful for landmarks which often have no accessible name.
-     * 
+     *
      * @param role - The exact role to match (e.g. 'banner', 'navigation', 'main')
      * @returns The matched node and its index, or null if no match found
      */
@@ -166,10 +192,10 @@ export class NvdaAxCursor {
      * Find an AX node by its backendDOMNodeId.
      * Useful for focus mode navigation where we know the focused DOM element
      * but need to find its corresponding AX node.
-     * 
+     *
      * NOTE: This does NOT advance the cursor since focus mode navigation
      * doesn't follow document order like browse mode.
-     * 
+     *
      * @param backendDOMNodeId - The backend DOM node ID from CDP
      * @returns The matched AX node or null if not found
      */

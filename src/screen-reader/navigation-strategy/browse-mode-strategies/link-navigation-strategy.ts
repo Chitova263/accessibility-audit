@@ -54,8 +54,15 @@ export class LinkNavigationStrategy implements INavigationStrategy {
             }
 
             // Try to match the spoken output to an AX node.
-            // Links have role 'link' in the AX tree.
-            const matchResult = cursor.matchNextByRole('link');
+            // Use itemText first as it's usually the accessible name,
+            // fall back to spoken phrases if needed.
+            let matchResult = cursor.matchNext(itemText, 'link');
+            if (!matchResult && spokenPhrases.length > 0) {
+                for (const phrase of spokenPhrases) {
+                    matchResult = cursor.matchNext(phrase, 'link');
+                    if (matchResult) break;
+                }
+            }
 
             // Fetch the outer HTML for the matched AX node via its backendDOMNodeId
             const axNode = matchResult?.node;
@@ -63,6 +70,7 @@ export class LinkNavigationStrategy implements INavigationStrategy {
                 axNode?.backendDOMNodeId != null ? await getOuterHtml(cdpSession, axNode.backendDOMNodeId) : null;
 
             navigationSteps.push({
+                index: navigationSteps.length,
                 axNode,
                 htmlSnippet,
                 identifier: crypto.randomUUID(),

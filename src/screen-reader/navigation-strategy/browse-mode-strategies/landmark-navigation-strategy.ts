@@ -70,6 +70,7 @@ export class LandmarkNavigationStrategy implements INavigationStrategy {
                 axNode?.backendDOMNodeId != null ? await getOuterHtml(cdpSession, axNode.backendDOMNodeId) : null;
 
             navigationSteps.push({
+                index: navigationSteps.length,
                 axNode,
                 htmlSnippet,
                 identifier: crypto.randomUUID(),

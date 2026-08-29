@@ -1,12 +1,12 @@
 /**
  * Analyzer: Role Mismatch
- * 
+ *
  * Detects when the ARIA/AX role doesn't match the underlying HTML element.
  * For example: <a> with role="button" or <div> acting as a link.
- * 
+ *
  * These mismatches can cause confusing behavior for screen reader users
  * when the announced role doesn't match expected keyboard interaction.
- * 
+ *
  * Maps to WCAG 4.1.2 (Name, Role, Value).
  */
 
@@ -17,22 +17,22 @@ type RoleMismatchIssue = 'link-as-button' | 'button-as-link' | 'div-as-interacti
 
 /** Expected role for common HTML elements */
 const ELEMENT_EXPECTED_ROLES: Record<string, string[]> = {
-    'a': ['link'],
-    'button': ['button'],
-    'input': ['textbox', 'checkbox', 'radio', 'slider', 'spinbutton', 'combobox', 'searchbox'],
-    'select': ['combobox', 'listbox'],
-    'textarea': ['textbox'],
-    'img': ['img', 'image'],
-    'nav': ['navigation'],
-    'main': ['main'],
-    'header': ['banner'],
-    'footer': ['contentinfo'],
-    'aside': ['complementary'],
-    'form': ['form'],
-    'table': ['table'],
-    'ul': ['list'],
-    'ol': ['list'],
-    'li': ['listitem'],
+    a: ['link'],
+    button: ['button'],
+    input: ['textbox', 'checkbox', 'radio', 'slider', 'spinbutton', 'combobox', 'searchbox'],
+    select: ['combobox', 'listbox'],
+    textarea: ['textbox'],
+    img: ['img', 'image'],
+    nav: ['navigation'],
+    main: ['main'],
+    header: ['banner'],
+    footer: ['contentinfo'],
+    aside: ['complementary'],
+    form: ['form'],
+    table: ['table'],
+    ul: ['list'],
+    ol: ['list'],
+    li: ['listitem'],
 };
 
 /** Roles that indicate interactivity */
@@ -73,9 +73,7 @@ interface ElementInfo {
     strategyType: string;
 }
 
-export function analyzeRoleMismatch(
-    strategyResults: StrategyResult[]
-): RoleMismatchAnalyzerResult {
+export function analyzeRoleMismatch(strategyResults: StrategyResult[]): RoleMismatchAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<string, number> = {};
     let totalChecked = 0;
@@ -154,7 +152,8 @@ function detectMismatch(element: ElementInfo): MismatchInfo | null {
     if (tag === 'a' && role === 'button') {
         return {
             issue: 'link-as-button',
-            description: 'Link (<a>) has role="button". This can confuse users as Enter activates links but Enter/Space activate buttons.',
+            description:
+                'Link (<a>) has role="button". This can confuse users as Enter activates links but Enter/Space activate buttons.',
         };
     }
 
@@ -162,7 +161,8 @@ function detectMismatch(element: ElementInfo): MismatchInfo | null {
     if (tag === 'button' && role === 'link') {
         return {
             issue: 'button-as-link',
-            description: 'Button has role="link". Users expect links to navigate, but this button may perform an action instead.',
+            description:
+                'Button has role="link". Users expect links to navigate, but this button may perform an action instead.',
         };
     }
 

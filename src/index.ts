@@ -10,6 +10,7 @@ import { HeadingHierarchyNavigationStrategy } from './screen-reader/navigation-s
 import { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
 import {
     analyzeAriaHiddenFocusable,
+    analyzeContentGrouping,
     analyzeEmptyAccessibleNames,
     analyzeFocusOrder,
     analyzeFocusTraps,
@@ -24,6 +25,9 @@ import {
     analyzeSkipLink,
     analyzeWithAxeCore,
 } from './analysis';
+import { createPromptBuilder } from './llm/prompt-builder';
+import { formatTranscriptAsText } from './reporting';
+import { ArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/arrow-navigation-strategy';
 
 let chromeDevToolsProtocolConnection: ChromeDevToolsProtocolConnection | undefined = undefined;
 try {
@@ -40,6 +44,7 @@ try {
         new HeadingHierarchyNavigationStrategy({ maxSteps: 500, level: 4 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps: 500, level: 5 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps: 500, level: 6 }),
+        new ArrowNavigationStrategy({ maxSteps: 500 }),
         new TabNavigationStrategy({ maxSteps: 500 }),
     ];
     const url = 'https://www.swisscom.ch/de/privatkunden/mobile-handy-abo.html';
@@ -69,6 +74,7 @@ try {
         formLabels: analyzeFormLabels(result.results),
         ariaHiddenFocusable: analyzeAriaHiddenFocusable(result.results),
         navigationSize: analyzeNavigationSize(result.results),
+        contentGrouping: analyzeContentGrouping(result.results),
         axeCore: axeCoreResults,
     };
 
@@ -87,12 +93,59 @@ try {
         ...analysisResults.formLabels.violations,
         ...analysisResults.ariaHiddenFocusable.violations,
         ...analysisResults.navigationSize.violations,
+        ...analysisResults.contentGrouping.violations,
     ];
 
     // Combine all violations
     const allViolations = [...nvdaViolations, ...analysisResults.axeCore.violations];
 
-    console.log('=== Analysis Complete ===');
+    // ==========================================================================
+    // Build LLM Prompt
+    // ==========================================================================
+
+    const promptBuilder = createPromptBuilder({
+        transcript: {
+            includeHtmlSnippets: true,
+            includeAxNodes: true,
+            maxHtmlSnippetLength: 500,
+        },
+        violations: {
+            includeHtmlSnippets: true,
+            includeCorrelations: true,
+            groupByRule: true,
+            maxViolationsPerGroup: 5,
+        },
+    });
+
+    await promptBuilder.withPage(result.page);
+    const prompt = promptBuilder.withStrategyResults(result.results).withViolations(allViolations).build();
+
+    console.log('\n=== LLM Prompt Generated ===');
+    console.log(`Transcript: ${prompt.metadata.totalStrategies} strategies, ${prompt.metadata.totalSteps} steps`);
+    console.log(`Violations: ${prompt.metadata.totalViolations} total`);
+    console.log(`System prompt: ${prompt.metadata.systemPromptLength} chars`);
+    console.log(`User prompt: ${prompt.metadata.userPromptLength} chars`);
+    console.log(`Combined prompt: ${prompt.metadata.combinedPromptLength} chars`);
+    console.log(`Estimated tokens: ~${prompt.metadata.estimatedTokens}`);
+
+    // Write prompts to files
+    const fs = await import('fs/promises');
+    await fs.writeFile('llm-prompt-system.txt', prompt.system, 'utf-8');
+    await fs.writeFile('llm-prompt-user.txt', prompt.user, 'utf-8');
+    await fs.writeFile('llm-prompt-combined.txt', prompt.combined, 'utf-8');
+
+    // Write transcript in human-readable text format
+    const transcriptData = promptBuilder.getTranscriptData();
+    const transcriptText = formatTranscriptAsText(transcriptData);
+    await fs.writeFile('transcript-readable.txt', transcriptText, 'utf-8');
+
+    console.log('\nPrompts written to:');
+    console.log('  - llm-prompt-system.txt (system prompt for API use)');
+    console.log('  - llm-prompt-user.txt (user prompt for API use)');
+    console.log('  - llm-prompt-combined.txt (copy-paste this into AI chat)');
+    console.log('  - transcript-readable.txt (human-readable transcript)');
+
+    console.log('\n=== Analysis Complete ===');
     console.log(`Total violations found: ${allViolations.length}`);
     console.log(`  NVDA violations: ${nvdaViolations.length}`);
     console.log(`  axe-core violations: ${analysisResults.axeCore.violations.length}`);
@@ -111,6 +164,7 @@ try {
     console.log(`  Form Labels: ${analysisResults.formLabels.violations.length}`);
     console.log(`  Aria Hidden Focusable: ${analysisResults.ariaHiddenFocusable.violations.length}`);
     console.log(`  Navigation Size: ${analysisResults.navigationSize.violations.length}`);
+    console.log(`  Content Grouping: ${analysisResults.contentGrouping.violations.length}`);
 
     console.log('\naxe-core summary:');
     console.log(`  By impact:`, analysisResults.axeCore.summary.byImpact);

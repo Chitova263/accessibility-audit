@@ -1,12 +1,12 @@
 /**
  * Analyzer: Navigation Size
- * 
+ *
  * Detects excessively large navigation regions that may overwhelm
  * keyboard and screen reader users.
- * 
+ *
  * Too many links in navigation forces users to tab through
  * dozens of items before reaching main content.
- * 
+ *
  * Maps to WCAG 2.4.1 (Bypass Blocks) - related concern.
  */
 
@@ -41,11 +41,9 @@ interface NavLinkInfo {
     } | null;
 }
 
-export function analyzeNavigationSize(
-    strategyResults: StrategyResult[]
-): NavigationSizeAnalyzerResult {
+export function analyzeNavigationSize(strategyResults: StrategyResult[]): NavigationSizeAnalyzerResult {
     const violations: NvdaViolation[] = [];
-    
+
     // Count total links from link strategy
     let totalLinks = 0;
     for (const result of strategyResults) {
@@ -57,18 +55,18 @@ export function analyzeNavigationSize(
 
     // Count navigation landmarks
     const navigationLandmarks: NavLinkInfo[] = [];
-    
+
     for (const result of strategyResults) {
         if ((result.meta.type ?? result.meta.name) !== 'landmark') continue;
 
         for (const step of result.navigationSteps) {
             const node = step.axNode;
             const role = node?.role?.value;
-            
+
             if (role === 'navigation') {
                 navigationLandmarks.push({
                     landmarkName: node?.name?.value || '(unnamed navigation)',
-                    linkCount: 0,  // We'll estimate this
+                    linkCount: 0, // We'll estimate this
                     firstLinkStep: null,
                 });
             }
@@ -79,12 +77,12 @@ export function analyzeNavigationSize(
     // estimate links per navigation (simplified - assumes even distribution)
     // In reality, we'd need to analyze DOM structure to know exactly
     const linksPerNavigation: Record<string, number> = {};
-    
+
     if (navigationLandmarks.length > 0) {
         // Simple heuristic: divide total links by nav count
         // This is imprecise but gives a rough idea
         const avgLinks = Math.round(totalLinks / navigationLandmarks.length);
-        
+
         for (const nav of navigationLandmarks) {
             linksPerNavigation[nav.landmarkName] = avgLinks;
         }
@@ -148,9 +146,7 @@ function createExcessiveLinksViolation(
         axNode: firstLinkStep.axNode as NvdaToolDetails['axNode'],
     };
 
-    const threshold = severity === 'critical' 
-        ? VERY_EXCESSIVE_NAV_LINKS_THRESHOLD 
-        : EXCESSIVE_NAV_LINKS_THRESHOLD;
+    const threshold = severity === 'critical' ? VERY_EXCESSIVE_NAV_LINKS_THRESHOLD : EXCESSIVE_NAV_LINKS_THRESHOLD;
 
     return {
         id: `excessive-navigation-${firstLinkStep.identifier}`,

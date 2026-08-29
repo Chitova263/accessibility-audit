@@ -1,10 +1,10 @@
 /**
  * Analyzer: Link Text Quality
- * 
+ *
  * Detects link text issues:
  * - Generic link text ("click here", "read more", etc.)
  * - Duplicate link text pointing to different destinations
- * 
+ *
  * Maps to WCAG 2.4.4 (Link Purpose in Context).
  */
 
@@ -32,9 +32,9 @@ const GENERIC_LINK_PATTERNS = [
     /^view\s*more$/i,
     /^see\s*more$/i,
     /^full\s*story$/i,
-    /^mehr$/i,           // German "more"
-    /^weiterlesen$/i,    // German "read more"
-    /^hier$/i,           // German "here"
+    /^mehr$/i, // German "more"
+    /^weiterlesen$/i, // German "read more"
+    /^hier$/i, // German "here"
 ];
 
 export interface LinkTextAnalyzerResult {
@@ -58,9 +58,7 @@ interface LinkInfo {
     axNode: unknown;
 }
 
-export function analyzeLinkText(
-    strategyResults: StrategyResult[]
-): LinkTextAnalyzerResult {
+export function analyzeLinkText(strategyResults: StrategyResult[]): LinkTextAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<LinkIssue, number> = {
         'generic-link-text': 0,
@@ -72,13 +70,13 @@ export function analyzeLinkText(
 
     for (const result of strategyResults) {
         const strategyType = result.meta.type ?? result.meta.name;
-        
+
         if (strategyType !== 'link') continue;
 
         for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {
             const step = result.navigationSteps[stepIndex]!;
             const node = step.axNode;
-            
+
             if (!node || node.role?.value !== 'link') continue;
 
             const name = node.name?.value ?? '';
@@ -101,7 +99,7 @@ export function analyzeLinkText(
     // Check: Generic link text
     for (const link of links) {
         const normalizedName = link.name.trim();
-        
+
         if (isGenericLinkText(normalizedName)) {
             byIssue['generic-link-text']++;
             violations.push(createGenericLinkViolation(link));
@@ -109,14 +107,14 @@ export function analyzeLinkText(
     }
 
     // Check: Duplicate link text with different destinations
-    const linksByName = groupBy(links, l => l.name.trim().toLowerCase());
-    
+    const linksByName = groupBy(links, (l) => l.name.trim().toLowerCase());
+
     for (const [, group] of Object.entries(linksByName)) {
         if (group.length <= 1) continue;
-        
+
         // Get unique hrefs in this group
-        const uniqueHrefs = new Set(group.map(l => l.href).filter(Boolean));
-        
+        const uniqueHrefs = new Set(group.map((l) => l.href).filter(Boolean));
+
         if (uniqueHrefs.size > 1) {
             // Multiple links with same text but different destinations
             for (const link of group) {
@@ -137,12 +135,12 @@ export function analyzeLinkText(
 }
 
 function isGenericLinkText(text: string): boolean {
-    return GENERIC_LINK_PATTERNS.some(pattern => pattern.test(text));
+    return GENERIC_LINK_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 function extractHref(htmlSnippet: string | null): string | null {
     if (!htmlSnippet) return null;
-    
+
     const match = htmlSnippet.match(/href\s*=\s*["']([^"']*)["']/i);
     return match?.[1] ?? null;
 }

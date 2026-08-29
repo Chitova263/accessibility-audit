@@ -1,12 +1,12 @@
 /**
  * Analyzer: Skip Link
- * 
+ *
  * Detects whether the page has a skip link (skip to main content)
  * that appears early in the tab order.
- * 
+ *
  * Skip links help keyboard users bypass repetitive navigation
  * and jump directly to main content.
- * 
+ *
  * Maps to WCAG 2.4.1 (Bypass Blocks).
  */
 
@@ -21,10 +21,10 @@ const SKIP_LINK_NAME_PATTERNS = [
     /skip/i,
     /jump\s*to/i,
     /go\s*to\s*(main|content)/i,
-    /direkt\s*zu/i,          // German
-    /zum\s*(inhalt|hauptinhalt)/i,  // German
-    /aller\s*au\s*contenu/i,  // French
-    /passer/i,                // French
+    /direkt\s*zu/i, // German
+    /zum\s*(inhalt|hauptinhalt)/i, // German
+    /aller\s*au\s*contenu/i, // French
+    /passer/i, // French
 ];
 
 /** Patterns in href that indicate skip link target */
@@ -36,8 +36,8 @@ const SKIP_LINK_HREF_PATTERNS = [
     /#maincontent/i,
     /#main-content/i,
     /#body/i,
-    /#inhalt/i,    // German
-    /#contenu/i,   // French
+    /#inhalt/i, // German
+    /#contenu/i, // French
 ];
 
 export interface SkipLinkAnalyzerResult {
@@ -49,9 +49,7 @@ export interface SkipLinkAnalyzerResult {
     };
 }
 
-export function analyzeSkipLink(
-    strategyResults: StrategyResult[]
-): SkipLinkAnalyzerResult {
+export function analyzeSkipLink(strategyResults: StrategyResult[]): SkipLinkAnalyzerResult {
     const violations: NvdaViolation[] = [];
     let skipLinkFound = false;
     let skipLinkPosition: number | null = null;
@@ -60,7 +58,7 @@ export function analyzeSkipLink(
     // Find tab strategy results
     for (const result of strategyResults) {
         const strategyType = result.meta.type ?? result.meta.name;
-        
+
         if (strategyType !== 'tab') continue;
 
         // Check first N tab stops for skip link
@@ -76,7 +74,7 @@ export function analyzeSkipLink(
 
             if (isSkipLink(name, htmlSnippet)) {
                 skipLinkFound = true;
-                skipLinkPosition = i + 1;  // 1-based position
+                skipLinkPosition = i + 1; // 1-based position
                 break;
             }
         }
@@ -88,7 +86,7 @@ export function analyzeSkipLink(
             violations.push(createMissingSkipLinkViolation(firstStep, firstFewTabStops));
         }
 
-        break;  // Only check first tab strategy
+        break; // Only check first tab strategy
     }
 
     return {
@@ -103,11 +101,11 @@ export function analyzeSkipLink(
 
 function isSkipLink(name: string, htmlSnippet: string): boolean {
     // Check name patterns
-    const nameMatches = SKIP_LINK_NAME_PATTERNS.some(pattern => pattern.test(name));
+    const nameMatches = SKIP_LINK_NAME_PATTERNS.some((pattern) => pattern.test(name));
     if (nameMatches) return true;
 
     // Check href patterns in HTML
-    const hrefMatches = SKIP_LINK_HREF_PATTERNS.some(pattern => pattern.test(htmlSnippet));
+    const hrefMatches = SKIP_LINK_HREF_PATTERNS.some((pattern) => pattern.test(htmlSnippet));
     if (hrefMatches) return true;
 
     return false;

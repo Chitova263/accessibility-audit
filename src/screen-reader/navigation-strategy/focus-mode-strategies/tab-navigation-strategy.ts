@@ -28,17 +28,17 @@ async function getFocusedElementBackendNodeId(cdpSession: CDPSession): Promise<n
             `,
             returnByValue: false,
         });
-        
+
         if (exceptionDetails || !result.objectId) return null;
-        
+
         // Get the DOM node for this element
         const { node } = await cdpSession.send('DOM.describeNode', {
             objectId: result.objectId,
         });
-        
+
         // Release the object reference
         await cdpSession.send('Runtime.releaseObject', { objectId: result.objectId }).catch(() => {});
-        
+
         return node.backendNodeId ?? null;
     } catch {
         return null;
@@ -144,6 +144,7 @@ export class TabNavigationStrategy implements INavigationStrategy {
             const htmlSnippet = await getFocusedElementHtml(page);
 
             navigationSteps.push({
+                index: navigationSteps.length,
                 axNode,
                 htmlSnippet,
                 identifier: crypto.randomUUID(),

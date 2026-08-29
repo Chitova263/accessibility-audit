@@ -1,12 +1,12 @@
 /**
  * Analyzer: Heading Structure
- * 
+ *
  * Detects heading hierarchy issues:
  * - Skipped heading levels (e.g., H1 → H3)
  * - Multiple H1s on page
  * - Missing H1
  * - Empty headings
- * 
+ *
  * Maps to WCAG 1.3.1 (Info and Relationships).
  */
 
@@ -37,9 +37,7 @@ interface HeadingInfo {
     axNode: unknown;
 }
 
-export function analyzeHeadingStructure(
-    strategyResults: StrategyResult[]
-): HeadingStructureAnalyzerResult {
+export function analyzeHeadingStructure(strategyResults: StrategyResult[]): HeadingStructureAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<HeadingIssue, number> = {
         'skipped-level': 0,
@@ -53,14 +51,14 @@ export function analyzeHeadingStructure(
 
     for (const result of strategyResults) {
         const strategyType = result.meta.type ?? result.meta.name;
-        
+
         // Only process heading strategies
         if (!strategyType.startsWith('heading')) continue;
 
         for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {
             const step = result.navigationSteps[stepIndex]!;
             const node = step.axNode;
-            
+
             if (!node || node.role?.value !== 'heading') continue;
 
             // Extract level from properties
@@ -83,10 +81,10 @@ export function analyzeHeadingStructure(
 
     // Deduplicate headings by identifier (same heading might appear in multiple strategies)
     const uniqueHeadings = deduplicateHeadings(headings);
-    const headingSequence = uniqueHeadings.map(h => h.level);
+    const headingSequence = uniqueHeadings.map((h) => h.level);
 
     // Check: Missing H1
-    const h1Count = uniqueHeadings.filter(h => h.level === 1).length;
+    const h1Count = uniqueHeadings.filter((h) => h.level === 1).length;
     if (h1Count === 0 && uniqueHeadings.length > 0) {
         byIssue['missing-h1'] = 1;
         violations.push(createMissingH1Violation(uniqueHeadings[0]!));
@@ -94,9 +92,9 @@ export function analyzeHeadingStructure(
 
     // Check: Multiple H1s
     if (h1Count > 1) {
-        const h1Headings = uniqueHeadings.filter(h => h.level === 1);
+        const h1Headings = uniqueHeadings.filter((h) => h.level === 1);
         byIssue['multiple-h1'] = h1Count - 1;
-        
+
         // Flag all H1s after the first
         for (let i = 1; i < h1Headings.length; i++) {
             violations.push(createMultipleH1Violation(h1Headings[i]!, i + 1));
@@ -105,7 +103,7 @@ export function analyzeHeadingStructure(
 
     // Check: Skipped levels and empty headings
     let previousLevel = 0;
-    
+
     for (const heading of uniqueHeadings) {
         // Empty heading
         if (heading.name.trim() === '') {

@@ -1,10 +1,10 @@
 /**
  * Analyzer: Form Labels
- * 
+ *
  * Detects form fields that are missing accessible labels.
  * This is a specialized check for form-specific roles.
- * 
- * Maps to WCAG 1.3.1 (Info and Relationships), 
+ *
+ * Maps to WCAG 1.3.1 (Info and Relationships),
  * 3.3.2 (Labels or Instructions), and 4.1.2 (Name, Role, Value).
  */
 
@@ -46,9 +46,7 @@ interface FormFieldInfo {
     strategyType: string;
 }
 
-export function analyzeFormLabels(
-    strategyResults: StrategyResult[]
-): FormLabelsAnalyzerResult {
+export function analyzeFormLabels(strategyResults: StrategyResult[]): FormLabelsAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byRole: Record<string, { total: number; unlabeled: number }> = {};
 
@@ -65,7 +63,7 @@ export function analyzeFormLabels(
             if (!node) continue;
 
             const role = node.role?.value;
-            if (!role || !FORM_FIELD_ROLES.includes(role as typeof FORM_FIELD_ROLES[number])) {
+            if (!role || !FORM_FIELD_ROLES.includes(role as (typeof FORM_FIELD_ROLES)[number])) {
                 continue;
             }
 
@@ -97,7 +95,7 @@ export function analyzeFormLabels(
         roleStats.total++;
 
         const hasLabel = field.name.trim() !== '';
-        
+
         if (!hasLabel) {
             roleStats.unlabeled++;
             violations.push(createUnlabeledFieldViolation(field));

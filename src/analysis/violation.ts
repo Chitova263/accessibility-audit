@@ -4,7 +4,7 @@
  */
 
 export interface WcagCriterion {
-    criterion: string;  // e.g., "4.1.2"
+    criterion: string; // e.g., "4.1.2"
     level: 'A' | 'AA' | 'AAA';
 }
 
@@ -50,12 +50,14 @@ export interface NvdaToolDetails {
     itemText: string;
     navigationStrategy: string;
     stepIndex: number;
-    axNode?: {
-        nodeId: string;
-        role?: string | undefined;
-        name?: string | undefined;
-        properties?: unknown | undefined;
-    } | undefined;
+    axNode?:
+        | {
+              nodeId: string;
+              role?: string | undefined;
+              name?: string | undefined;
+              properties?: unknown | undefined;
+          }
+        | undefined;
 }
 
 export type NvdaViolation = Violation<NvdaToolDetails>;
