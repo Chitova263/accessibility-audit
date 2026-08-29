@@ -477,7 +477,13 @@ export class HtmlReporter implements Reporter {
     }
 
     private buildTimelineStep(
-        step: { index: number; identifier: string; spokenPhrases: string[]; itemText: string; htmlSnippet: string | null },
+        step: {
+            index: number;
+            identifier: string;
+            spokenPhrases: string[];
+            itemText: string;
+            htmlSnippet: string | null;
+        },
         strategyName: string,
         idx: number,
         total: number
@@ -502,7 +508,7 @@ export class HtmlReporter implements Reporter {
     private formatHtmlSnippet(html: string): string {
         // Truncate if too long before formatting
         const snippet = html.length > 600 ? html.slice(0, 600) + '...' : html;
-        
+
         try {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const { parse } = require('node-html-parser');
@@ -510,10 +516,25 @@ export class HtmlReporter implements Reporter {
                 lowerCaseTagName: false,
                 comment: true,
                 voidTag: {
-                    tags: ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'],
+                    tags: [
+                        'area',
+                        'base',
+                        'br',
+                        'col',
+                        'embed',
+                        'hr',
+                        'img',
+                        'input',
+                        'link',
+                        'meta',
+                        'param',
+                        'source',
+                        'track',
+                        'wbr',
+                    ],
                 },
             });
-            
+
             // Format with indentation
             const formatted = this.formatNode(root, 0);
             return escapeHtml(formatted.trim());
@@ -528,49 +549,64 @@ export class HtmlReporter implements Reporter {
      */
     private formatNode(node: any, depth: number): string {
         const indent = '  '.repeat(depth);
-        
+
         // Text node
         if (node.nodeType === 3) {
             const text = node.text?.trim();
             return text ? `${indent}${text}\n` : '';
         }
-        
+
         // Comment node
         if (node.nodeType === 8) {
             return `${indent}<!--${node.text}-->\n`;
         }
-        
+
         // Root node - just process children
         if (!node.tagName) {
             return node.childNodes?.map((child: any) => this.formatNode(child, depth)).join('') || '';
         }
-        
+
         // Element node
         const tagName = node.tagName.toLowerCase();
         const attrs = node.rawAttrs ? ` ${node.rawAttrs}` : '';
-        
+
         // Void elements (self-closing)
-        const voidTags = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+        const voidTags = [
+            'area',
+            'base',
+            'br',
+            'col',
+            'embed',
+            'hr',
+            'img',
+            'input',
+            'link',
+            'meta',
+            'param',
+            'source',
+            'track',
+            'wbr',
+        ];
         if (voidTags.includes(tagName)) {
             return `${indent}<${tagName}${attrs}>\n`;
         }
-        
+
         // Get children content
         const children = node.childNodes || [];
         const hasOnlyText = children.length === 1 && children[0].nodeType === 3;
         const textContent = hasOnlyText ? children[0].text?.trim() : '';
-        
+
         // Short inline elements - keep on one line
         if (hasOnlyText && textContent && textContent.length < 40) {
             return `${indent}<${tagName}${attrs}>${textContent}</${tagName}>\n`;
         }
-        
+
         // Elements with children - format with newlines
         if (children.length > 0) {
             const childContent = children.map((child: any) => this.formatNode(child, depth + 1)).join('');
             return `${indent}<${tagName}${attrs}>\n${childContent}${indent}</${tagName}>\n`;
         }
-        
+
         // Empty elements
         return `${indent}<${tagName}${attrs}></${tagName}>\n`;
     }
@@ -579,39 +615,37 @@ export class HtmlReporter implements Reporter {
      * Basic HTML formatting fallback.
      */
     private basicHtmlFormat(html: string): string {
-        let formatted = html
-            .replace(/></g, '>\n<')
-            .replace(/\/>/g, '/>\n');
-        
+        let formatted = html.replace(/></g, '>\n<').replace(/\/>/g, '/>\n');
+
         const lines = formatted.split('\n');
         let indent = 0;
         const indentedLines: string[] = [];
-        
+
         for (const line of lines) {
             const trimmed = line.trim();
             if (!trimmed) continue;
-            
+
             if (trimmed.startsWith('</')) {
                 indent = Math.max(0, indent - 1);
             }
-            
+
             indentedLines.push('  '.repeat(indent) + trimmed);
-            
+
             if (
-                trimmed.startsWith('<') && 
-                !trimmed.startsWith('</') && 
+                trimmed.startsWith('<') &&
+                !trimmed.startsWith('</') &&
                 !trimmed.startsWith('<!') &&
                 !trimmed.endsWith('/>') &&
                 !trimmed.includes('</')
             ) {
                 indent++;
             }
-            
+
             if (trimmed.includes('</') && !trimmed.startsWith('</')) {
                 indent = Math.max(0, indent - 1);
             }
         }
-        
+
         return indentedLines.join('\n');
     }
 

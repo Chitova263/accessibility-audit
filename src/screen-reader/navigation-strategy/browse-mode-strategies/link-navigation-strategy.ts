@@ -7,7 +7,7 @@ import type {
 } from './navigation-strategy';
 import type { CDPSession, Page } from 'playwright';
 import type { IScreenReader } from '../../screen-reader';
-import { NvdaAxCursor } from '../../nvda-ax-cursor';
+import { AxTreeCursor } from '../../ax-tree-cursor';
 
 async function getOuterHtml(cdpSession: CDPSession, backendDOMNodeId: number): Promise<string> {
     try {
@@ -33,7 +33,7 @@ export class LinkNavigationStrategy implements INavigationStrategy {
         accessibilityTree: Protocol.Accessibility.getFullAXTreeReturnValue,
         cdpSession: CDPSession
     ): Promise<StrategyResult> {
-        const cursor = new NvdaAxCursor(accessibilityTree.nodes);
+        const cursor = new AxTreeCursor(accessibilityTree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
         for (let steps = 0; steps < this.config.maxSteps; steps++) {
