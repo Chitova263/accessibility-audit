@@ -26,8 +26,18 @@ import {
     analyzeWithAxeCore,
 } from './analysis';
 import { createPromptBuilder } from './llm/prompt-builder';
-import { formatTranscriptAsText } from './reporting';
+import { formatTranscriptAsText, generateReportFromFiles } from './reporting';
 import { ArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/arrow-navigation-strategy';
+
+await generateReportFromFiles({
+    llmResponsePath: './llm-response.json',
+    violationsPath: './violations.json',
+    transcriptPath: './transcript.json',
+    pageUrl: 'https://www.swisscom.ch/tv-subscription-center-web/step/1',
+    pageTitle: 'TV Subscription Center',
+    format: 'html',
+    outputPath: './report.html',
+});
 
 let chromeDevToolsProtocolConnection: ChromeDevToolsProtocolConnection | undefined = undefined;
 try {
@@ -48,16 +58,14 @@ try {
         new TabNavigationStrategy({ maxSteps: 500 }),
     ];
     const url = 'https://www.swisscom.ch/de/privatkunden/mobile-handy-abo.html';
-    const pageUrl = new URL('https://www.swisscom.ch/tv-subscription-center-web/step/1');
+    let chTvSubscriptionCenterWebStep1 = 'https://www.swisscom.ch/tv-subscription-center-web/step/1';
+    const pageUrl = new URL(url);
     const pageSession = new PageSession(pageUrl, new NvdaScreenReader(), strategies, chromeDevToolsProtocolConnection);
     await pageSession.startSession();
     const result = await pageSession.run();
 
     // Run axe-core analysis on the page (must be before disconnect)
     const axeCoreResults = await analyzeWithAxeCore(result.page);
-
-    await pageSession.endEndSession();
-    await chromeDevToolsProtocolConnection.disconnect();
 
     // Run all NVDA analyzers on the results
     const analysisResults = {
@@ -99,8 +107,17 @@ try {
     // Combine all violations
     const allViolations = [...nvdaViolations, ...analysisResults.axeCore.violations];
 
+    // Write audit data to files
+    const fs = await import('fs/promises');
+    await fs.writeFile('violations.json', JSON.stringify(allViolations, null, 2), 'utf-8');
+    await fs.writeFile('transcript.json', JSON.stringify(result.results, null, 2), 'utf-8');
+    console.log('\nAudit data written to:');
+    console.log('  - llm-response.json (LLM analysis result)');
+    console.log('  - violations.json (all violations for reporting)');
+    console.log('  - transcript.json (strategy results for HTML report)');
+
     // ==========================================================================
-    // Build LLM Prompt
+    // Build LLM Prompt (for reference/debugging)
     // ==========================================================================
 
     const promptBuilder = createPromptBuilder({
@@ -120,6 +137,9 @@ try {
     await promptBuilder.withPage(result.page);
     const prompt = promptBuilder.withStrategyResults(result.results).withViolations(allViolations).build();
 
+    await pageSession.endEndSession();
+    await chromeDevToolsProtocolConnection.disconnect();
+
     console.log('\n=== LLM Prompt Generated ===');
     console.log(`Transcript: ${prompt.metadata.totalStrategies} strategies, ${prompt.metadata.totalSteps} steps`);
     console.log(`Violations: ${prompt.metadata.totalViolations} total`);
@@ -129,7 +149,6 @@ try {
     console.log(`Estimated tokens: ~${prompt.metadata.estimatedTokens}`);
 
     // Write prompts to files
-    const fs = await import('fs/promises');
     await fs.writeFile('llm-prompt-system.txt', prompt.system, 'utf-8');
     await fs.writeFile('llm-prompt-user.txt', prompt.user, 'utf-8');
     await fs.writeFile('llm-prompt-combined.txt', prompt.combined, 'utf-8');

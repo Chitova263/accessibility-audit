@@ -103,7 +103,7 @@ export class ArrowNavigationStrategy implements INavigationStrategy {
 
             navigationSteps.push({
                 index: navigationSteps.length,
-                identifier: `arrow-${steps}`,
+                identifier: crypto.randomUUID(),
                 spokenPhrases,
                 itemText,
                 itemTextLog: await sr.itemTextLog(),

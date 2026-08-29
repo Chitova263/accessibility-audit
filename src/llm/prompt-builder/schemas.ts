@@ -173,10 +173,10 @@ export const confidenceLevelSchema = z
 export type ConfidenceLevel = z.infer<typeof confidenceLevelSchema>;
 
 /**
- * A reference to a specific step in the transcript, unambiguously identified
- * by both its navigation strategy and its position/identifier within that strategy.
+ * A reference to a specific step in the transcript with its spoken phrase,
+ * unambiguously identified by strategy, index, and identifier.
  */
-export const llmStepReferenceSchema = z
+export const llmEvidenceStepSchema = z
     .object({
         /** Name of the navigation strategy (e.g. "tab", "heading", "link") */
         strategy: z.string().describe('The navigation strategy name (e.g. "tab", "heading", "link", "landmark")'),
@@ -186,27 +186,24 @@ export const llmStepReferenceSchema = z
         identifier: z
             .string()
             .describe('Stable UUID identifier for the step, from the id attribute in the transcript XML'),
+        /** The exact spoken phrase from this step */
+        spokenPhrase: z.string().describe('Exact spoken phrase from the transcript step. Quote verbatim.'),
     })
-    .describe('Unambiguous reference to a single step in the transcript');
+    .describe('Reference to a transcript step with its spoken phrase');
 
-export type LlmStepReference = z.infer<typeof llmStepReferenceSchema>;
+export type LlmEvidenceStep = z.infer<typeof llmEvidenceStepSchema>;
 
 /**
  * Evidence supporting an LLM finding.
  */
 export const llmEvidenceSchema = z
     .object({
-        /** Exact phrases from the transcript */
-        phrases: z
-            .array(z.string())
-            .min(1)
-            .describe('Exact phrases from the transcript that support this finding. Quote verbatim.'),
-        /** Rich references to the transcript steps where the evidence was found */
-        positions: z
-            .array(llmStepReferenceSchema)
+        /** Steps from the transcript that support this finding */
+        steps: z
+            .array(llmEvidenceStepSchema)
             .min(1)
             .describe(
-                'References to the transcript steps where the evidence was found. Each entry identifies the strategy, step index, and stable step identifier.'
+                'Transcript steps that support this finding, each with strategy, index, identifier, and spoken phrase.'
             ),
         /** Optional pattern description */
         pattern: z.string().optional().describe('Description of the pattern if this finding spans multiple steps'),
@@ -530,22 +527,15 @@ export function getLlmOutputJsonSchema(): object {
                                 evidence: {
                                     description: 'Evidence from the transcript supporting this finding',
                                     type: 'object',
-                                    required: ['phrases', 'positions'],
+                                    required: ['steps'],
                                     properties: {
-                                        phrases: {
+                                        steps: {
                                             description:
-                                                'Exact phrases from the transcript that support this finding. Quote verbatim from the spoken text.',
-                                            type: 'array',
-                                            items: { type: 'string' },
-                                            minItems: 1,
-                                        },
-                                        positions: {
-                                            description:
-                                                'References to the transcript steps where the evidence was found. Each entry identifies the strategy, step index, and stable step identifier.',
+                                                'Transcript steps that support this finding, each with strategy, index, identifier, and spoken phrase.',
                                             type: 'array',
                                             items: {
                                                 type: 'object',
-                                                required: ['strategy', 'stepIndex', 'identifier'],
+                                                required: ['strategy', 'stepIndex', 'identifier', 'spokenPhrase'],
                                                 properties: {
                                                     strategy: {
                                                         description:
@@ -560,6 +550,11 @@ export function getLlmOutputJsonSchema(): object {
                                                     identifier: {
                                                         description:
                                                             'Stable UUID identifier for the step, from the id attribute in the transcript XML',
+                                                        type: 'string',
+                                                    },
+                                                    spokenPhrase: {
+                                                        description:
+                                                            'Exact spoken phrase from the transcript step. Quote verbatim.',
                                                         type: 'string',
                                                     },
                                                 },

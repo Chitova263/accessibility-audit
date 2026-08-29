@@ -1,28 +1,43 @@
 import { describe, it, expect } from 'vitest';
 import { buildTranscriptData, renderTranscriptXml, buildTranscriptSection } from './transcript-section';
-import type { StrategyResult } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type {
+    StrategyResult,
+    NavigationStep,
+} from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { PromptTranscript, PromptStrategySection, PromptNavigationStep } from '../schemas';
 
 // =============================================================================
 // TEST DATA FIXTURES
 // =============================================================================
 
+// Creates a complete NavigationStep with all required fields
 const createNavigationStep = (
     index: number,
     overrides: Partial<{
         identifier: string;
         spokenPhrases: string[];
         itemText: string;
+        itemTextLog: string[];
+        timestamp: number;
         axNode: unknown;
         htmlSnippet: string;
     }> = {}
-) => ({
+): NavigationStep => ({
     index,
     identifier: overrides.identifier ?? `step-${index}`,
     spokenPhrases: overrides.spokenPhrases ?? [`Item ${index}`],
     itemText: overrides.itemText ?? `Item ${index}`,
-    axNode: overrides.axNode ?? null,
+    itemTextLog: overrides.itemTextLog ?? [],
+    timestamp: overrides.timestamp ?? Date.now(),
+    axNode: overrides.axNode as NavigationStep['axNode'],
     htmlSnippet: overrides.htmlSnippet ?? null,
+});
+
+// Helper to add missing itemTextLog and timestamp to inline step objects
+const makeStep = (step: Omit<NavigationStep, 'itemTextLog' | 'timestamp'>): NavigationStep => ({
+    ...step,
+    itemTextLog: [],
+    timestamp: Date.now(),
 });
 
 const createStrategyResult = (overrides: Partial<StrategyResult> = {}): StrategyResult => ({
@@ -616,7 +631,7 @@ describe('buildTranscriptData', () => {
                 meta: { name: 'heading', type: 'heading', description: 'Heading navigation' },
                 completionReason: 'end-of-headings',
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'h1-0',
                         spokenPhrases: ['Welcome', 'heading', 'level 1'],
@@ -625,7 +640,7 @@ describe('buildTranscriptData', () => {
                             { name: 'level', value: { value: 1 } },
                         ]),
                         htmlSnippet: '<h1>Welcome</h1>',
-                    },
+                    }),
                 ],
             }),
         ];
@@ -639,7 +654,7 @@ describe('buildTranscriptData', () => {
             createStrategyResult({
                 meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'checkbox-0',
                         spokenPhrases: ['Accept terms', 'checkbox', 'not checked'],
@@ -650,7 +665,7 @@ describe('buildTranscriptData', () => {
                             { name: 'required', value: { value: true } },
                         ]),
                         htmlSnippet: '<input type="checkbox" required>',
-                    },
+                    }),
                 ],
             }),
         ];
@@ -705,14 +720,14 @@ describe('buildTranscriptData', () => {
         const strategyResults: StrategyResult[] = [
             createStrategyResult({
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'long-html',
                         spokenPhrases: ['Long content'],
                         itemText: 'Long content',
                         axNode: null,
                         htmlSnippet: longHtml,
-                    },
+                    }),
                 ],
             }),
         ];
@@ -725,14 +740,14 @@ describe('buildTranscriptData', () => {
         const strategyResults: StrategyResult[] = [
             createStrategyResult({
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'step-0',
                         spokenPhrases: ['Button'],
                         itemText: 'Button',
                         axNode: null,
                         htmlSnippet: '<button>Submit</button>',
-                    },
+                    }),
                 ],
             }),
         ];
@@ -745,14 +760,14 @@ describe('buildTranscriptData', () => {
         const strategyResults: StrategyResult[] = [
             createStrategyResult({
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'step-0',
                         spokenPhrases: ['Button'],
                         itemText: 'Button',
                         axNode: createAxNode('button', 'Submit'),
                         htmlSnippet: null,
-                    },
+                    }),
                 ],
             }),
         ];
@@ -773,15 +788,15 @@ describe('buildTranscriptSection', () => {
                 meta: { name: 'tab', type: 'tab', description: 'Tab navigation through focusable elements' },
                 completionReason: 'focus-cycle-complete',
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'skip-link',
                         spokenPhrases: ['Skip to main content', 'link'],
                         itemText: 'Skip to main content',
                         axNode: createAxNode('link', 'Skip to main content'),
                         htmlSnippet: '<a href="#main">Skip to main content</a>',
-                    },
-                    {
+                    }),
+                    makeStep({
                         index: 1,
                         identifier: 'search-input',
                         spokenPhrases: ['Search', 'edit', 'blank'],
@@ -790,14 +805,14 @@ describe('buildTranscriptSection', () => {
                             { name: 'focusable', value: { value: true } },
                         ]),
                         htmlSnippet: '<input type="search" placeholder="Search...">',
-                    },
+                    }),
                 ],
             }),
             createStrategyResult({
                 meta: { name: 'heading', type: 'heading', description: 'Navigate through headings' },
                 completionReason: 'end-of-headings',
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'main-heading',
                         spokenPhrases: ['Welcome to Our Site', 'heading', 'level 1'],
@@ -806,7 +821,7 @@ describe('buildTranscriptSection', () => {
                             { name: 'level', value: { value: 1 } },
                         ]),
                         htmlSnippet: '<h1>Welcome to Our Site</h1>',
-                    },
+                    }),
                 ],
             }),
         ];
@@ -819,27 +834,27 @@ describe('buildTranscriptSection', () => {
             createStrategyResult({
                 meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'btn-0',
                         spokenPhrases: ['Submit', 'button'],
                         itemText: 'Submit',
                         axNode: createAxNode('button', 'Submit'),
                         htmlSnippet: '<button>Submit</button>',
-                    },
+                    }),
                 ],
             }),
             createStrategyResult({
                 meta: { name: 'heading', type: 'heading', description: 'Heading navigation' },
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'h1-0',
                         spokenPhrases: ['Title', 'heading', 'level 1'],
                         itemText: 'Title',
                         axNode: createAxNode('heading', 'Title'),
                         htmlSnippet: '<h1>Title</h1>',
-                    },
+                    }),
                 ],
             }),
         ];
@@ -864,38 +879,38 @@ describe('buildTranscriptSection', () => {
                 },
                 completionReason: 'end-of-landmarks',
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'banner-0',
                         spokenPhrases: ['banner landmark'],
                         itemText: 'banner',
                         axNode: createAxNode('banner', ''),
                         htmlSnippet: '<header role="banner">...</header>',
-                    },
-                    {
+                    }),
+                    makeStep({
                         index: 1,
                         identifier: 'nav-0',
                         spokenPhrases: ['navigation landmark', 'Main Navigation'],
                         itemText: 'Main Navigation',
                         axNode: createAxNode('navigation', 'Main Navigation'),
                         htmlSnippet: '<nav aria-label="Main Navigation">...</nav>',
-                    },
-                    {
+                    }),
+                    makeStep({
                         index: 2,
                         identifier: 'main-0',
                         spokenPhrases: ['main landmark'],
                         itemText: 'main',
                         axNode: createAxNode('main', ''),
                         htmlSnippet: '<main>...</main>',
-                    },
-                    {
+                    }),
+                    makeStep({
                         index: 3,
                         identifier: 'contentinfo-0',
                         spokenPhrases: ['content info landmark'],
                         itemText: 'contentinfo',
                         axNode: createAxNode('contentinfo', ''),
                         htmlSnippet: '<footer>...</footer>',
-                    },
+                    }),
                 ],
             }),
             createStrategyResult({
@@ -906,15 +921,15 @@ describe('buildTranscriptSection', () => {
                 },
                 completionReason: 'end-of-document',
                 navigationSteps: [
-                    {
+                    makeStep({
                         index: 0,
                         identifier: 'arrow-0',
                         spokenPhrases: ['link', 'Homepage'],
                         itemText: 'Homepage',
                         axNode: createAxNode('link', 'Homepage'),
                         htmlSnippet: '<a href="/">Homepage</a>',
-                    },
-                    {
+                    }),
+                    makeStep({
                         index: 1,
                         identifier: 'arrow-1',
                         spokenPhrases: ['heading', 'level 1', 'Welcome'],
@@ -923,15 +938,15 @@ describe('buildTranscriptSection', () => {
                             { name: 'level', value: { value: 1 } },
                         ]),
                         htmlSnippet: '<h1>Welcome</h1>',
-                    },
-                    {
+                    }),
+                    makeStep({
                         index: 2,
                         identifier: 'arrow-2',
                         spokenPhrases: ['This is the introduction paragraph.'],
                         itemText: 'This is the introduction paragraph.',
                         axNode: createAxNode('StaticText', 'This is the introduction paragraph.'),
                         htmlSnippet: '<p>This is the introduction paragraph.</p>',
-                    },
+                    }),
                 ],
             }),
         ];
