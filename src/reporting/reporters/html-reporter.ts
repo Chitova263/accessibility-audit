@@ -418,7 +418,7 @@ export class HtmlReporter implements Reporter {
     }
 
     // -------------------------------------------------------------------------
-    // Transcript Section - Timeline View
+    // Transcript Section
     // -------------------------------------------------------------------------
 
     private buildTranscript(data: ReportData): string {
@@ -430,53 +430,80 @@ export class HtmlReporter implements Reporter {
 </section>`;
         }
 
-        const totalSteps = data.strategyResults.reduce((sum, s) => sum + s.navigationSteps.length, 0);
         const strategies = data.strategyResults.filter((s) => s.navigationSteps.length > 0);
+        const totalSteps = strategies.reduce((sum, s) => sum + s.navigationSteps.length, 0);
+        const cited = this.citedStepIdentifiers(data);
 
-        // Build strategy filter buttons
-        const strategyButtons = strategies
+        const walkChips = strategies
             .map(
                 (s) =>
-                    `<button class="strategy-filter-btn" data-strategy="${escapeHtml(s.meta.name)}" title="${escapeHtml(s.meta.description)}">${this.formatStrategyName(s.meta.name)} <span class="count">${s.navigationSteps.length}</span></button>`
+                    `<button type="button" class="t-chip" data-walk="${escapeHtml(s.meta.name)}" aria-pressed="false" title="${escapeHtml(s.meta.description)}">${escapeHtml(s.meta.name)}<span class="t-chip-count">${s.navigationSteps.length}</span></button>`
             )
+            .join('\n');
+
+        const blocks = strategies
+            .map((s) => {
+                const lines = s.navigationSteps.map((step) => this.buildRow(step, s.meta.name, cited)).join('\n');
+                return `
+<div class="t-walk-block" data-walk="${escapeHtml(s.meta.name)}">
+    <div class="t-walk-header" title="${escapeHtml(s.meta.description)}">
+        <span class="t-walk-name">${escapeHtml(s.meta.name)}</span>
+        <span class="t-walk-count">${s.navigationSteps.length} step${s.navigationSteps.length !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="t-lines">
+${lines}
+    </div>
+</div>`;
+            })
             .join('\n');
 
         return `
 <section class="transcript" aria-labelledby="transcript-heading">
-    <h2 id="transcript-heading">Screen Reader Transcript <span class="count">(${totalSteps} steps)</span></h2>
-    <p class="transcript-intro">What NVDA announced during navigation. Click a strategy to filter.</p>
-    
-    <div class="strategy-filters">
-        <button class="strategy-filter-btn active" data-strategy="all">All Strategies</button>
-        ${strategyButtons}
+    <h2 id="transcript-heading">Screen Reader Transcript <span class="count">${totalSteps} steps</span></h2>
+
+    <div class="t-controls">
+        <label class="t-search" for="transcript-filter">
+            <span class="visually-hidden">Filter announcements</span>
+            <input type="search" id="transcript-filter" placeholder="Filter announcements&hellip;" autocomplete="off">
+        </label>
+        <div class="t-chips" role="group" aria-label="Filter by navigation walk">
+            <button type="button" class="t-chip is-active" data-walk="all" aria-pressed="true">All</button>
+            ${walkChips}
+        </div>
+        <p class="t-status" role="status" aria-live="polite"></p>
     </div>
 
-    <div class="timeline-container">
-        ${strategies.map((result) => this.buildStrategyTimeline(result)).join('\n')}
+    <div class="t-body">
+${blocks}
     </div>
 </section>`;
     }
 
-    private formatStrategyName(name: string): string {
-        return name;
+    /**
+     * Step identifiers the analysis cites as evidence.
+     *
+     * The findings section links into the transcript; this lets the transcript
+     * point back, so a reader scanning it can see which steps mattered.
+     */
+    private citedStepIdentifiers(data: ReportData): Set<string> {
+        const identifiers = new Set<string>();
+
+        for (const finding of data.analysis.analysis.findings) {
+            for (const step of finding.evidence.steps) {
+                identifiers.add(step.identifier);
+            }
+        }
+
+        return identifiers;
     }
 
-    private buildStrategyTimeline(result: StrategyResult): string {
-        const { meta, navigationSteps } = result;
-
-        return `
-<div class="timeline-strategy" data-strategy="${escapeHtml(meta.name)}">
-    <div class="timeline-strategy-header">
-        <span>${this.formatStrategyName(meta.name)}</span>
-        <span class="strategy-count">${navigationSteps.length} steps</span>
-    </div>
-    <div class="timeline-steps">
-        ${navigationSteps.map((step, idx) => this.buildTimelineStep(step, meta.name, idx, navigationSteps.length)).join('\n')}
-    </div>
-</div>`;
-    }
-
-    private buildTimelineStep(
+    /**
+     * One transcript line per step.
+     *
+     * Layout: step-number  [cited]  "announcement text"  [</>]
+     * Markup expands inline below the line, not in a sibling row.
+     */
+    private buildRow(
         step: {
             index: number;
             identifier: string;
@@ -484,21 +511,34 @@ export class HtmlReporter implements Reporter {
             itemText: string;
             htmlSnippet: string | null;
         },
-        strategyName: string,
-        idx: number,
-        total: number
+        walk: string,
+        cited: Set<string>
     ): string {
         const spoken = step.spokenPhrases.join(' ') || step.itemText || '(no announcement)';
-        const formattedHtml = step.htmlSnippet ? this.formatHtmlSnippet(step.htmlSnippet) : null;
+        const isCited = cited.has(step.identifier);
+        const markup = step.htmlSnippet ? this.formatHtmlSnippet(step.htmlSnippet) : null;
+        const lineId = `step-${escapeHtml(step.identifier)}`;
+        const markupId = `markup-${escapeHtml(step.identifier)}`;
+        const walkAttr = escapeHtml(walk);
 
-        return `
-<div class="timeline-step" id="step-${escapeHtml(step.identifier)}">
-    <div class="step-main">
-        <a href="#step-${escapeHtml(step.identifier)}" class="step-number">[${step.index}]</a>
-        <span class="step-spoken">${escapeHtml(spoken)}</span>
-    </div>
-    ${formattedHtml ? `<pre class="step-html-snippet"><code>${formattedHtml}</code></pre>` : ''}
-</div>`;
+        const citedBadge = isCited
+            ? `<span class="t-cited" title="Cited as evidence by the analysis">cited</span>`
+            : '';
+
+        const markupToggle = markup
+            ? `<button type="button" class="t-markup-toggle" aria-expanded="false" aria-controls="${markupId}" title="Show HTML markup">&lt;/&gt;</button>`
+            : '';
+
+        const markupBlock = markup
+            ? `<div class="t-markup" id="${markupId}" hidden><pre><code>${markup}</code></pre></div>`
+            : '';
+
+        return `<div class="t-line${isCited ? ' t-line--cited' : ''}" id="${lineId}" data-walk="${walkAttr}">
+    <span class="t-num"><a href="#${lineId}" tabindex="-1" aria-label="Step ${step.index}">${step.index}</a></span>
+    <span class="t-text">${escapeHtml(spoken)}</span>
+    <span class="t-actions">${citedBadge}${markupToggle}</span>
+    ${markupBlock}
+</div>`
     }
 
     /**
@@ -1095,159 +1135,287 @@ footer {
 .violation-html code {
     color: var(--text-secondary);
 }
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-}
 
 .violation-id {
     font-size: 0.85rem;
 }
 
-/* Transcript Timeline section */
+/* Transcript */
 .transcript {
     background: var(--bg-primary);
 }
 
-.transcript-intro {
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
 }
 
-/* Strategy filter buttons */
-.strategy-filters {
+/* Controls bar */
+.t-controls {
     display: flex;
+    align-items: center;
+    gap: 0.75rem;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.25rem;
 }
 
-.strategy-filter-btn {
+.t-search input {
+    min-width: min(260px, 100%);
+    padding: 0.4rem 0.65rem;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-family: inherit;
+}
+
+.t-search input:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 1px;
+}
+
+.t-chips {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.t-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 0.75rem;
+    gap: 0.35em;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.78rem;
+    font-family: inherit;
+    color: var(--text-secondary);
+    background: transparent;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-size: 0.85rem;
+    border-radius: 999px;
     cursor: pointer;
+    white-space: nowrap;
 }
 
-.strategy-filter-btn:hover {
-    background: var(--border-color);
+.t-chip:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
 }
 
-.strategy-filter-btn.active {
-    background: var(--text-primary);
+.t-chip:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 1px;
+}
+
+.t-chip.is-active {
     color: var(--bg-primary);
+    background: var(--text-primary);
     border-color: var(--text-primary);
 }
 
-.strategy-filter-btn .count {
-    font-size: 0.75rem;
-    opacity: 0.7;
+.t-chip-count {
+    opacity: 0.55;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9em;
 }
 
-/* Timeline container */
-.timeline-container {
+.t-status {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Walk blocks */
+.t-body {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 0;
 }
 
-/* Each strategy section */
-.timeline-strategy {
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+.t-walk-block {
+    border-top: 1px solid var(--border-color);
 }
 
-.timeline-strategy.hidden {
+.t-walk-block[hidden] {
     display: none;
 }
 
-.timeline-strategy-header {
-    padding: 0.5rem 1rem;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-    font-weight: 600;
-    font-size: 0.9rem;
-    display: flex;
-    justify-content: space-between;
-}
-
-.strategy-count {
-    font-weight: normal;
-    color: var(--text-secondary);
-}
-
-/* Timeline steps - simple list */
-.timeline-steps {
-    background: var(--bg-primary);
-}
-
-.timeline-step {
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid var(--border-color);
-    scroll-margin-top: 100px;
-}
-
-.timeline-step:last-child {
-    border-bottom: none;
-}
-
-.timeline-step:target {
-    background: var(--bg-secondary);
-}
-
-.step-main {
+.t-walk-header {
     display: flex;
     align-items: baseline;
-    gap: 0.75rem;
+    gap: 0.6rem;
+    padding: 0.6rem 0;
+    cursor: default;
 }
 
-.step-number {
+.t-walk-name {
+    font-size: 0.72rem;
     font-weight: 600;
-    font-size: 0.8rem;
-    color: var(--accent-color);
-    font-family: monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.t-walk-count {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+/* Transcript lines */
+.t-lines {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0.5rem;
+}
+
+.t-line {
+    display: grid;
+    grid-template-columns: 3ch 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 1rem;
+    align-items: baseline;
+    padding: 0.3rem 0;
+    border-radius: 3px;
+}
+
+.t-line[hidden] {
+    display: none;
+}
+
+.t-line:hover {
+    background: var(--bg-secondary);
+}
+
+.t-line:target {
+    background: var(--bg-secondary);
+    outline: 1px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* Cited lines get a left-gutter accent */
+.t-line--cited {
+    border-left: 2px solid var(--accent-color);
+    padding-left: 0.5rem;
+    margin-left: -0.5rem;
+}
+
+.t-num {
+    grid-column: 1;
+    grid-row: 1;
+    text-align: right;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    user-select: none;
+    padding-top: 0.05em;
+}
+
+.t-num a {
+    color: inherit;
     text-decoration: none;
-    flex-shrink: 0;
 }
 
-.step-number:hover {
-    text-decoration: underline;
+.t-num a:hover,
+.t-num a:focus-visible {
+    opacity: 1;
+    color: var(--accent-color);
 }
 
-.step-spoken {
+.t-text {
+    grid-column: 2;
+    grid-row: 1;
     font-size: 0.9rem;
+    line-height: 1.55;
     color: var(--text-primary);
 }
 
-.step-html-snippet {
-    margin: 0.5rem 0 0 0;
-    padding: 0.5rem;
-    background: #f8f8f8;
+.t-actions {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
+.t-cited {
+    font-size: 0.66rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-color);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 0.05rem 0.4rem;
+    opacity: 0.8;
+}
+
+.t-markup-toggle {
+    padding: 0.1rem 0.3rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.t-markup-toggle:hover {
+    opacity: 1;
+    border-color: var(--border-color);
+}
+
+.t-markup-toggle:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 1px;
+}
+
+.t-markup-toggle[aria-expanded="true"] {
+    opacity: 1;
+    color: var(--accent-color);
+    border-color: var(--border-color);
+}
+
+/* Inline markup block */
+.t-markup {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    margin-top: 0.35rem;
+    margin-bottom: 0.2rem;
+}
+
+.t-markup[hidden] {
+    display: none;
+}
+
+.t-markup pre {
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 0.75rem;
     overflow-x: auto;
+    line-height: 1.5;
 }
 
-[data-theme="dark"] .step-html-snippet {
-    background: #1a1a1a;
+.t-markup code {
+    color: var(--text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.step-html-snippet code {
-    color: #666;
-}
-
-[data-theme="dark"] .step-html-snippet code {
-    color: #999;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -1281,38 +1449,82 @@ ${opts.customCss}
     private getScripts(): string {
         return `
 <script>
-// Strategy filter buttons
-document.querySelectorAll('.strategy-filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const strategy = btn.dataset.strategy;
-        
-        // Update active button
-        document.querySelectorAll('.strategy-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        // Show/hide strategies
-        document.querySelectorAll('.timeline-strategy').forEach(section => {
-            if (strategy === 'all' || section.dataset.strategy === strategy) {
-                section.classList.remove('hidden');
-            } else {
-                section.classList.add('hidden');
-            }
+(function () {
+    var input = document.getElementById('transcript-filter');
+    var status = document.querySelector('.t-status');
+    var chips = Array.prototype.slice.call(document.querySelectorAll('.t-chip'));
+    var lines = Array.prototype.slice.call(document.querySelectorAll('.t-line'));
+    var blocks = Array.prototype.slice.call(document.querySelectorAll('.t-walk-block'));
+    var walk = 'all';
+
+    function apply() {
+        var query = (input ? input.value : '').trim().toLowerCase();
+        var shown = 0;
+
+        lines.forEach(function (line) {
+            var text = (line.querySelector('.t-text') || line).textContent.toLowerCase();
+            var matchesWalk = walk === 'all' || line.getAttribute('data-walk') === walk;
+            var matchesText = query === '' || text.indexOf(query) !== -1;
+            var visible = matchesWalk && matchesText;
+            line.hidden = !visible;
+            if (visible) shown++;
+        });
+
+        // Hide entire walk blocks when every line inside them is hidden
+        blocks.forEach(function (block) {
+            var visibleLines = block.querySelectorAll('.t-line:not([hidden])');
+            block.hidden = visibleLines.length === 0;
+        });
+
+        var filtering = query !== '' || walk !== 'all';
+        if (status) {
+            status.textContent = filtering ? shown + (shown === 1 ? ' step' : ' steps') : '';
+        }
+    }
+
+    function selectWalk(name) {
+        walk = name;
+        chips.forEach(function (chip) {
+            var on = chip.getAttribute('data-walk') === name;
+            chip.classList.toggle('is-active', on);
+            chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        apply();
+    }
+
+    if (input) input.addEventListener('input', apply);
+
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            selectWalk(chip.getAttribute('data-walk'));
         });
     });
-});
 
-// Smooth scroll to step when clicking evidence links (future feature)
-document.querySelectorAll('[data-scroll-to-step]').forEach(link => {
-    link.addEventListener('click', (e) => {
-        const stepId = link.dataset.scrollToStep;
-        const step = document.querySelector('[data-id="' + stepId + '"]');
-        if (step) {
-            step.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            step.classList.add('highlight');
-            setTimeout(() => step.classList.remove('highlight'), 2000);
-        }
+    // Markup toggle: expand/collapse inline .t-markup block
+    document.querySelectorAll('.t-markup-toggle').forEach(function (toggle) {
+        toggle.addEventListener('click', function () {
+            var expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+            var markup = document.getElementById(toggle.getAttribute('aria-controls'));
+            if (markup) markup.hidden = expanded;
+        });
     });
-});
+
+    // Evidence links can point at a line that the current filter is hiding — reveal it
+    function revealTarget() {
+        if (!location.hash) return;
+        var target = document.getElementById(location.hash.slice(1));
+        if (!target || !target.classList.contains('t-line')) return;
+        if (target.hidden) {
+            if (input) input.value = '';
+            selectWalk('all');
+        }
+        target.scrollIntoView({ block: 'center' });
+    }
+
+    window.addEventListener('hashchange', revealTarget);
+    revealTarget();
+})();
 </script>`;
     }
 

@@ -10,6 +10,9 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails as buildToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 type LandmarkIssue = 'duplicate-landmark' | 'missing-main-landmark';
 
@@ -38,7 +41,7 @@ interface LandmarkInfo {
     axNode: unknown;
 }
 
-export function analyzeLandmarkStructure(strategyResults: StrategyResult[]): LandmarkStructureAnalyzerResult {
+export function analyzeLandmarkStructure({ strategyResults }: TranscriptContext): LandmarkStructureAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<LandmarkIssue, number> = {
         'duplicate-landmark': 0,
@@ -139,24 +142,13 @@ function findDuplicates(arr: string[]): string[] {
 }
 
 function createToolDetails(landmark: LandmarkInfo): NvdaToolDetails {
-    return {
-        spokenPhrases: landmark.spokenPhrases,
-        itemText: landmark.itemText,
-        navigationStrategy: 'landmark',
-        stepIndex: landmark.stepIndex,
-        axNode: landmark.axNode as NvdaToolDetails['axNode'],
-    };
+    return buildToolDetails(landmark, 'landmark', landmark.stepIndex);
 }
 
 function createMissingLandmarkViolation(missingRole: string, firstLandmark: LandmarkInfo): NvdaViolation {
     return {
-        id: `missing-${missingRole}-${Date.now()}`,
-        ruleId: 'missing-main-landmark',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-            related: [{ criterion: '2.4.1', level: 'A' }],
-        },
-        impact: 'serious',
+        id: `missing-${missingRole}-${firstLandmark.identifier}`,
+        ...ruleMetadata('missing-main-landmark'),
         message: `Page is missing a "${missingRole}" landmark. Screen reader users rely on landmarks to navigate directly to main content.`,
         element: {
             htmlSnippet: undefined,
@@ -175,11 +167,7 @@ function createDuplicateLandmarkViolation(landmark: LandmarkInfo, totalCount: nu
 
     return {
         id: `duplicate-landmark-${landmark.identifier}`,
-        ruleId: 'duplicate-landmark',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-        },
-        impact: 'moderate',
+        ...ruleMetadata('duplicate-landmark'),
         message,
         element: {
             htmlSnippet: landmark.htmlSnippet ?? undefined,

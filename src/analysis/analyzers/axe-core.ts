@@ -10,9 +10,9 @@
  * attribute validity, etc.)
  */
 
-import type { Page } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import type { Violation } from '../violation';
+import type { AuditContext } from '../context';
 
 /** Axe-core specific violation details */
 export interface AxeToolDetails {
@@ -40,7 +40,7 @@ export interface AxeCoreAnalyzerResult {
 /**
  * Run axe-core analysis on a page
  */
-export async function analyzeWithAxeCore(page: Page): Promise<AxeCoreAnalyzerResult> {
+export async function analyzeWithAxeCore({ page }: AuditContext): Promise<AxeCoreAnalyzerResult> {
     const axeResults = await new AxeBuilder({ page }).analyze();
     const violations = convertAxeViolations(axeResults);
 

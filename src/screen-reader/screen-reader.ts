@@ -1,7 +1,6 @@
 import {
     type CommandOptions,
     type IScreenReader as IGuidepupScreenReader,
-    nvda,
     type StartOptions,
 } from '@guidepup/guidepup';
 import { execSync } from 'node:child_process';
@@ -9,9 +8,6 @@ import { execSync } from 'node:child_process';
 export interface IScreenReader {
     start(options?: StartOptions): Promise<void>;
     stop(options?: CommandOptions): Promise<void>;
-    // previous(options?: CommandOptions): Promise<void>;
-    // next(options?: CommandOptions): Promise<void>;
-    // previousHeading(options?: CommandOptions): Promise<void>;
     nextHeading(options?: CommandOptions): Promise<void>;
     nextHeadingLevel1(options?: CommandOptions): Promise<void>;
     nextHeadingLevel2(options?: CommandOptions): Promise<void>;
@@ -19,30 +15,19 @@ export interface IScreenReader {
     nextHeadingLevel4(options?: CommandOptions): Promise<void>;
     nextHeadingLevel5(options?: CommandOptions): Promise<void>;
     nextHeadingLevel6(options?: CommandOptions): Promise<void>;
-    // previousLink(options?: CommandOptions): Promise<void>;
     nextLink(options?: CommandOptions): Promise<void>;
-    // previousLandmark(options?: CommandOptions): Promise<void>;
     nextLandmark(options?: CommandOptions): Promise<void>;
-    // previousButton(options?: CommandOptions): Promise<void>;
     nextButton(options?: CommandOptions): Promise<void>;
-    // act(options?: CommandOptions): Promise<void>;
-    // interact(options?: CommandOptions): Promise<void>;
-    // stopInteracting(options?: CommandOptions): Promise<void>;
     press(key: string, options?: CommandOptions): Promise<void>;
     /** Press Tab key to move to next focusable element */
     pressTab(options?: CommandOptions): Promise<void>;
-    // type(text: string, options?: KeyboardOptions): Promise<void>;
     perform(command: unknown, options?: CommandOptions): Promise<void>;
-    // click(options?: ClickOptions): Promise<void>;
     lastSpokenPhrase(): Promise<string>;
     itemText(): Promise<string>;
     spokenPhraseLog(): Promise<string[]>;
     clearSpokenPhraseLog(): Promise<void>;
     itemTextLog(): Promise<string[]>;
     clearItemTextLog(): Promise<void>;
-    // getSettings(): Record<string, unknown>;
-    // getSetting(key: string): unknown;
-    // capture<T>(action: () => Promise<T>, options?: CommandOptions): Promise<Capture<T>>;
     toggleBetweenBrowseAndFocusMode(): Promise<'Browse' | 'Focus' | undefined>;
     /** Move NVDA cursor to the beginning of the document (Ctrl+Home) */
     navigateToDocumentStart(options?: CommandOptions): Promise<void>;

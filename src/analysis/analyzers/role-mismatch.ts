@@ -12,8 +12,12 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails as buildToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
-type RoleMismatchIssue = 'link-as-button' | 'button-as-link' | 'div-as-interactive' | 'span-as-interactive';
+type RoleMismatchIssue =
+    'link-as-button' | 'button-as-link' | 'div-as-interactive' | 'span-as-interactive' | 'element-role-override';
 
 /** Expected role for common HTML elements */
 const ELEMENT_EXPECTED_ROLES: Record<string, string[]> = {
@@ -73,7 +77,7 @@ interface ElementInfo {
     strategyType: string;
 }
 
-export function analyzeRoleMismatch(strategyResults: StrategyResult[]): RoleMismatchAnalyzerResult {
+export function analyzeRoleMismatch({ strategyResults }: TranscriptContext): RoleMismatchAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<string, number> = {};
     let totalChecked = 0;
@@ -187,7 +191,7 @@ function detectMismatch(element: ElementInfo): MismatchInfo | null {
     if (expectedRoles && !expectedRoles.includes(role) && INTERACTIVE_ROLES.includes(role)) {
         // Only flag if the override is to an interactive role
         return {
-            issue: 'link-as-button', // Generic mismatch
+            issue: 'element-role-override',
             description: `<${tag}> has unexpected role="${role}". Expected one of: ${expectedRoles.join(', ')}.`,
         };
     }
@@ -219,23 +223,13 @@ function deduplicateElements(elements: ElementInfo[]): ElementInfo[] {
 }
 
 function createToolDetails(element: ElementInfo): NvdaToolDetails {
-    return {
-        spokenPhrases: element.spokenPhrases,
-        itemText: element.itemText,
-        navigationStrategy: element.strategyType,
-        stepIndex: element.stepIndex,
-        axNode: element.axNode as NvdaToolDetails['axNode'],
-    };
+    return buildToolDetails(element, element.strategyType, element.stepIndex);
 }
 
 function createMismatchViolation(element: ElementInfo, mismatch: MismatchInfo): NvdaViolation {
     return {
         id: `role-mismatch-${element.identifier}`,
-        ruleId: 'role-mismatch',
-        wcag: {
-            primary: { criterion: '4.1.2', level: 'A' },
-        },
-        impact: 'moderate',
+        ...ruleMetadata('role-mismatch'),
         message: `${mismatch.description} Element: <${element.htmlTag}> with role="${element.role}"${element.name ? ` and name "${element.name}"` : ''}.`,
         element: {
             htmlSnippet: element.htmlSnippet ?? undefined,

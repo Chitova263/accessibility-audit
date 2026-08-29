@@ -12,6 +12,9 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 /** Threshold for "excessive" navigation links */
 const EXCESSIVE_NAV_LINKS_THRESHOLD = 40;
@@ -41,7 +44,7 @@ interface NavLinkInfo {
     } | null;
 }
 
-export function analyzeNavigationSize(strategyResults: StrategyResult[]): NavigationSizeAnalyzerResult {
+export function analyzeNavigationSize({ strategyResults }: TranscriptContext): NavigationSizeAnalyzerResult {
     const violations: NvdaViolation[] = [];
 
     // Count total links from link strategy
@@ -138,23 +141,13 @@ function createExcessiveLinksViolation(
     },
     severity: 'critical' | 'moderate'
 ): NvdaViolation {
-    const toolDetails: NvdaToolDetails = {
-        spokenPhrases: firstLinkStep.spokenPhrases,
-        itemText: firstLinkStep.itemText,
-        navigationStrategy: 'link',
-        stepIndex: 0,
-        axNode: firstLinkStep.axNode as NvdaToolDetails['axNode'],
-    };
+    const toolDetails = createToolDetails(firstLinkStep, 'link', 0);
 
     const threshold = severity === 'critical' ? VERY_EXCESSIVE_NAV_LINKS_THRESHOLD : EXCESSIVE_NAV_LINKS_THRESHOLD;
 
     return {
         id: `excessive-navigation-${firstLinkStep.identifier}`,
-        ruleId: 'excessive-navigation-links',
-        wcag: {
-            primary: { criterion: '2.4.1', level: 'A' },
-        },
-        impact: severity === 'critical' ? 'serious' : 'moderate',
+        ...ruleMetadata('excessive-navigation-links', severity === 'critical' ? 'serious' : 'moderate'),
         message: `Page has ${linkCount} links (threshold: ${threshold}). Excessive links make keyboard navigation tedious. Consider grouping links, using skip links, or simplifying navigation structure.`,
         element: {
             htmlSnippet: undefined,
