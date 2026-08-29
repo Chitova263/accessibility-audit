@@ -8,23 +8,7 @@ import { ButtonNavigationStrategy } from './screen-reader/navigation-strategy/br
 import { LinkNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/link-navigation-strategy';
 import { HeadingHierarchyNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/heading-hierarchy-navigation-strategy';
 import { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
-import {
-    analyzeAriaHiddenFocusable,
-    analyzeContentGrouping,
-    analyzeEmptyAccessibleNames,
-    analyzeFocusOrder,
-    analyzeFocusTraps,
-    analyzeFormLabels,
-    analyzeHeadingStructure,
-    analyzeImageAltText,
-    analyzeKeyboardAccessibility,
-    analyzeLandmarkStructure,
-    analyzeLinkText,
-    analyzeNavigationSize,
-    analyzeRoleMismatch,
-    analyzeSkipLink,
-    analyzeWithAxeCore,
-} from './analysis';
+import { collectViolations, runChecks, summarizeViolations } from './analysis';
 import { createPromptBuilder } from './llm/prompt-builder';
 import { formatTranscriptAsText, generateReportFromFiles } from './reporting';
 import { ArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/arrow-navigation-strategy';
@@ -59,53 +43,15 @@ try {
     ];
     const url = 'https://www.swisscom.ch/de/privatkunden/mobile-handy-abo.html';
     let chTvSubscriptionCenterWebStep1 = 'https://www.swisscom.ch/tv-subscription-center-web/step/1';
-    const pageUrl = new URL(url);
+    const pageUrl = new URL('https://www.swisscom.ch/myswisscom/benefits/overview');
     const pageSession = new PageSession(pageUrl, new NvdaScreenReader(), strategies, chromeDevToolsProtocolConnection);
     await pageSession.startSession();
     const result = await pageSession.run();
 
-    // Run axe-core analysis on the page (must be before disconnect)
-    const axeCoreResults = await analyzeWithAxeCore(result.page);
-
-    // Run all NVDA analyzers on the results
-    const analysisResults = {
-        emptyAccessibleNames: analyzeEmptyAccessibleNames(result.results),
-        headingStructure: analyzeHeadingStructure(result.results),
-        landmarkStructure: analyzeLandmarkStructure(result.results),
-        linkText: analyzeLinkText(result.results),
-        focusTraps: analyzeFocusTraps(result.results),
-        keyboardAccessibility: analyzeKeyboardAccessibility(result.results),
-        imageAltText: analyzeImageAltText(result.results),
-        roleMismatch: analyzeRoleMismatch(result.results),
-        focusOrder: analyzeFocusOrder(result.results),
-        skipLink: analyzeSkipLink(result.results),
-        formLabels: analyzeFormLabels(result.results),
-        ariaHiddenFocusable: analyzeAriaHiddenFocusable(result.results),
-        navigationSize: analyzeNavigationSize(result.results),
-        contentGrouping: analyzeContentGrouping(result.results),
-        axeCore: axeCoreResults,
-    };
-
-    // Collect all NVDA violations
-    const nvdaViolations = [
-        ...analysisResults.emptyAccessibleNames.violations,
-        ...analysisResults.headingStructure.violations,
-        ...analysisResults.landmarkStructure.violations,
-        ...analysisResults.linkText.violations,
-        ...analysisResults.focusTraps.violations,
-        ...analysisResults.keyboardAccessibility.violations,
-        ...analysisResults.imageAltText.violations,
-        ...analysisResults.roleMismatch.violations,
-        ...analysisResults.focusOrder.violations,
-        ...analysisResults.skipLink.violations,
-        ...analysisResults.formLabels.violations,
-        ...analysisResults.ariaHiddenFocusable.violations,
-        ...analysisResults.navigationSize.violations,
-        ...analysisResults.contentGrouping.violations,
-    ];
-
-    // Combine all violations
-    const allViolations = [...nvdaViolations, ...analysisResults.axeCore.violations];
+    // Run every registered check. axe-core drives the live page, so this has to
+    // happen before the connection is closed.
+    const checkResults = await runChecks({ strategyResults: result.results, page: result.page });
+    const allViolations = collectViolations(checkResults);
 
     // Write audit data to files
     const fs = await import('fs/promises');
@@ -164,30 +110,20 @@ try {
     console.log('  - llm-prompt-combined.txt (copy-paste this into AI chat)');
     console.log('  - transcript-readable.txt (human-readable transcript)');
 
+    const totals = summarizeViolations(allViolations);
+
     console.log('\n=== Analysis Complete ===');
-    console.log(`Total violations found: ${allViolations.length}`);
-    console.log(`  NVDA violations: ${nvdaViolations.length}`);
-    console.log(`  axe-core violations: ${analysisResults.axeCore.violations.length}`);
+    console.log(`Total violations found: ${totals.total}`);
+    console.log(`Checks run: ${checkResults.length}`);
+    console.log(`  By tool:`, totals.byTool);
 
-    console.log('\nNVDA violations by analyzer:');
-    console.log(`  Empty Accessible Names: ${analysisResults.emptyAccessibleNames.violations.length}`);
-    console.log(`  Heading Structure: ${analysisResults.headingStructure.violations.length}`);
-    console.log(`  Landmark Structure: ${analysisResults.landmarkStructure.violations.length}`);
-    console.log(`  Link Text: ${analysisResults.linkText.violations.length}`);
-    console.log(`  Focus Traps: ${analysisResults.focusTraps.violations.length}`);
-    console.log(`  Keyboard Accessibility: ${analysisResults.keyboardAccessibility.violations.length}`);
-    console.log(`  Image Alt Text: ${analysisResults.imageAltText.violations.length}`);
-    console.log(`  Role Mismatch: ${analysisResults.roleMismatch.violations.length}`);
-    console.log(`  Focus Order: ${analysisResults.focusOrder.violations.length}`);
-    console.log(`  Skip Link: ${analysisResults.skipLink.violations.length}`);
-    console.log(`  Form Labels: ${analysisResults.formLabels.violations.length}`);
-    console.log(`  Aria Hidden Focusable: ${analysisResults.ariaHiddenFocusable.violations.length}`);
-    console.log(`  Navigation Size: ${analysisResults.navigationSize.violations.length}`);
-    console.log(`  Content Grouping: ${analysisResults.contentGrouping.violations.length}`);
+    console.log('\nViolations by check:');
+    for (const { check, violations } of checkResults) {
+        console.log(`  ${check.name}: ${violations.length}`);
+    }
 
-    console.log('\naxe-core summary:');
-    console.log(`  By impact:`, analysisResults.axeCore.summary.byImpact);
-    console.log(`  By rule:`, analysisResults.axeCore.summary.byRule);
+    console.log('\nViolations by impact:', totals.byImpact);
+    console.log('Violations by rule:', totals.byRule);
 
     // Output detailed violations
     console.log('\n=== Detailed Violations ===');

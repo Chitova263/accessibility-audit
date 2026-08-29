@@ -15,6 +15,9 @@ import type {
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 type KeyboardIssue = 'button-not-in-tab-order' | 'link-not-in-tab-order';
 
@@ -37,7 +40,9 @@ interface ElementSignature {
     strategyType: string;
 }
 
-export function analyzeKeyboardAccessibility(strategyResults: StrategyResult[]): KeyboardAccessibilityAnalyzerResult {
+export function analyzeKeyboardAccessibility({
+    strategyResults,
+}: TranscriptContext): KeyboardAccessibilityAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<KeyboardIssue, number> = {
         'button-not-in-tab-order': 0,
@@ -151,24 +156,14 @@ function countByRole(results: StrategyResult[], strategyType: string, role: stri
 }
 
 function createNotInTabOrderViolation(element: ElementSignature, role: 'button' | 'link'): NvdaViolation {
-    const toolDetails: NvdaToolDetails = {
-        spokenPhrases: element.step.spokenPhrases,
-        itemText: element.step.itemText,
-        navigationStrategy: element.strategyType,
-        stepIndex: 0,
-        axNode: element.step.axNode as NvdaToolDetails['axNode'],
-    };
+    const toolDetails = createToolDetails(element.step, element.strategyType, 0);
 
     const ruleId = role === 'button' ? 'button-not-in-tab-order' : 'link-not-in-tab-order';
     const keyUsed = role === 'button' ? 'B' : 'K';
 
     return {
         id: `${ruleId}-${element.step.identifier}`,
-        ruleId,
-        wcag: {
-            primary: { criterion: '2.1.1', level: 'A' },
-        },
-        impact: 'serious',
+        ...ruleMetadata(ruleId),
         message: `${capitalize(role)} "${element.name || '(unnamed)'}" is reachable via ${keyUsed} key navigation but not in the Tab order. This ${role} may not be keyboard accessible.`,
         element: {
             htmlSnippet: element.htmlSnippet ?? undefined,

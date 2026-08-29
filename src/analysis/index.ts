@@ -1,6 +1,17 @@
 // Core types
 export type { Violation, WcagCriterion, NvdaViolation, NvdaToolDetails } from './violation';
 
+// Rule catalog - single source of truth for rule metadata
+export { RULES, RULE_IDS, ruleMetadata } from './rule-catalog';
+export type { RuleId, RuleDefinition, Impact } from './rule-catalog';
+
+// Audit context - the single input every check receives
+export type { AuditContext, TranscriptContext } from './context';
+
+// Check registry - run every analyzer without hand-wiring each one
+export { CHECKS, runChecks, collectViolations, summarizeViolations } from './registry';
+export type { Check, CheckOutput, CompletedCheck, ViolationTotals } from './registry';
+
 // Analyzers
 export { analyzeEmptyAccessibleNames } from './analyzers/empty-accessible-name';
 export type { EmptyAccessibleNameAnalyzerResult } from './analyzers/empty-accessible-name';
@@ -53,7 +64,6 @@ export {
     analyzeReadingOrderLandmarkSequence,
     analyzeExcessiveRepetition,
     analyzeContentDensityPerRegion,
-    analyzeIsolatedInteractiveElements,
     analyzeArrowNavigation,
 } from './analyzers/arrow-navigation';
 export type {
@@ -67,8 +77,5 @@ export type {
     ContentDensityPerRegionResult,
     ContentDensityPerRegionSummary,
     RegionDensity,
-    IsolatedInteractiveElementResult,
-    IsolatedInteractiveElementSummary,
-    IsolatedElement,
     ArrowNavigationAnalysisResult,
 } from './analyzers/arrow-navigation';

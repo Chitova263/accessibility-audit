@@ -10,6 +10,9 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 export interface AriaHiddenFocusableAnalyzerResult {
     violations: NvdaViolation[];
@@ -19,7 +22,7 @@ export interface AriaHiddenFocusableAnalyzerResult {
     };
 }
 
-export function analyzeAriaHiddenFocusable(strategyResults: StrategyResult[]): AriaHiddenFocusableAnalyzerResult {
+export function analyzeAriaHiddenFocusable({ strategyResults }: TranscriptContext): AriaHiddenFocusableAnalyzerResult {
     const violations: NvdaViolation[] = [];
     let totalFocusable = 0;
     const seen = new Set<string>();
@@ -74,24 +77,13 @@ function createAriaHiddenFocusableViolation(
     },
     stepIndex: number
 ): NvdaViolation {
-    const toolDetails: NvdaToolDetails = {
-        spokenPhrases: step.spokenPhrases,
-        itemText: step.itemText,
-        navigationStrategy: 'tab',
-        stepIndex,
-        axNode: step.axNode as NvdaToolDetails['axNode'],
-    };
+    const toolDetails = createToolDetails(step, 'tab', stepIndex);
 
     const spokenText = step.spokenPhrases.length > 0 ? step.spokenPhrases.join(', ') : '(nothing announced)';
 
     return {
         id: `aria-hidden-focusable-${step.identifier}`,
-        ruleId: 'aria-hidden-focusable',
-        wcag: {
-            primary: { criterion: '4.1.2', level: 'A' },
-            related: [{ criterion: '1.3.1', level: 'A' }],
-        },
-        impact: 'critical',
+        ...ruleMetadata('aria-hidden-focusable'),
         message: `Focusable element has aria-hidden="true". Focus landed on this element but screen readers are instructed to ignore it, creating a confusing silent focus. NVDA announced: "${spokenText}"`,
         element: {
             htmlSnippet: step.htmlSnippet ?? undefined,

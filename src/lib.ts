@@ -19,6 +19,7 @@ export {
 // =============================================================================
 export {
     analyzeAriaHiddenFocusable,
+    analyzeArrowNavigation,
     analyzeContentGrouping,
     analyzeEmptyAccessibleNames,
     analyzeFocusOrder,
@@ -33,6 +34,7 @@ export {
     analyzeRoleMismatch,
     analyzeSkipLink,
     analyzeWithAxeCore,
+    type ArrowNavigationAnalysisResult,
     type Violation,
 } from './analysis';
 

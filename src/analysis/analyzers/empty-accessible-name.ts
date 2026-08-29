@@ -14,6 +14,9 @@ import type {
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 /** Roles that require an accessible name per WCAG 4.1.2 */
 const ROLES_REQUIRING_NAME = [
@@ -46,7 +49,7 @@ export interface EmptyAccessibleNameAnalyzerResult {
     };
 }
 
-export function analyzeEmptyAccessibleNames(strategyResults: StrategyResult[]): EmptyAccessibleNameAnalyzerResult {
+export function analyzeEmptyAccessibleNames({ strategyResults }: TranscriptContext): EmptyAccessibleNameAnalyzerResult {
     const violations: NvdaViolation[] = [];
     let totalChecked = 0;
     const byRole: Record<string, number> = {};
@@ -92,31 +95,11 @@ function createViolation(
     navigationStrategy: string,
     stepIndex: number
 ): NvdaViolation {
-    const toolDetails: NvdaToolDetails = {
-        spokenPhrases: step.spokenPhrases,
-        itemText: step.itemText,
-        navigationStrategy,
-        stepIndex,
-        axNode: step.axNode
-            ? {
-                  nodeId: step.axNode.nodeId,
-                  role: step.axNode.role?.value,
-                  name: step.axNode.name?.value,
-                  properties: step.axNode.properties,
-              }
-            : undefined,
-    };
+    const toolDetails = createToolDetails(step, navigationStrategy, stepIndex);
 
     return {
         id: step.identifier,
-        ruleId: 'empty-accessible-name',
-        wcag: {
-            primary: { criterion: '4.1.2', level: 'A' },
-            related: [
-                { criterion: '1.1.1', level: 'A' }, // Non-text content (for images)
-            ],
-        },
-        impact: 'serious',
+        ...ruleMetadata('empty-accessible-name'),
         message: `${capitalizeFirst(role)} has no accessible name. Screen readers will announce only "${role}" with no indication of purpose.`,
         element: {
             htmlSnippet: step.htmlSnippet ?? undefined,

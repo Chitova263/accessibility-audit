@@ -17,6 +17,9 @@ import type {
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 type ContentGroupingIssue = 'large-content-gap' | 'landmark-without-heading' | 'repeated-pattern-without-heading';
 
@@ -68,7 +71,7 @@ const DEFAULT_OPTIONS: Required<ContentGroupingOptions> = {
 };
 
 export function analyzeContentGrouping(
-    strategyResults: StrategyResult[],
+    { strategyResults }: TranscriptContext,
     options: ContentGroupingOptions = {}
 ): ContentGroupingAnalyzerResult {
     const config = { ...DEFAULT_OPTIONS, ...options };
@@ -391,38 +394,16 @@ function checkHeadingBefore(steps: NavigationStep[], beforeIndex: number): boole
 // Violation Creators
 // =============================================================================
 
-function createToolDetails(step: NavigationStep, strategyName: string, stepIndex: number): NvdaToolDetails {
-    return {
-        spokenPhrases: step.spokenPhrases,
-        itemText: step.itemText,
-        navigationStrategy: strategyName,
-        stepIndex,
-        axNode: step.axNode
-            ? {
-                  nodeId: step.axNode.nodeId,
-                  role: (step.axNode.role as any)?.value,
-                  name: (step.axNode.name as any)?.value,
-                  properties: step.axNode.properties,
-              }
-            : undefined,
-    };
-}
-
 function createLargeGapViolation(gap: ContentGap, threshold: number): NvdaViolation {
     return {
         id: `large-content-gap-${gap.startStep.identifier}`,
-        ruleId: 'large-content-gap',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-            related: [{ criterion: '2.4.6', level: 'AA' }],
-        },
-        impact: 'moderate',
+        ...ruleMetadata('large-content-gap'),
         message: `Large content section (${gap.stepCount} items) without a heading. Content between steps ${gap.startStepIndex} and ${gap.endStepIndex} may need a section heading for screen reader navigation. Threshold: ${threshold} items.`,
         element: {
             htmlSnippet: gap.startStep.htmlSnippet ?? undefined,
         },
         tool: 'nvda-audit',
-        timestamp: Date.now(),
+        timestamp: gap.startStep.timestamp,
         toolDetails: createToolDetails(gap.startStep, 'ArrowNavigation', gap.startStepIndex),
     };
 }
@@ -432,18 +413,13 @@ function createLandmarkWithoutHeadingViolation(landmark: LandmarkContent): NvdaV
 
     return {
         id: `landmark-without-heading-${landmark.landmark.identifier}`,
-        ruleId: 'landmark-without-heading',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-            related: [{ criterion: '2.4.6', level: 'AA' }],
-        },
-        impact: 'moderate',
+        ...ruleMetadata('landmark-without-heading'),
         message: `Landmark "${landmarkSpoken}" contains ${landmark.contentSteps.length} items but no heading. Consider adding a heading to help screen reader users understand the section's purpose.`,
         element: {
             htmlSnippet: landmark.landmark.htmlSnippet ?? undefined,
         },
         tool: 'nvda-audit',
-        timestamp: Date.now(),
+        timestamp: landmark.landmark.timestamp,
         toolDetails: createToolDetails(landmark.landmark, 'ArrowNavigation', landmark.stepIndex),
     };
 }
@@ -453,18 +429,13 @@ function createRepeatedPatternViolation(pattern: RepeatedPattern): NvdaViolation
 
     return {
         id: `repeated-pattern-${firstOccurrence.identifier}`,
-        ruleId: 'repeated-pattern-without-heading',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-            related: [{ criterion: '2.4.6', level: 'AA' }],
-        },
-        impact: 'minor',
+        ...ruleMetadata('repeated-pattern-without-heading'),
         message: `Repeated content pattern detected: ${pattern.occurrences.length} similar "${pattern.pattern}" without a preceding section heading. Consider adding a heading to group this content (e.g., "Products", "Results", "Items").`,
         element: {
             htmlSnippet: firstOccurrence.htmlSnippet ?? undefined,
         },
         tool: 'nvda-audit',
-        timestamp: Date.now(),
+        timestamp: firstOccurrence.timestamp,
         toolDetails: createToolDetails(firstOccurrence, 'ArrowNavigation', pattern.startIndex),
     };
 }

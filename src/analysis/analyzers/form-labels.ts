@@ -10,6 +10,9 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails as buildToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 /** Form field roles that require labels */
 const FORM_FIELD_ROLES = [
@@ -46,7 +49,7 @@ interface FormFieldInfo {
     strategyType: string;
 }
 
-export function analyzeFormLabels(strategyResults: StrategyResult[]): FormLabelsAnalyzerResult {
+export function analyzeFormLabels({ strategyResults }: TranscriptContext): FormLabelsAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byRole: Record<string, { total: number; unlabeled: number }> = {};
 
@@ -146,13 +149,7 @@ function getRoleDescription(role: string): string {
 }
 
 function createToolDetails(field: FormFieldInfo): NvdaToolDetails {
-    return {
-        spokenPhrases: field.spokenPhrases,
-        itemText: field.itemText,
-        navigationStrategy: field.strategyType,
-        stepIndex: field.stepIndex,
-        axNode: field.axNode as NvdaToolDetails['axNode'],
-    };
+    return buildToolDetails(field, field.strategyType, field.stepIndex);
 }
 
 function createUnlabeledFieldViolation(field: FormFieldInfo): NvdaViolation {
@@ -160,15 +157,7 @@ function createUnlabeledFieldViolation(field: FormFieldInfo): NvdaViolation {
 
     return {
         id: `unlabeled-form-field-${field.identifier}`,
-        ruleId: 'form-field-no-label',
-        wcag: {
-            primary: { criterion: '3.3.2', level: 'A' },
-            related: [
-                { criterion: '1.3.1', level: 'A' },
-                { criterion: '4.1.2', level: 'A' },
-            ],
-        },
-        impact: 'critical',
+        ...ruleMetadata('form-field-no-label'),
         message: `${capitalizeFirst(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. NVDA announced: "${field.itemText || '(nothing)'}"`,
         element: {
             htmlSnippet: field.htmlSnippet ?? undefined,

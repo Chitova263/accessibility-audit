@@ -10,6 +10,9 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails as buildToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 type ImageIssue = 'filename-as-alt';
 
@@ -56,7 +59,7 @@ interface ImageInfo {
     axNode: unknown;
 }
 
-export function analyzeImageAltText(strategyResults: StrategyResult[]): ImageAltTextAnalyzerResult {
+export function analyzeImageAltText({ strategyResults }: TranscriptContext): ImageAltTextAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<ImageIssue, number> = {
         'filename-as-alt': 0,
@@ -142,23 +145,13 @@ function deduplicateImages(images: ImageInfo[]): ImageInfo[] {
 }
 
 function createToolDetails(image: ImageInfo): NvdaToolDetails {
-    return {
-        spokenPhrases: image.spokenPhrases,
-        itemText: image.itemText,
-        navigationStrategy: 'graphics',
-        stepIndex: image.stepIndex,
-        axNode: image.axNode as NvdaToolDetails['axNode'],
-    };
+    return buildToolDetails(image, 'graphics', image.stepIndex);
 }
 
 function createFilenameAltViolation(image: ImageInfo): NvdaViolation {
     return {
         id: `filename-alt-${image.identifier}`,
-        ruleId: 'filename-as-alt',
-        wcag: {
-            primary: { criterion: '1.1.1', level: 'A' },
-        },
-        impact: 'serious',
+        ...ruleMetadata('filename-as-alt'),
         message: `Image has filename as alt text: "${image.name}". Alt text should describe the image content, not be a filename or auto-generated identifier.`,
         element: {
             htmlSnippet: image.htmlSnippet ?? undefined,

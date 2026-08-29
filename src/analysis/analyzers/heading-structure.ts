@@ -12,6 +12,9 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails as buildToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 type HeadingIssue = 'skipped-level' | 'multiple-h1' | 'missing-h1' | 'empty-heading';
 
@@ -37,7 +40,7 @@ interface HeadingInfo {
     axNode: unknown;
 }
 
-export function analyzeHeadingStructure(strategyResults: StrategyResult[]): HeadingStructureAnalyzerResult {
+export function analyzeHeadingStructure({ strategyResults }: TranscriptContext): HeadingStructureAnalyzerResult {
     const violations: NvdaViolation[] = [];
     const byIssue: Record<HeadingIssue, number> = {
         'skipped-level': 0,
@@ -148,24 +151,13 @@ function deduplicateHeadings(headings: HeadingInfo[]): HeadingInfo[] {
 }
 
 function createToolDetails(heading: HeadingInfo): NvdaToolDetails {
-    return {
-        spokenPhrases: heading.spokenPhrases,
-        itemText: heading.itemText,
-        navigationStrategy: 'heading',
-        stepIndex: heading.stepIndex,
-        axNode: heading.axNode as NvdaToolDetails['axNode'],
-    };
+    return buildToolDetails(heading, 'heading', heading.stepIndex);
 }
 
 function createMissingH1Violation(firstHeading: HeadingInfo): NvdaViolation {
     return {
         id: `missing-h1-${firstHeading.identifier}`,
-        ruleId: 'missing-h1',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-            related: [{ criterion: '2.4.6', level: 'AA' }],
-        },
-        impact: 'serious',
+        ...ruleMetadata('missing-h1'),
         message: `Page has no H1 heading. First heading found is H${firstHeading.level}. Pages should have exactly one H1 that describes the main content.`,
         element: {
             htmlSnippet: firstHeading.htmlSnippet ?? undefined,
@@ -179,11 +171,7 @@ function createMissingH1Violation(firstHeading: HeadingInfo): NvdaViolation {
 function createMultipleH1Violation(heading: HeadingInfo, count: number): NvdaViolation {
     return {
         id: `multiple-h1-${heading.identifier}`,
-        ruleId: 'multiple-h1',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-        },
-        impact: 'moderate',
+        ...ruleMetadata('multiple-h1'),
         message: `Multiple H1 headings found (this is H1 #${count}). Pages should have exactly one H1 that describes the main content.`,
         element: {
             htmlSnippet: heading.htmlSnippet ?? undefined,
@@ -197,11 +185,7 @@ function createMultipleH1Violation(heading: HeadingInfo, count: number): NvdaVio
 function createSkippedLevelViolation(heading: HeadingInfo, previousLevel: number): NvdaViolation {
     return {
         id: `skipped-level-${heading.identifier}`,
-        ruleId: 'heading-level-skipped',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-        },
-        impact: 'moderate',
+        ...ruleMetadata('heading-level-skipped'),
         message: `Heading level skipped: H${previousLevel} → H${heading.level}. Expected H${previousLevel + 1}. Skipping heading levels breaks the document outline for screen reader users.`,
         element: {
             htmlSnippet: heading.htmlSnippet ?? undefined,
@@ -215,12 +199,7 @@ function createSkippedLevelViolation(heading: HeadingInfo, previousLevel: number
 function createEmptyHeadingViolation(heading: HeadingInfo): NvdaViolation {
     return {
         id: `empty-heading-${heading.identifier}`,
-        ruleId: 'empty-heading',
-        wcag: {
-            primary: { criterion: '1.3.1', level: 'A' },
-            related: [{ criterion: '2.4.6', level: 'AA' }],
-        },
-        impact: 'serious',
+        ...ruleMetadata('empty-heading'),
         message: `H${heading.level} heading has no text content. Empty headings confuse screen reader users navigating by heading.`,
         element: {
             htmlSnippet: heading.htmlSnippet ?? undefined,

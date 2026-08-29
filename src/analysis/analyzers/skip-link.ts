@@ -12,6 +12,9 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 /** How many tab stops to check for skip link */
 const MAX_TAB_STOPS_TO_CHECK = 5;
@@ -49,7 +52,7 @@ export interface SkipLinkAnalyzerResult {
     };
 }
 
-export function analyzeSkipLink(strategyResults: StrategyResult[]): SkipLinkAnalyzerResult {
+export function analyzeSkipLink({ strategyResults }: TranscriptContext): SkipLinkAnalyzerResult {
     const violations: NvdaViolation[] = [];
     let skipLinkFound = false;
     let skipLinkPosition: number | null = null;
@@ -122,21 +125,11 @@ function createMissingSkipLinkViolation(
     },
     firstFewTabStops: string[]
 ): NvdaViolation {
-    const toolDetails: NvdaToolDetails = {
-        spokenPhrases: firstStep.spokenPhrases,
-        itemText: firstStep.itemText,
-        navigationStrategy: 'tab',
-        stepIndex: 0,
-        axNode: firstStep.axNode as NvdaToolDetails['axNode'],
-    };
+    const toolDetails = createToolDetails(firstStep, 'tab', 0);
 
     return {
         id: `missing-skip-link-${firstStep.identifier}`,
-        ruleId: 'missing-skip-link',
-        wcag: {
-            primary: { criterion: '2.4.1', level: 'A' },
-        },
-        impact: 'serious',
+        ...ruleMetadata('missing-skip-link'),
         message: `No skip link found in the first ${MAX_TAB_STOPS_TO_CHECK} tab stops. Skip links help keyboard users bypass navigation and jump to main content. First tab stops: ${firstFewTabStops.join(', ')}.`,
         element: {
             htmlSnippet: undefined,

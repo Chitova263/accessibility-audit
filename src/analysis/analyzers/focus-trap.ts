@@ -9,6 +9,9 @@
 
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
 
 export interface FocusTrapAnalyzerResult {
     violations: NvdaViolation[];
@@ -18,7 +21,7 @@ export interface FocusTrapAnalyzerResult {
     };
 }
 
-export function analyzeFocusTraps(strategyResults: StrategyResult[]): FocusTrapAnalyzerResult {
+export function analyzeFocusTraps({ strategyResults }: TranscriptContext): FocusTrapAnalyzerResult {
     const violations: NvdaViolation[] = [];
     let tabStrategiesChecked = 0;
 
@@ -60,21 +63,11 @@ function createFocusTrapViolation(
     },
     stepsBeforeTrap: number
 ): NvdaViolation {
-    const toolDetails: NvdaToolDetails = {
-        spokenPhrases: step.spokenPhrases,
-        itemText: step.itemText,
-        navigationStrategy: 'tab',
-        stepIndex: stepsBeforeTrap - 1,
-        axNode: step.axNode as NvdaToolDetails['axNode'],
-    };
+    const toolDetails = createToolDetails(step, 'tab', stepsBeforeTrap - 1);
 
     return {
         id: `focus-trap-${step.identifier}`,
-        ruleId: 'focus-trap',
-        wcag: {
-            primary: { criterion: '2.1.2', level: 'A' },
-        },
-        impact: 'critical',
+        ...ruleMetadata('focus-trap'),
         message: `Keyboard focus trap detected after ${stepsBeforeTrap} tab presses. Users cannot navigate away from this element using the keyboard. Element text: "${step.itemText}"`,
         element: {
             htmlSnippet: step.htmlSnippet ?? undefined,

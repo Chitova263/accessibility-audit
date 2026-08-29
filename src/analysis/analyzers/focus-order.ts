@@ -2,13 +2,15 @@
  * Analyzer: Focus Order
  *
  * Detects focus order anomalies where the tab order significantly
- * differs from the visual/DOM order, potentially confusing users.
+ * differs from the reading order, potentially confusing users.
  *
  * Maps to WCAG 2.4.3 (Focus Order).
  *
- * Note: This is a heuristic analysis since we infer DOM position from
- * the order elements appear in the HTML. True visual position would
- * require layout information.
+ * Reading order comes from the Arrow navigation walk, which reads the page
+ * linearly in DOM order. Tab steps are matched to it by backendDOMNodeId, so a
+ * tab stop's reading position is the position NVDA actually announced it at
+ * rather than an inferred one. Elements the arrow walk never reached have no
+ * reading position and are skipped rather than guessed at.
  */
 
 import type {
@@ -16,11 +18,23 @@ import type {
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails as buildToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
+
+/**
+ * How far backwards through the reading order focus must jump before it counts
+ * as an anomaly. Small backwards movements are tolerated because the arrow walk
+ * matches announcements to AX nodes by text, so neighbouring positions can be
+ * off by one or two.
+ */
+const BACKWARDS_JUMP_THRESHOLD = 5;
 
 export interface FocusOrderAnalyzerResult {
     violations: NvdaViolation[];
     summary: {
         totalFocusableElements: number;
+        elementsWithReadingPosition: number;
         anomaliesFound: number;
         tabOrderSequence: string[];
     };
@@ -31,12 +45,14 @@ interface FocusableElement {
     role: string;
     htmlSnippet: string | null;
     tabIndex: number; // Position in tab order (0-based)
-    domPosition: number | null; // Estimated position in DOM/page HTML
+    readingOrderIndex: number | null; // Position in the linear reading order
     step: NavigationStep;
 }
 
-export function analyzeFocusOrder(strategyResults: StrategyResult[], pageHtml?: string): FocusOrderAnalyzerResult {
+export function analyzeFocusOrder({ strategyResults }: TranscriptContext): FocusOrderAnalyzerResult {
     const violations: NvdaViolation[] = [];
+
+    const readingOrder = buildReadingOrderIndex(strategyResults);
 
     // Collect tab order from tab strategy
     const focusableElements: FocusableElement[] = [];
@@ -53,18 +69,15 @@ export function analyzeFocusOrder(strategyResults: StrategyResult[], pageHtml?: 
             const name = node?.name?.value ?? step.itemText ?? '';
             const role = node?.role?.value ?? '';
 
-            // Estimate DOM position from page HTML if available
-            let domPosition: number | null = null;
-            if (pageHtml && step.htmlSnippet) {
-                domPosition = estimateDomPosition(pageHtml, step.htmlSnippet);
-            }
+            const backendNodeId = getBackendDomNodeId(step);
+            const readingOrderIndex = backendNodeId != null ? (readingOrder.get(backendNodeId) ?? null) : null;
 
             focusableElements.push({
                 name,
                 role,
                 htmlSnippet: step.htmlSnippet,
                 tabIndex,
-                domPosition,
+                readingOrderIndex,
                 step,
             });
         }
@@ -72,13 +85,10 @@ export function analyzeFocusOrder(strategyResults: StrategyResult[], pageHtml?: 
 
     const tabOrderSequence = focusableElements.map((el) => el.name || `(${el.role})`);
 
-    // Analyze for anomalies
-    if (pageHtml) {
-        // Method 1: Compare tab order vs DOM order
-        const anomalies = detectDomOrderAnomalies(focusableElements);
-        for (const anomaly of anomalies) {
-            violations.push(createFocusOrderViolation(anomaly));
-        }
+    // Method 1: Compare tab order against reading order
+    const anomalies = detectReadingOrderAnomalies(focusableElements);
+    for (const anomaly of anomalies) {
+        violations.push(createFocusOrderViolation(anomaly));
     }
 
     // Method 2: Detect positive tabindex (always suspicious)
@@ -91,51 +101,68 @@ export function analyzeFocusOrder(strategyResults: StrategyResult[], pageHtml?: 
         violations,
         summary: {
             totalFocusableElements: focusableElements.length,
+            elementsWithReadingPosition: focusableElements.filter((el) => el.readingOrderIndex !== null).length,
             anomaliesFound: violations.length,
             tabOrderSequence,
         },
     };
 }
 
+/**
+ * Maps each element the arrow walk reached to its position in the reading order.
+ * The first occurrence wins, so an element announced twice keeps its earliest
+ * position.
+ */
+function buildReadingOrderIndex(strategyResults: StrategyResult[]): Map<number, number> {
+    const readingOrder = new Map<number, number>();
+
+    const arrowResult = strategyResults.find((r) => r.meta.type === 'arrow');
+    if (!arrowResult) return readingOrder;
+
+    for (let i = 0; i < arrowResult.navigationSteps.length; i++) {
+        const backendNodeId = getBackendDomNodeId(arrowResult.navigationSteps[i]!);
+        if (backendNodeId != null && !readingOrder.has(backendNodeId)) {
+            readingOrder.set(backendNodeId, i);
+        }
+    }
+
+    return readingOrder;
+}
+
+function getBackendDomNodeId(step: NavigationStep): number | null {
+    return step.axNode?.backendDOMNodeId ?? null;
+}
+
 interface FocusOrderAnomaly {
     element: FocusableElement;
     previousElement: FocusableElement;
-    issue: 'backwards-jump' | 'large-forward-jump';
     jumpDistance: number;
 }
 
-function detectDomOrderAnomalies(elements: FocusableElement[]): FocusOrderAnomaly[] {
+/**
+ * Flags tab stops that move backwards through the reading order.
+ *
+ * Only backwards movement is reported. Tab deliberately skips non-focusable
+ * content, so a large forward jump is what tab navigation is for rather than a
+ * defect.
+ */
+function detectReadingOrderAnomalies(elements: FocusableElement[]): FocusOrderAnomaly[] {
     const anomalies: FocusOrderAnomaly[] = [];
 
-    // Filter to elements with known DOM positions
-    const withPositions = elements.filter((el) => el.domPosition !== null);
+    // Filter to elements the arrow walk also reached
+    const withPositions = elements.filter((el) => el.readingOrderIndex !== null);
 
     for (let i = 1; i < withPositions.length; i++) {
         const current = withPositions[i]!;
         const previous = withPositions[i - 1]!;
 
-        const domJump = current.domPosition! - previous.domPosition!;
+        const jump = current.readingOrderIndex! - previous.readingOrderIndex!;
 
-        // Backwards jump in DOM order (focus moved up the page)
-        if (domJump < -1000) {
-            // Threshold: significant backwards movement
+        if (jump < -BACKWARDS_JUMP_THRESHOLD) {
             anomalies.push({
                 element: current,
                 previousElement: previous,
-                issue: 'backwards-jump',
-                jumpDistance: Math.abs(domJump),
-            });
-        }
-
-        // Large forward jump (skipped significant portion of page)
-        // This is less concerning but might indicate issues
-        if (domJump > 5000) {
-            // Threshold: jumped over large section
-            anomalies.push({
-                element: current,
-                previousElement: previous,
-                issue: 'large-forward-jump',
-                jumpDistance: domJump,
+                jumpDistance: Math.abs(jump),
             });
         }
     }
@@ -166,17 +193,6 @@ function detectTabindexAnomalies(elements: FocusableElement[]): TabindexAnomaly[
     return anomalies;
 }
 
-function estimateDomPosition(pageHtml: string, snippet: string): number | null {
-    if (!snippet) return null;
-
-    // Find position of this snippet in the page HTML
-    // Use a portion of the snippet to handle minor differences
-    const searchText = snippet.slice(0, Math.min(100, snippet.length));
-    const position = pageHtml.indexOf(searchText);
-
-    return position >= 0 ? position : null;
-}
-
 function extractTabindex(htmlSnippet: string | null): number | null {
     if (!htmlSnippet) return null;
 
@@ -188,30 +204,17 @@ function extractTabindex(htmlSnippet: string | null): number | null {
 }
 
 function createToolDetails(element: FocusableElement): NvdaToolDetails {
-    return {
-        spokenPhrases: element.step.spokenPhrases,
-        itemText: element.step.itemText,
-        navigationStrategy: 'tab',
-        stepIndex: element.tabIndex,
-        axNode: element.step.axNode as NvdaToolDetails['axNode'],
-    };
+    return buildToolDetails(element.step, 'tab', element.tabIndex);
 }
 
 function createFocusOrderViolation(anomaly: FocusOrderAnomaly): NvdaViolation {
-    const isBackwards = anomaly.issue === 'backwards-jump';
-
-    const message = isBackwards
-        ? `Focus jumped backwards in the page after "${anomaly.previousElement.name || anomaly.previousElement.role}". Focus moved to "${anomaly.element.name || anomaly.element.role}" which appears earlier in the DOM. This can disorient keyboard users.`
-        : `Focus jumped over a large section of the page. After "${anomaly.previousElement.name || anomaly.previousElement.role}", focus moved to "${anomaly.element.name || anomaly.element.role}", skipping significant content.`;
+    const previousLabel = anomaly.previousElement.name || anomaly.previousElement.role;
+    const currentLabel = anomaly.element.name || anomaly.element.role;
 
     return {
         id: `focus-order-${anomaly.element.step.identifier}`,
-        ruleId: 'focus-order-anomaly',
-        wcag: {
-            primary: { criterion: '2.4.3', level: 'A' },
-        },
-        impact: isBackwards ? 'serious' : 'moderate',
-        message,
+        ...ruleMetadata('focus-order-anomaly'),
+        message: `Focus jumped backwards through the page. After "${previousLabel}", focus moved to "${currentLabel}", which is announced ${anomaly.jumpDistance} positions earlier when reading the page linearly. This can disorient keyboard users.`,
         element: {
             htmlSnippet: anomaly.element.htmlSnippet ?? undefined,
         },
@@ -224,11 +227,7 @@ function createFocusOrderViolation(anomaly: FocusOrderAnomaly): NvdaViolation {
 function createTabindexViolation(anomaly: TabindexAnomaly): NvdaViolation {
     return {
         id: `positive-tabindex-${anomaly.element.step.identifier}`,
-        ruleId: 'positive-tabindex',
-        wcag: {
-            primary: { criterion: '2.4.3', level: 'A' },
-        },
-        impact: 'serious',
+        ...ruleMetadata('positive-tabindex'),
         message: `Element has positive tabindex="${anomaly.tabindexValue}". Positive tabindex values disrupt natural focus order and should be avoided. Use tabindex="0" or rely on DOM order instead.`,
         element: {
             htmlSnippet: anomaly.element.htmlSnippet ?? undefined,

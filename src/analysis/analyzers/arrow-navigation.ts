@@ -4,12 +4,15 @@
  * These analyzers are designed to work with Arrow Navigation Strategy results,
  * which capture linear reading through the page content.
  *
- * Rules implemented:
- * - steps-to-main-content: Count steps to reach main landmark (WCAG 2.4.1 A)
- * - reading-order-landmark-sequence: Footer/aside before main in DOM (WCAG 1.3.2 A)
- * - excessive-repetition: Same phrase announced N+ times consecutively (WCAG 1.3.1 A)
- * - content-density-per-region: Items per landmark exceed threshold (WCAG 2.4.1 A)
- * - isolated-interactive-element: Button/link with no surrounding context (WCAG 2.4.4 A)
+ * Rules implemented (WCAG mappings live in the rule catalog):
+ * - steps-to-main-content: Count steps to reach main landmark
+ * - reading-order-landmark-sequence: Footer/aside before main in DOM
+ * - excessive-repetition: Same phrase announced N+ times consecutively
+ * - content-density-per-region: Items per landmark exceed threshold
+ *
+ * Linear reading is also the context signal for two rules that live elsewhere:
+ * link-text judges generic link text against its surrounding announcements, and
+ * focus-order compares tab order against reading order.
  */
 
 import type {
@@ -17,48 +20,33 @@ import type {
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { NvdaViolation, NvdaToolDetails } from '../violation';
+import type { TranscriptContext } from '../context';
+import { createToolDetails } from '../tool-details';
+import { ruleMetadata } from '../rule-catalog';
+import type { Impact, RuleId } from '../rule-catalog';
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 function createViolation(
-    ruleId: string,
-    wcagCriterion: string,
-    wcagLevel: 'A' | 'AA' | 'AAA',
-    impact: string,
+    ruleId: RuleId,
     message: string,
     step: NavigationStep,
-    strategyName: string
+    strategyName: string,
+    impactOverride?: Impact
 ): NvdaViolation {
     return {
         id: `${ruleId}-${step.identifier}`,
-        ruleId,
-        wcag: {
-            primary: { criterion: wcagCriterion, level: wcagLevel },
-        },
-        impact,
+        ...ruleMetadata(ruleId, impactOverride),
         message,
         element: {
             htmlSnippet: step.htmlSnippet ?? undefined,
             selector: undefined,
         },
         tool: 'nvda-audit',
-        timestamp: Date.now(),
-        toolDetails: {
-            spokenPhrases: step.spokenPhrases,
-            itemText: step.itemText,
-            navigationStrategy: strategyName,
-            stepIndex: step.index,
-            axNode: step.axNode
-                ? {
-                      nodeId: step.axNode.nodeId,
-                      role: (step.axNode.role as any)?.value,
-                      name: (step.axNode.name as any)?.value,
-                      properties: step.axNode.properties,
-                  }
-                : undefined,
-        },
+        timestamp: step.timestamp,
+        toolDetails: createToolDetails(step, strategyName, step.index),
     };
 }
 
@@ -81,6 +69,7 @@ function getRole(step: NavigationStep): string | undefined {
 export interface StepsToMainContentSummary {
     stepsToMain: number | null;
     mainFoundAtStep: number | null;
+    mainFound: boolean;
     totalSteps: number;
     threshold: number;
     exceedsThreshold: boolean;
@@ -98,7 +87,7 @@ export interface StepsToMainContentResult {
  * WCAG 2.4.1: Bypass Blocks (Level A)
  */
 export function analyzeStepsToMainContent(
-    strategyResults: StrategyResult[],
+    { strategyResults }: TranscriptContext,
     options: { threshold?: number } = {}
 ): StepsToMainContentResult {
     const threshold = options.threshold ?? 30; // Default: 30 steps is too many
@@ -111,6 +100,7 @@ export function analyzeStepsToMainContent(
             summary: {
                 stepsToMain: null,
                 mainFoundAtStep: null,
+                mainFound: false,
                 totalSteps: 0,
                 threshold,
                 exceedsThreshold: false,
@@ -142,11 +132,21 @@ export function analyzeStepsToMainContent(
         violations.push(
             createViolation(
                 'steps-to-main-content',
-                '2.4.1',
-                'A',
-                'moderate',
                 `Main content reached after ${stepsToMain} steps (threshold: ${threshold}). Users must navigate through excessive content before reaching main content. Consider adding or improving skip links.`,
                 step,
+                arrowResult.meta.name
+            )
+        );
+    }
+
+    // Never reaching a main landmark is worse than reaching it late: there is no
+    // target for skip links and no way to bypass repeated content at all.
+    if (mainFoundAtStep === null && steps.length > 0) {
+        violations.push(
+            createViolation(
+                'missing-main-landmark',
+                `No main landmark was announced across ${steps.length} steps of linear reading. Without a main landmark, screen reader users cannot jump past repeated header and navigation content. Wrap the primary content in a <main> element.`,
+                steps[0]!,
                 arrowResult.meta.name
             )
         );
@@ -157,6 +157,7 @@ export function analyzeStepsToMainContent(
         summary: {
             stepsToMain,
             mainFoundAtStep,
+            mainFound: mainFoundAtStep !== null,
             totalSteps: steps.length,
             threshold,
             exceedsThreshold,
@@ -186,14 +187,22 @@ export interface ReadingOrderLandmarkSequenceResult {
     summary: ReadingOrderLandmarkSequenceSummary;
 }
 
+/**
+ * Landmark announcements as NVDA speaks them, e.g. "banner landmark".
+ *
+ * The "landmark"/"region" qualifier is required: without it these patterns
+ * collapse to bare word matches and fire on ordinary content ("domain" matching
+ * main, "beside" matching aside), which corrupts every landmark boundary.
+ *
+ * Keys must be valid ARIA roles — they are also compared against the AX node
+ * role, which is the more reliable of the two signals.
+ */
 const LANDMARK_PATTERNS: Record<string, RegExp> = {
-    banner: /banner\s*(landmark|region)?/i,
-    navigation: /navigation\s*(landmark|region)?/i,
-    main: /main\s*(landmark|region)?/i,
-    complementary: /complementary\s*(landmark|region)?/i,
-    contentinfo: /(content\s*info|contentinfo)\s*(landmark|region)?/i,
-    aside: /aside|complementary/i,
-    footer: /(footer|content\s*info)/i,
+    banner: /\bbanner\s+(landmark|region)\b/i,
+    navigation: /\bnavigation\s+(landmark|region)\b/i,
+    main: /\bmain\s+(landmark|region)\b/i,
+    complementary: /\b(complementary|aside)\s+(landmark|region)\b/i,
+    contentinfo: /\b(content\s*info|footer)\s+(landmark|region)\b/i,
 };
 
 /**
@@ -202,9 +211,9 @@ const LANDMARK_PATTERNS: Record<string, RegExp> = {
  *
  * WCAG 1.3.2: Meaningful Sequence (Level A)
  */
-export function analyzeReadingOrderLandmarkSequence(
-    strategyResults: StrategyResult[]
-): ReadingOrderLandmarkSequenceResult {
+export function analyzeReadingOrderLandmarkSequence({
+    strategyResults,
+}: TranscriptContext): ReadingOrderLandmarkSequenceResult {
     const violations: NvdaViolation[] = [];
     const landmarkSequence: LandmarkSequenceInfo[] = [];
 
@@ -244,8 +253,8 @@ export function analyzeReadingOrderLandmarkSequence(
 
     // Find positions
     const mainIndex = landmarkSequence.findIndex((l) => l.landmark === 'main');
-    const footerIndex = landmarkSequence.findIndex((l) => l.landmark === 'contentinfo' || l.landmark === 'footer');
-    const asideIndex = landmarkSequence.findIndex((l) => l.landmark === 'complementary' || l.landmark === 'aside');
+    const footerIndex = landmarkSequence.findIndex((l) => l.landmark === 'contentinfo');
+    const asideIndex = landmarkSequence.findIndex((l) => l.landmark === 'complementary');
 
     const hasMainBeforeFooter = mainIndex === -1 || footerIndex === -1 || mainIndex < footerIndex;
     const hasMainBeforeAside = mainIndex === -1 || asideIndex === -1 || mainIndex < asideIndex;
@@ -258,9 +267,6 @@ export function analyzeReadingOrderLandmarkSequence(
         violations.push(
             createViolation(
                 'reading-order-landmark-sequence',
-                '1.3.2',
-                'A',
-                'serious',
                 `Footer/contentinfo landmark (step ${landmarkSequence[footerIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Screen reader users will hear footer content before main content.`,
                 footerStep,
                 arrowResult.meta.name
@@ -275,12 +281,10 @@ export function analyzeReadingOrderLandmarkSequence(
         violations.push(
             createViolation(
                 'reading-order-landmark-sequence',
-                '1.3.2',
-                'A',
-                'moderate',
                 `Complementary/aside landmark (step ${landmarkSequence[asideIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Consider if sidebar content should come after main content.`,
                 asideStep,
-                arrowResult.meta.name
+                arrowResult.meta.name,
+                'moderate'
             )
         );
         violationMessages.push('Aside before main');
@@ -326,10 +330,12 @@ export interface ExcessiveRepetitionResult {
  * WCAG 1.3.1: Info and Relationships (Level A)
  */
 export function analyzeExcessiveRepetition(
-    strategyResults: StrategyResult[],
+    { strategyResults }: TranscriptContext,
     options: { threshold?: number; minPhraseLength?: number } = {}
 ): ExcessiveRepetitionResult {
-    const threshold = options.threshold ?? 3; // Default: 3+ repetitions is excessive
+    // 5+ rather than 3+: a linear arrow walk crosses product grids and card lists
+    // where 3 identical announcements in a row are normal rather than a defect.
+    const threshold = options.threshold ?? 5;
     const minPhraseLength = options.minPhraseLength ?? 3; // Ignore very short phrases
     const violations: NvdaViolation[] = [];
     const repetitions: RepetitionInfo[] = [];
@@ -408,9 +414,6 @@ export function analyzeExcessiveRepetition(
         violations.push(
             createViolation(
                 'excessive-repetition',
-                '1.3.1',
-                'A',
-                'minor',
                 `"${rep.phrase}" is announced ${rep.count} times consecutively (steps ${rep.startStep}-${rep.endStep}). This repetition may confuse screen reader users or indicate redundant content.`,
                 step,
                 arrowResult.meta.name
@@ -458,7 +461,7 @@ export interface ContentDensityPerRegionResult {
  * WCAG 2.4.1: Bypass Blocks (Level A)
  */
 export function analyzeContentDensityPerRegion(
-    strategyResults: StrategyResult[],
+    { strategyResults }: TranscriptContext,
     options: { threshold?: number } = {}
 ): ContentDensityPerRegionResult {
     const threshold = options.threshold ?? 50; // Default: 50 items per region is excessive
@@ -514,14 +517,14 @@ export function analyzeContentDensityPerRegion(
             exceedsThreshold,
         });
 
-        if (exceedsThreshold) {
+        // Oversized navigation regions are already reported by the navigation-size
+        // analyzer, which counts links rather than steps. Recording the region in the
+        // summary but skipping the violation keeps the two from double-reporting.
+        if (exceedsThreshold && current.landmark !== 'navigation') {
             const step = steps[startStep]!;
             violations.push(
                 createViolation(
                     'content-density-per-region',
-                    '2.4.1',
-                    'A',
-                    'moderate',
                     `${current.landmark} region contains ${itemCount} items (threshold: ${threshold}). This high density may overwhelm screen reader users. Consider breaking into smaller sections or adding sub-headings.`,
                     step,
                     arrowResult.meta.name
@@ -541,152 +544,6 @@ export function analyzeContentDensityPerRegion(
 }
 
 // =============================================================================
-// Rule: isolated-interactive-element (WCAG 2.4.4 A)
-// =============================================================================
-
-export interface IsolatedElement {
-    stepIndex: number;
-    element: string;
-    role: string;
-    contextBefore: string[];
-    contextAfter: string[];
-}
-
-export interface IsolatedInteractiveElementSummary {
-    isolatedElements: IsolatedElement[];
-    totalIsolated: number;
-    contextWindow: number;
-}
-
-export interface IsolatedInteractiveElementResult {
-    violations: NvdaViolation[];
-    summary: IsolatedInteractiveElementSummary;
-}
-
-const INTERACTIVE_ROLES = ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'switch', 'textbox', 'combobox'];
-
-/**
- * Analyzes for interactive elements (buttons, links) that have no surrounding
- * text context to explain their purpose.
- *
- * WCAG 2.4.4: Link Purpose (In Context) (Level A)
- */
-export function analyzeIsolatedInteractiveElements(
-    strategyResults: StrategyResult[],
-    options: { contextWindow?: number } = {}
-): IsolatedInteractiveElementResult {
-    const contextWindow = options.contextWindow ?? 2; // Check 2 steps before/after
-    const violations: NvdaViolation[] = [];
-    const isolatedElements: IsolatedElement[] = [];
-
-    const arrowResult = getArrowStrategyResult(strategyResults);
-    if (!arrowResult) {
-        return {
-            violations: [],
-            summary: {
-                isolatedElements: [],
-                totalIsolated: 0,
-                contextWindow,
-            },
-        };
-    }
-
-    const steps = arrowResult.navigationSteps;
-
-    for (let i = 0; i < steps.length; i++) {
-        const step = steps[i]!;
-        const role = getRole(step);
-
-        // Check if this is an interactive element
-        if (!role || !INTERACTIVE_ROLES.includes(role)) {
-            continue;
-        }
-
-        // Check if the element has a generic/ambiguous name
-        const name = step.itemText.toLowerCase().trim();
-        const genericNames = [
-            'click',
-            'click here',
-            'here',
-            'more',
-            'read more',
-            'learn more',
-            'submit',
-            'go',
-            'ok',
-            'button',
-            'link',
-        ];
-
-        if (!genericNames.includes(name) && name.length > 3) {
-            // Has a specific name, not isolated
-            continue;
-        }
-
-        // Get context before and after
-        const contextBefore: string[] = [];
-        const contextAfter: string[] = [];
-
-        for (let j = Math.max(0, i - contextWindow); j < i; j++) {
-            const contextStep = steps[j]!;
-            const contextRole = getRole(contextStep);
-            // Only count non-interactive text as context
-            if (!contextRole || !INTERACTIVE_ROLES.includes(contextRole)) {
-                const text = contextStep.itemText.trim();
-                if (text.length > 3) {
-                    contextBefore.push(text);
-                }
-            }
-        }
-
-        for (let j = i + 1; j <= Math.min(steps.length - 1, i + contextWindow); j++) {
-            const contextStep = steps[j]!;
-            const contextRole = getRole(contextStep);
-            if (!contextRole || !INTERACTIVE_ROLES.includes(contextRole)) {
-                const text = contextStep.itemText.trim();
-                if (text.length > 3) {
-                    contextAfter.push(text);
-                }
-            }
-        }
-
-        // Check if there's meaningful context
-        const hasContext = contextBefore.length > 0 || contextAfter.length > 0;
-
-        if (!hasContext) {
-            isolatedElements.push({
-                stepIndex: i,
-                element: step.itemText,
-                role,
-                contextBefore,
-                contextAfter,
-            });
-
-            violations.push(
-                createViolation(
-                    'isolated-interactive-element',
-                    '2.4.4',
-                    'A',
-                    'moderate',
-                    `${role} "${step.itemText}" at step ${i} has no surrounding text context to explain its purpose. Screen reader users may not understand what this ${role} does.`,
-                    step,
-                    arrowResult.meta.name
-                )
-            );
-        }
-    }
-
-    return {
-        violations,
-        summary: {
-            isolatedElements,
-            totalIsolated: isolatedElements.length,
-            contextWindow,
-        },
-    };
-}
-
-// =============================================================================
 // Combined Analysis
 // =============================================================================
 
@@ -695,7 +552,6 @@ export interface ArrowNavigationAnalysisResult {
     readingOrderLandmarkSequence: ReadingOrderLandmarkSequenceResult;
     excessiveRepetition: ExcessiveRepetitionResult;
     contentDensityPerRegion: ContentDensityPerRegionResult;
-    isolatedInteractiveElements: IsolatedInteractiveElementResult;
     totalViolations: number;
     allViolations: NvdaViolation[];
 }
@@ -704,34 +560,28 @@ export interface ArrowNavigationAnalysisResult {
  * Run all arrow navigation specific analyzers.
  */
 export function analyzeArrowNavigation(
-    strategyResults: StrategyResult[],
+    context: TranscriptContext,
     options: {
         stepsToMainThreshold?: number;
         repetitionThreshold?: number;
         densityThreshold?: number;
-        contextWindow?: number;
     } = {}
 ): ArrowNavigationAnalysisResult {
     const stepsToMainContent = analyzeStepsToMainContent(
-        strategyResults,
+        context,
         options.stepsToMainThreshold !== undefined ? { threshold: options.stepsToMainThreshold } : {}
     );
 
-    const readingOrderLandmarkSequence = analyzeReadingOrderLandmarkSequence(strategyResults);
+    const readingOrderLandmarkSequence = analyzeReadingOrderLandmarkSequence(context);
 
     const excessiveRepetition = analyzeExcessiveRepetition(
-        strategyResults,
+        context,
         options.repetitionThreshold !== undefined ? { threshold: options.repetitionThreshold } : {}
     );
 
     const contentDensityPerRegion = analyzeContentDensityPerRegion(
-        strategyResults,
+        context,
         options.densityThreshold !== undefined ? { threshold: options.densityThreshold } : {}
-    );
-
-    const isolatedInteractiveElements = analyzeIsolatedInteractiveElements(
-        strategyResults,
-        options.contextWindow !== undefined ? { contextWindow: options.contextWindow } : {}
     );
 
     const allViolations = [
@@ -739,7 +589,6 @@ export function analyzeArrowNavigation(
         ...readingOrderLandmarkSequence.violations,
         ...excessiveRepetition.violations,
         ...contentDensityPerRegion.violations,
-        ...isolatedInteractiveElements.violations,
     ];
 
     return {
@@ -747,7 +596,6 @@ export function analyzeArrowNavigation(
         readingOrderLandmarkSequence,
         excessiveRepetition,
         contentDensityPerRegion,
-        isolatedInteractiveElements,
         totalViolations: allViolations.length,
         allViolations,
     };
