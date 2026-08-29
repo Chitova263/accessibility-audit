@@ -1,4 +1,6 @@
 import { parse, HTMLElement } from 'node-html-parser';
+import { create } from 'xmlbuilder2';
+import type { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
 import type {
     StrategyResult,
     NavigationStep,
@@ -12,18 +14,6 @@ import type {
     ResolvedTranscriptConfig,
 } from '../schemas';
 import { getNavigationMode, mergeTranscriptConfig } from '../schemas';
-
-/**
- * Escapes XML special characters.
- */
-function escapeXml(text: string): string {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-}
 
 /**
  * Cleans and truncates HTML snippet using node-html-parser.
@@ -292,94 +282,108 @@ export function buildTranscriptData(
 }
 
 /**
- * Renders a single navigation step as XML.
+ * Adds a navigation step to the parent XML element using xmlbuilder2.
  */
-function renderStepXml(step: PromptNavigationStep, includeAxNode: boolean, includeHtml: boolean): string {
-    const lines: string[] = [];
+function addStepXml(
+    parent: XMLBuilder,
+    step: PromptNavigationStep,
+    includeAxNode: boolean,
+    includeHtml: boolean
+): void {
+    const stepEle = parent.ele('step', { index: step.index, id: step.identifier });
 
-    lines.push(`    <step index="${step.index}" id="${escapeXml(step.identifier)}">`);
-    lines.push(`      <spoken>${escapeXml(step.spoken)}</spoken>`);
-    lines.push(`      <item_text>${escapeXml(step.itemText)}</item_text>`);
+    stepEle.ele('spoken').txt(step.spoken);
+    stepEle.ele('item_text').txt(step.itemText);
 
     if (includeAxNode && step.axNode) {
-        lines.push(`      <ax_node>`);
-        lines.push(`        <role>${escapeXml(step.axNode.role)}</role>`);
-        lines.push(`        <name>${escapeXml(step.axNode.name)}</name>`);
+        const axNodeEle = stepEle.ele('ax_node');
+        axNodeEle.ele('role').txt(step.axNode.role);
+        axNodeEle.ele('name').txt(step.axNode.name);
+
         if (step.axNode.description) {
-            lines.push(`        <description>${escapeXml(step.axNode.description)}</description>`);
+            axNodeEle.ele('description').txt(step.axNode.description);
         }
         if (step.axNode.value) {
-            lines.push(`        <value>${escapeXml(step.axNode.value)}</value>`);
+            axNodeEle.ele('value').txt(step.axNode.value);
         }
         if (step.axNode.properties) {
             const props = step.axNode.properties;
-            const propStrings: string[] = [];
-            if (props.focusable !== undefined) propStrings.push(`focusable="${props.focusable}"`);
-            if (props.focused !== undefined) propStrings.push(`focused="${props.focused}"`);
-            if (props.disabled !== undefined) propStrings.push(`disabled="${props.disabled}"`);
-            if (props.expanded !== undefined) propStrings.push(`expanded="${props.expanded}"`);
-            if (props.selected !== undefined) propStrings.push(`selected="${props.selected}"`);
-            if (props.checked !== undefined) propStrings.push(`checked="${props.checked}"`);
-            if (props.level !== undefined) propStrings.push(`level="${props.level}"`);
-            if (props.required !== undefined) propStrings.push(`required="${props.required}"`);
-            if (props.invalid !== undefined) propStrings.push(`invalid="${props.invalid}"`);
-            if (propStrings.length > 0) {
-                lines.push(`        <properties ${propStrings.join(' ')} />`);
+            const propAttrs: Record<string, string | number | boolean> = {};
+
+            if (props.focusable !== undefined) propAttrs.focusable = props.focusable;
+            if (props.focused !== undefined) propAttrs.focused = props.focused;
+            if (props.disabled !== undefined) propAttrs.disabled = props.disabled;
+            if (props.expanded !== undefined) propAttrs.expanded = props.expanded;
+            if (props.selected !== undefined) propAttrs.selected = props.selected;
+            if (props.checked !== undefined) propAttrs.checked = props.checked;
+            if (props.level !== undefined) propAttrs.level = props.level;
+            if (props.required !== undefined) propAttrs.required = props.required;
+            if (props.invalid !== undefined) propAttrs.invalid = props.invalid;
+
+            if (Object.keys(propAttrs).length > 0) {
+                axNodeEle.ele('properties', propAttrs);
             }
         }
-        lines.push(`      </ax_node>`);
     }
 
     if (includeHtml && step.htmlSnippet) {
-        // Wrap HTML in CDATA to avoid escaping issues
-        lines.push(`      <html_snippet><![CDATA[${step.htmlSnippet}]]></html_snippet>`);
+        // CDATA sections cannot contain ']]>' - we need to handle this edge case
+        // by splitting into multiple CDATA sections. Since xmlbuilder2 validates
+        // CDATA content, we build the raw content manually.
+        const htmlSnippetEle = stepEle.ele('html_snippet');
+
+        if (step.htmlSnippet.includes(']]>')) {
+            // Split CDATA at ]]> sequences: "foo]]>bar" becomes "<![CDATA[foo]]]]><![CDATA[>bar]]>"
+            const parts = step.htmlSnippet.split(']]>');
+            parts.forEach((part, i) => {
+                htmlSnippetEle.dat(part);
+                if (i < parts.length - 1) {
+                    // Insert the '>' part after closing previous CDATA
+                    htmlSnippetEle.dat('>');
+                }
+            });
+        } else {
+            htmlSnippetEle.dat(step.htmlSnippet);
+        }
     }
-
-    lines.push(`    </step>`);
-
-    return lines.join('\n');
 }
 
 /**
- * Renders a strategy section as XML.
+ * Adds a strategy section to the parent XML element using xmlbuilder2.
  */
-function renderSectionXml(section: PromptStrategySection, config: ResolvedTranscriptConfig): string {
-    const lines: string[] = [];
+function addSectionXml(parent: XMLBuilder, section: PromptStrategySection, config: ResolvedTranscriptConfig): void {
+    const strategyEle = parent.ele('strategy', {
+        name: section.strategyName,
+        type: section.strategyType,
+        mode: section.mode,
+    });
 
-    lines.push(
-        `  <strategy name="${escapeXml(section.strategyName)}" type="${escapeXml(section.strategyType)}" mode="${section.mode}">`
-    );
-    lines.push(`    <description>${escapeXml(section.description)}</description>`);
-    lines.push(`    <completion_reason>${escapeXml(section.completionReason)}</completion_reason>`);
-    lines.push(`    <steps total="${section.totalSteps}">`);
+    strategyEle.ele('description').txt(section.description);
+    strategyEle.ele('completion_reason').txt(section.completionReason);
+
+    const stepsEle = strategyEle.ele('steps', { total: section.totalSteps });
 
     for (const step of section.steps) {
-        lines.push(renderStepXml(step, config.includeAxNodes, config.includeHtmlSnippets));
+        addStepXml(stepsEle, step, config.includeAxNodes, config.includeHtmlSnippets);
     }
-
-    lines.push(`    </steps>`);
-    lines.push(`  </strategy>`);
-
-    return lines.join('\n');
 }
 
 /**
- * Renders the complete transcript as XML for prompt inclusion.
+ * Renders the complete transcript as XML for prompt inclusion using xmlbuilder2.
  */
 export function renderTranscriptXml(transcript: PromptTranscript, config: TranscriptSectionConfig = {}): string {
     const mergedConfig = mergeTranscriptConfig(config);
 
-    const lines: string[] = [];
-
-    lines.push(`<transcript strategies="${transcript.totalStrategies}" total_steps="${transcript.totalSteps}">`);
+    const root = create().ele('transcript', {
+        strategies: transcript.totalStrategies,
+        total_steps: transcript.totalSteps,
+    });
 
     for (const section of transcript.sections) {
-        lines.push(renderSectionXml(section, mergedConfig));
+        addSectionXml(root, section, mergedConfig);
     }
 
-    lines.push(`</transcript>`);
-
-    return lines.join('\n');
+    return root.end({ prettyPrint: true, indent: '    ', headless: true });
 }
 
 /**

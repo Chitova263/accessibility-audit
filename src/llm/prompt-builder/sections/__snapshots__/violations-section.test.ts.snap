@@ -1,0 +1,294 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildViolationsData > should build data structure with correlations 1`] = `
+{
+  "byImpact": {
+    "serious": 1,
+  },
+  "groups": [
+    {
+      "count": 1,
+      "impact": "serious",
+      "ruleId": "empty-accessible-name",
+      "violations": [
+        {
+          "correlation": {
+            "confidence": "high",
+            "spoken": "button",
+            "stepIndex": 5,
+            "strategyName": "tab",
+          },
+          "htmlSnippet": "<button></button>",
+          "id": "nvda-violation-1",
+          "impact": "serious",
+          "message": "Button has no accessible name",
+          "ruleId": "empty-accessible-name",
+          "selector": "button",
+          "wcag": "4.1.2 A",
+          "wcagLevel": "A",
+        },
+      ],
+      "wcag": "4.1.2 A",
+      "wcagLevel": "A",
+    },
+  ],
+  "totalRules": 1,
+  "totalViolations": 1,
+}
+`;
+
+exports[`buildViolationsData > should build data structure without correlations 1`] = `
+{
+  "byImpact": {
+    "serious": 1,
+  },
+  "groups": [
+    {
+      "count": 1,
+      "impact": "serious",
+      "ruleId": "empty-accessible-name",
+      "violations": [
+        {
+          "correlation": undefined,
+          "htmlSnippet": "<button></button>",
+          "id": "nvda-violation-1",
+          "impact": "serious",
+          "message": "Button has no accessible name",
+          "ruleId": "empty-accessible-name",
+          "selector": "button",
+          "wcag": "4.1.2 A",
+          "wcagLevel": "A",
+        },
+      ],
+      "wcag": "4.1.2 A",
+      "wcagLevel": "A",
+    },
+  ],
+  "totalRules": 1,
+  "totalViolations": 1,
+}
+`;
+
+exports[`buildViolationsData > should truncate long HTML snippets 1`] = `
+{
+  "byImpact": {
+    "critical": 1,
+  },
+  "groups": [
+    {
+      "count": 1,
+      "impact": "critical",
+      "ruleId": "button-name",
+      "violations": [
+        {
+          "correlation": undefined,
+          "htmlSnippet": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...",
+          "id": "long-html",
+          "impact": "critical",
+          "message": "Buttons must have discernible text",
+          "ruleId": "button-name",
+          "selector": "div",
+          "wcag": "4.1.2 A",
+          "wcagLevel": "A",
+        },
+      ],
+      "wcag": "4.1.2 A",
+      "wcagLevel": "A",
+    },
+  ],
+  "totalRules": 1,
+  "totalViolations": 1,
+}
+`;
+
+exports[`buildViolationsSection > should build complete section from violations array 1`] = `
+"<violations total="3" rules="3" critical="2" serious="1">
+    <rule id="button-name" wcag="4.1.2 A" impact="critical" count="1">
+        <violation id="v1">
+            <message>Buttons must have discernible text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+            <transcript_match strategy="tab" step="5" confidence="low">
+                <spoken>button</spoken>
+            </transcript_match>
+        </violation>
+    </rule>
+    <rule id="link-name" wcag="4.1.2 A" impact="critical" count="1">
+        <violation id="v2">
+            <message>Links must have text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+            <transcript_match strategy="tab" step="0" confidence="low">
+                <spoken>Skip to main content, link</spoken>
+            </transcript_match>
+        </violation>
+    </rule>
+    <rule id="empty-accessible-name" wcag="4.1.2 A" impact="serious" count="1">
+        <violation id="v3">
+            <message>Button has no accessible name</message>
+            <selector>button</selector>
+            <html_snippet><![CDATA[<button></button>]]></html_snippet>
+            <transcript_match strategy="tab" step="5" confidence="high">
+                <spoken>button</spoken>
+            </transcript_match>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`buildViolationsSection > should build section with grouping disabled 1`] = `
+"<violations total="2" rules="1" critical="2">
+    <rule id="button-name" wcag="4.1.2 A" impact="critical" count="1">
+        <violation id="v1">
+            <message>Buttons must have discernible text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+        </violation>
+    </rule>
+    <rule id="button-name" wcag="4.1.2 A" impact="critical" count="1">
+        <violation id="v2">
+            <message>Buttons must have discernible text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`buildViolationsSection > should filter by impact 1`] = `
+"<violations total="2" rules="1" critical="1" moderate="1">
+    <rule id="button-name" wcag="4.1.2 A" impact="critical" count="2">
+        <violation id="v1">
+            <message>Buttons must have discernible text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+        </violation>
+        <violation id="v2">
+            <message>Buttons must have discernible text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`buildViolationsSection > should limit violations per group 1`] = `
+"<violations total="5" rules="1" critical="5">
+    <rule id="button-name" wcag="4.1.2 A" impact="critical" count="5" showing="2">
+        <violation id="v1">
+            <message>Buttons must have discernible text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+        </violation>
+        <violation id="v2">
+            <message>Buttons must have discernible text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`renderViolationsXml > XML escaping > should handle CDATA for HTML snippets with special content 1`] = `
+"<violations total="1" rules="1" moderate="1">
+    <rule id="test-rule" wcag="1.1.1 A" impact="moderate" count="1">
+        <violation id="cdata-test">
+            <message>Test message</message>
+            <html_snippet><![CDATA[<div class="test" data-value="foo & bar">Content with <b>tags</b></div>]]></html_snippet>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`renderViolationsXml > XML escaping > should properly escape special characters in message 1`] = `
+"<violations total="1" rules="1" moderate="1">
+    <rule id="test-rule" wcag="1.1.1 A" impact="moderate" count="1">
+        <violation id="escape-test">
+            <message>Text contains &lt;special&gt; &amp; "characters" that's problematic</message>
+            <selector>[data-attr="value"]</selector>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`renderViolationsXml > empty violations > should render empty violations correctly 1`] = `
+"<violations total="0" rules="0" />
+<!-- No violations found by static analyzers -->"
+`;
+
+exports[`renderViolationsXml > multiple violations > should render multiple violations grouped by rule 1`] = `
+"<violations total="3" rules="2" critical="2" serious="1">
+    <rule id="button-name" wcag="4.1.2 A" impact="critical" count="2">
+        <violation id="btn-1">
+            <message>Buttons must have discernible text</message>
+            <selector>#submit</selector>
+        </violation>
+        <violation id="btn-2">
+            <message>Buttons must have discernible text</message>
+            <selector>#cancel</selector>
+        </violation>
+    </rule>
+    <rule id="link-name" wcag="4.1.2 A" impact="serious" count="1">
+        <violation id="link-1">
+            <message>Links must have discernible text</message>
+            <selector>a.icon-link</selector>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`renderViolationsXml > multiple violations > should render truncated groups with showing attribute 1`] = `
+"<violations total="50" rules="1" serious="50">
+    <rule id="color-contrast" wcag="1.4.3 AA" impact="serious" count="50" showing="3">
+        <violation id="cc-1">
+            <message>Elements must have sufficient color contrast</message>
+            <selector>.text-light</selector>
+        </violation>
+        <violation id="cc-2">
+            <message>Elements must have sufficient color contrast</message>
+            <selector>.text-muted</selector>
+        </violation>
+        <violation id="cc-3">
+            <message>Elements must have sufficient color contrast</message>
+            <selector>.placeholder</selector>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`renderViolationsXml > single violation > should render a single violation with all fields 1`] = `
+"<violations total="1" rules="1" critical="1">
+    <rule id="button-name" wcag="4.1.2 A" impact="critical" count="1">
+        <violation id="test-1">
+            <message>Buttons must have discernible text</message>
+            <selector>button.submit-btn</selector>
+            <html_snippet><![CDATA[<button class="submit-btn"></button>]]></html_snippet>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`renderViolationsXml > single violation > should render a violation with transcript correlation 1`] = `
+"<violations total="1" rules="1" serious="1">
+    <rule id="empty-accessible-name" wcag="4.1.2 A" impact="serious" count="1">
+        <violation id="nvda-1">
+            <message>Button has no accessible name</message>
+            <selector>button.icon-btn</selector>
+            <html_snippet><![CDATA[<button class="icon-btn"><svg>...</svg></button>]]></html_snippet>
+            <transcript_match strategy="tab" step="5" confidence="high">
+                <spoken>button</spoken>
+            </transcript_match>
+        </violation>
+    </rule>
+</violations>"
+`;
+
+exports[`renderViolationsXml > single violation > should render a violation without optional fields 1`] = `
+"<violations total="1" rules="1" serious="1">
+    <rule id="color-contrast" wcag="1.4.3 AA" impact="serious" count="1">
+        <violation id="test-2">
+            <message>Elements must have sufficient color contrast</message>
+        </violation>
+    </rule>
+</violations>"
+`;

@@ -1,4 +1,5 @@
 import { parse } from 'node-html-parser';
+import { create } from 'xmlbuilder2';
 import type { Violation, NvdaViolation, NvdaToolDetails } from '../../../analysis/violation';
 import type {
     PromptNavigationStep,
@@ -11,18 +12,6 @@ import type {
     ResolvedViolationsConfig,
 } from '../schemas';
 import { mergeViolationsConfig } from '../schemas';
-
-/**
- * Escapes XML special characters.
- */
-function escapeXml(text: string): string {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-}
 
 /**
  * Cleans HTML snippet for prompt inclusion.
@@ -262,81 +251,67 @@ export function buildViolationsData(
 }
 
 /**
- * Renders a single violation as XML.
- */
-function renderViolationXml(violation: PromptViolation): string {
-    const lines: string[] = [];
-
-    lines.push(`        <violation id="${escapeXml(violation.id)}">`);
-    lines.push(`          <message>${escapeXml(violation.message)}</message>`);
-
-    if (violation.selector) {
-        lines.push(`          <selector>${escapeXml(violation.selector)}</selector>`);
-    }
-
-    if (violation.htmlSnippet) {
-        lines.push(`          <html_snippet><![CDATA[${violation.htmlSnippet}]]></html_snippet>`);
-    }
-
-    if (violation.correlation) {
-        const c = violation.correlation;
-        lines.push(
-            `          <transcript_match strategy="${escapeXml(c.strategyName)}" step="${c.stepIndex}" confidence="${c.confidence}">`
-        );
-        lines.push(`            <spoken>${escapeXml(c.spoken)}</spoken>`);
-        lines.push(`          </transcript_match>`);
-    }
-
-    lines.push(`        </violation>`);
-
-    return lines.join('\n');
-}
-
-/**
- * Renders a violation group as XML.
- */
-function renderGroupXml(group: PromptViolationGroup): string {
-    const lines: string[] = [];
-
-    const showingNote = group.count > group.violations.length ? ` showing="${group.violations.length}"` : '';
-
-    lines.push(
-        `    <rule id="${escapeXml(group.ruleId)}" wcag="${escapeXml(group.wcag)}" impact="${escapeXml(group.impact)}" count="${group.count}"${showingNote}>`
-    );
-
-    for (const violation of group.violations) {
-        lines.push(renderViolationXml(violation));
-    }
-
-    lines.push(`    </rule>`);
-
-    return lines.join('\n');
-}
-
-/**
- * Renders violations data as XML for prompt inclusion.
+ * Renders violations data as XML for prompt inclusion using xmlbuilder2.
  */
 export function renderViolationsXml(data: PromptViolationsData): string {
     if (data.totalViolations === 0) {
         return `<violations total="0" rules="0" />\n<!-- No violations found by static analyzers -->`;
     }
 
-    const lines: string[] = [];
+    // Build attributes including impact counts
+    const attrs: Record<string, string | number> = {
+        total: data.totalViolations,
+        rules: data.totalRules,
+    };
 
-    // Impact summary as attributes
-    const impactAttr = Object.entries(data.byImpact)
-        .map(([impact, count]) => `${impact}="${count}"`)
-        .join(' ');
-
-    lines.push(`<violations total="${data.totalViolations}" rules="${data.totalRules}" ${impactAttr}>`);
-
-    for (const group of data.groups) {
-        lines.push(renderGroupXml(group));
+    for (const [impact, count] of Object.entries(data.byImpact)) {
+        attrs[impact] = count;
     }
 
-    lines.push(`</violations>`);
+    const root = create().ele('violations', attrs);
 
-    return lines.join('\n');
+    // Add each group
+    for (const group of data.groups) {
+        const groupAttrs: Record<string, string | number> = {
+            id: group.ruleId,
+            wcag: group.wcag,
+            impact: group.impact,
+            count: group.count,
+        };
+
+        if (group.count > group.violations.length) {
+            groupAttrs.showing = group.violations.length;
+        }
+
+        const ruleEle = root.ele('rule', groupAttrs);
+
+        for (const violation of group.violations) {
+            const violationEle = ruleEle.ele('violation', { id: violation.id });
+            violationEle.ele('message').txt(violation.message);
+
+            if (violation.selector) {
+                violationEle.ele('selector').txt(violation.selector);
+            }
+
+            if (violation.htmlSnippet) {
+                violationEle.ele('html_snippet').dat(violation.htmlSnippet);
+            }
+
+            if (violation.correlation) {
+                const c = violation.correlation;
+                violationEle
+                    .ele('transcript_match', {
+                        strategy: c.strategyName,
+                        step: c.stepIndex,
+                        confidence: c.confidence,
+                    })
+                    .ele('spoken')
+                    .txt(c.spoken);
+            }
+        }
+    }
+
+    return root.end({ prettyPrint: true, indent: '    ', headless: true });
 }
 
 /**
