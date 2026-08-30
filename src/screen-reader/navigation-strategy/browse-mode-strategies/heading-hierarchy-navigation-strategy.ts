@@ -32,6 +32,7 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
             type: typeMap[this.level],
             name: `heading-level-${this.level}`,
             description: `Navigates through h${this.level} headings as a blind user would, using NVDA's heading level navigation (${this.level} key)`,
+            mode: 'browse',
         };
     }
 
@@ -71,7 +72,10 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
 
             if (navigationSteps.length >= this.config.maxSteps) {
                 return {
-                    completionReason: 'completed',
+                    completionReason: {
+                        kind: 'limit-reached',
+                        detail: `stopped after ${this.config.maxSteps} h${this.level} headings (safety limit)`,
+                    },
                     meta: this.meta,
                     navigationSteps,
                 };
@@ -79,7 +83,10 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
         }
 
         return {
-            completionReason: 'end-of-heading-level',
+            completionReason: {
+                kind: 'exhausted',
+                detail: `no more level ${this.level} headings (h${this.level}) found on page`,
+            },
             meta: this.meta,
             navigationSteps,
         };

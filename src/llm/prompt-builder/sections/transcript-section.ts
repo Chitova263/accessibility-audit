@@ -13,7 +13,7 @@ import type {
     TranscriptSectionConfig,
     ResolvedTranscriptConfig,
 } from '../schemas';
-import { getNavigationMode, mergeTranscriptConfig } from '../schemas';
+import { mergeTranscriptConfig } from '../schemas';
 
 /**
  * Cleans and truncates HTML snippet using node-html-parser.
@@ -235,7 +235,7 @@ function transformStrategy(result: StrategyResult, config: ResolvedTranscriptCon
         strategyName: result.meta.name,
         strategyType: result.meta.type ?? 'unknown',
         description: result.meta.description,
-        mode: getNavigationMode(result.meta.type),
+        mode: result.meta.mode,
         completionReason: result.completionReason,
         totalSteps: result.navigationSteps.length,
         steps: result.navigationSteps.map((step) => transformStep(step, config)),
@@ -359,7 +359,7 @@ function addSectionXml(parent: XMLBuilder, section: PromptStrategySection, confi
     });
 
     strategyEle.ele('description').txt(section.description);
-    strategyEle.ele('completion_reason').txt(section.completionReason);
+    strategyEle.ele('completion_reason', { kind: section.completionReason.kind }).txt(section.completionReason.detail);
 
     const stepsEle = strategyEle.ele('steps', { total: section.totalSteps });
 

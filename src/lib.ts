@@ -4,9 +4,6 @@
  * Main entry point for library consumers.
  */
 
-// =============================================================================
-// Prompt Builder
-// =============================================================================
 export {
     createPromptBuilder,
     buildAccessibilityPrompt,
@@ -14,9 +11,6 @@ export {
     type BuiltPrompt,
 } from './llm/prompt-builder';
 
-// =============================================================================
-// Analysis
-// =============================================================================
 export {
     analyzeAriaHiddenFocusable,
     analyzeArrowNavigation,
@@ -38,9 +32,6 @@ export {
     type Violation,
 } from './analysis';
 
-// =============================================================================
-// Screen Reader & Navigation
-// =============================================================================
 export { PageSession } from './screen-reader/page-session';
 export { NvdaScreenReader } from './screen-reader/nvda-screen-reader';
 export { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-connection';
@@ -52,7 +43,6 @@ export type {
     StrategyMetadata,
 } from './screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
-// Navigation Strategies
 export { HeadingNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/heading-navigation-strategy';
 export { LandmarkNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/landmark-navigation-strategy';
 export { ButtonNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/button-navigation-strategy';
@@ -61,7 +51,4 @@ export { HeadingHierarchyNavigationStrategy } from './screen-reader/navigation-s
 export { ArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/arrow-navigation-strategy';
 export { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
 
-// =============================================================================
-// Reporting
-// =============================================================================
 export { formatTranscriptAsText } from './reporting';

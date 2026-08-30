@@ -19,10 +19,6 @@ import {
 } from '../reporter';
 import type { LlmFinding, LlmViolationEnhancement } from '../../llm/prompt-builder';
 
-// =============================================================================
-// HTML Reporter Options
-// =============================================================================
-
 export interface HtmlReporterOptions extends ReporterOptions {
     /** Theme: 'light' or 'dark' */
     theme?: 'light' | 'dark';
@@ -50,10 +46,6 @@ const DEFAULT_OPTIONS: Required<HtmlReporterOptions> = {
     logoUrl: '',
     customCss: '',
 };
-
-// =============================================================================
-// HTML Reporter Implementation
-// =============================================================================
 
 export class HtmlReporter implements Reporter {
     readonly name = 'html';
@@ -94,10 +86,6 @@ export class HtmlReporter implements Reporter {
 </html>`;
     }
 
-    // -------------------------------------------------------------------------
-    // Header & Footer
-    // -------------------------------------------------------------------------
-
     private buildHeader(data: ReportData, opts: Required<HtmlReporterOptions>): string {
         const logo = opts.logoUrl ? `<img src="${escapeHtml(opts.logoUrl)}" alt="Logo" class="logo">` : '';
 
@@ -128,10 +116,6 @@ export class HtmlReporter implements Reporter {
     <p>Report ID: ${data.meta.timestamp}</p>
 </footer>`;
     }
-
-    // -------------------------------------------------------------------------
-    // Summary Section
-    // -------------------------------------------------------------------------
 
     private buildSummary(data: ReportData): string {
         const { summary } = data.analysis.analysis;
@@ -190,10 +174,6 @@ export class HtmlReporter implements Reporter {
     private formatAssessment(assessment: string): string {
         return assessment;
     }
-
-    // -------------------------------------------------------------------------
-    // Findings Section
-    // -------------------------------------------------------------------------
 
     private buildFindings(data: ReportData): string {
         const findings = data.analysis.analysis.findings;
@@ -282,10 +262,6 @@ export class HtmlReporter implements Reporter {
     private formatCategory(category: string): string {
         return category;
     }
-
-    // -------------------------------------------------------------------------
-    // Enhancements Section
-    // -------------------------------------------------------------------------
 
     private buildEnhancements(data: ReportData): string {
         const enhancements = data.analysis.enhancements;
@@ -392,14 +368,6 @@ export class HtmlReporter implements Reporter {
 </article>`;
     }
 
-    // -------------------------------------------------------------------------
-    // Transcript Section
-    // -------------------------------------------------------------------------
-
-    // -------------------------------------------------------------------------
-    // Limitations Section
-    // -------------------------------------------------------------------------
-
     private buildLimitations(data: ReportData): string {
         const limitations = data.analysis.analysis.limitations;
 
@@ -416,10 +384,6 @@ export class HtmlReporter implements Reporter {
     </ul>
 </section>`;
     }
-
-    // -------------------------------------------------------------------------
-    // Transcript Section
-    // -------------------------------------------------------------------------
 
     private buildTranscript(data: ReportData): string {
         if (!data.strategyResults || data.strategyResults.length === 0) {
@@ -688,10 +652,6 @@ ${blocks}
 
         return indentedLines.join('\n');
     }
-
-    // -------------------------------------------------------------------------
-    // Styles
-    // -------------------------------------------------------------------------
 
     private getStyles(opts: Required<HtmlReporterOptions>): string {
         return `
@@ -1442,10 +1402,6 @@ ${opts.customCss}
 `;
     }
 
-    // -------------------------------------------------------------------------
-    // Scripts
-    // -------------------------------------------------------------------------
-
     private getScripts(): string {
         return `
 <script>
@@ -1528,10 +1484,6 @@ ${opts.customCss}
 </script>`;
     }
 
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
-
     private groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
         const result: Record<string, T[]> = {};
         for (const item of items) {
@@ -1545,13 +1497,6 @@ ${opts.customCss}
     }
 }
 
-// =============================================================================
-// Factory Function
-// =============================================================================
-
-/**
- * Create an HTML reporter instance.
- */
 export function createHtmlReporter(): HtmlReporter {
     return new HtmlReporter();
 }

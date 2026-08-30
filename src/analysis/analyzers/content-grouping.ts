@@ -129,10 +129,6 @@ export function analyzeContentGrouping(
     };
 }
 
-// =============================================================================
-// Strategy Result Helpers
-// =============================================================================
-
 function getArrowStrategyResult(strategyResults: StrategyResult[]): StrategyResult | undefined {
     return strategyResults.find((r) => r.meta.type === 'arrow' || r.meta.name === 'ArrowNavigation');
 }
@@ -145,10 +141,6 @@ function getLandmarkStrategyResult(strategyResults: StrategyResult[]): StrategyR
     return strategyResults.find((r) => r.meta.type === 'landmark' || r.meta.name === 'landmark');
 }
 
-// =============================================================================
-// Analysis 1: Large Content Gaps
-// =============================================================================
-
 function findLargeContentGaps(
     arrowResult: StrategyResult,
     headingResult: StrategyResult,
@@ -157,11 +149,9 @@ function findLargeContentGaps(
     const gaps: ContentGap[] = [];
     const steps = arrowResult.navigationSteps;
 
-    // Find indices where headings appear in arrow navigation
     const headingIndices = findHeadingIndicesInArrowNav(steps);
 
     if (headingIndices.length === 0) {
-        // No headings at all - flag entire content if substantial
         if (steps.length >= threshold) {
             gaps.push({
                 startStep: steps[0]!,
@@ -174,7 +164,6 @@ function findLargeContentGaps(
         return gaps;
     }
 
-    // Check gap before first heading
     if (headingIndices[0]! >= threshold) {
         gaps.push({
             startStep: steps[0]!,
@@ -185,7 +174,6 @@ function findLargeContentGaps(
         });
     }
 
-    // Check gaps between headings
     for (let i = 0; i < headingIndices.length - 1; i++) {
         const gapSize = headingIndices[i + 1]! - headingIndices[i]! - 1;
         if (gapSize >= threshold) {
@@ -207,17 +195,12 @@ function findHeadingIndicesInArrowNav(steps: NavigationStep[]): number[] {
     for (let i = 0; i < steps.length; i++) {
         const step = steps[i]!;
         const spoken = step.spokenPhrases.join(' ').toLowerCase();
-        // Check if this step announces a heading
         if (spoken.includes('heading, level') || spoken.includes('heading level')) {
             indices.push(i);
         }
     }
     return indices;
 }
-
-// =============================================================================
-// Analysis 2: Landmarks Without Headings
-// =============================================================================
 
 function findLandmarksWithoutHeadings(
     arrowResult: StrategyResult,
@@ -227,14 +210,11 @@ function findLandmarksWithoutHeadings(
     const results: LandmarkContent[] = [];
     const steps = arrowResult.navigationSteps;
 
-    // Find landmark boundaries in arrow navigation
     const landmarkBoundaries = findLandmarkBoundaries(steps);
 
     for (const boundary of landmarkBoundaries) {
-        // Skip small landmarks
         if (boundary.contentSteps.length < itemThreshold) continue;
 
-        // Check if any content step contains a heading
         const hasHeading = boundary.contentSteps.some((step) => {
             const spoken = step.spokenPhrases.join(' ').toLowerCase();
             return spoken.includes('heading, level') || spoken.includes('heading level');
@@ -256,13 +236,10 @@ function findLandmarkBoundaries(steps: NavigationStep[]): LandmarkContent[] {
         const step = steps[i]!;
         const spoken = step.spokenPhrases.join(' ').toLowerCase();
 
-        // Check if entering a new landmark
         if (spoken.includes('landmark')) {
-            // Save previous landmark if exists
             if (currentLandmark) {
                 landmarks.push(currentLandmark);
             }
-            // Start new landmark
             currentLandmark = {
                 landmark: step,
                 stepIndex: i,
@@ -270,22 +247,16 @@ function findLandmarkBoundaries(steps: NavigationStep[]): LandmarkContent[] {
                 hasHeading: false,
             };
         } else if (currentLandmark) {
-            // Add step to current landmark's content
             currentLandmark.contentSteps.push(step);
         }
     }
 
-    // Don't forget the last landmark
     if (currentLandmark) {
         landmarks.push(currentLandmark);
     }
 
     return landmarks;
 }
-
-// =============================================================================
-// Analysis 3: Repeated Patterns Without Heading
-// =============================================================================
 
 function findRepeatedPatternsWithoutHeading(
     arrowResult: StrategyResult,
@@ -295,11 +266,9 @@ function findRepeatedPatternsWithoutHeading(
     const patterns: RepeatedPattern[] = [];
     const steps = arrowResult.navigationSteps;
 
-    // Look for repeated structural patterns (e.g., "graphic, heading, price, button" repeated)
     const structuralPatterns = findStructuralPatterns(steps, repetitionThreshold);
 
     for (const pattern of structuralPatterns) {
-        // Check if there's a heading before this pattern group
         const hasHeadingBefore = checkHeadingBefore(steps, pattern.startIndex);
 
         if (!hasHeadingBefore) {
@@ -313,21 +282,18 @@ function findRepeatedPatternsWithoutHeading(
 function findStructuralPatterns(steps: NavigationStep[], minRepetitions: number): RepeatedPattern[] {
     const patterns: RepeatedPattern[] = [];
 
-    // Extract role sequences for pattern detection
     const roleSequences: { role: string; step: NavigationStep; index: number }[] = [];
 
     for (let i = 0; i < steps.length; i++) {
         const step = steps[i]!;
         const spoken = step.spokenPhrases.join(' ').toLowerCase();
 
-        // Extract key structural elements from spoken text
         const role = extractStructuralRole(spoken);
         if (role) {
             roleSequences.push({ role, step, index: i });
         }
     }
 
-    // Look for repeated role patterns (simplified: look for repeated "clickable" items)
     const clickableGroups = findConsecutiveGroups(roleSequences, 'clickable', minRepetitions);
 
     for (const group of clickableGroups) {
@@ -342,7 +308,6 @@ function findStructuralPatterns(steps: NavigationStep[], minRepetitions: number)
 }
 
 function extractStructuralRole(spoken: string): string | null {
-    // Extract the primary structural indicator
     if (spoken.includes('clickable')) return 'clickable';
     if (spoken.includes('button')) return 'button';
     if (spoken.includes('link')) return 'link';
@@ -365,7 +330,6 @@ function findConsecutiveGroups<T extends { role: string }>(items: T[], targetRol
         }
     }
 
-    // Check final group
     if (currentGroup.length >= minSize) {
         groups.push(currentGroup);
     }
@@ -374,7 +338,6 @@ function findConsecutiveGroups<T extends { role: string }>(items: T[], targetRol
 }
 
 function checkHeadingBefore(steps: NavigationStep[], beforeIndex: number): boolean {
-    // Look back up to 5 steps for a heading
     const lookbackRange = Math.min(beforeIndex, 5);
 
     for (let i = beforeIndex - 1; i >= beforeIndex - lookbackRange; i--) {
@@ -389,10 +352,6 @@ function checkHeadingBefore(steps: NavigationStep[], beforeIndex: number): boole
 
     return false;
 }
-
-// =============================================================================
-// Violation Creators
-// =============================================================================
 
 function createLargeGapViolation(gap: ContentGap, threshold: number): NvdaViolation {
     return {

@@ -25,11 +25,7 @@ import { createToolDetails } from '../tool-details';
 import { ruleMetadata } from '../rule-catalog';
 import type { Impact, RuleId } from '../rule-catalog';
 
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-function createViolation(
+function createArrowNavigationViolation(
     ruleId: RuleId,
     message: string,
     step: NavigationStep,
@@ -61,10 +57,6 @@ function getSpokenText(step: NavigationStep): string {
 function getRole(step: NavigationStep): string | undefined {
     return (step.axNode?.role as any)?.value;
 }
-
-// =============================================================================
-// Rule: steps-to-main-content (WCAG 2.4.1 A)
-// =============================================================================
 
 export interface StepsToMainContentSummary {
     stepsToMain: number | null;
@@ -130,7 +122,7 @@ export function analyzeStepsToMainContent(
     if (exceedsThreshold && mainFoundAtStep !== null) {
         const step = steps[mainFoundAtStep]!;
         violations.push(
-            createViolation(
+            createArrowNavigationViolation(
                 'steps-to-main-content',
                 `Main content reached after ${stepsToMain} steps (threshold: ${threshold}). Users must navigate through excessive content before reaching main content. Consider adding or improving skip links.`,
                 step,
@@ -143,7 +135,7 @@ export function analyzeStepsToMainContent(
     // target for skip links and no way to bypass repeated content at all.
     if (mainFoundAtStep === null && steps.length > 0) {
         violations.push(
-            createViolation(
+            createArrowNavigationViolation(
                 'missing-main-landmark',
                 `No main landmark was announced across ${steps.length} steps of linear reading. Without a main landmark, screen reader users cannot jump past repeated header and navigation content. Wrap the primary content in a <main> element.`,
                 steps[0]!,
@@ -164,10 +156,6 @@ export function analyzeStepsToMainContent(
         },
     };
 }
-
-// =============================================================================
-// Rule: reading-order-landmark-sequence (WCAG 1.3.2 A)
-// =============================================================================
 
 export interface LandmarkSequenceInfo {
     landmark: string;
@@ -265,7 +253,7 @@ export function analyzeReadingOrderLandmarkSequence({
     if (!hasMainBeforeFooter && footerIndex !== -1 && mainIndex !== -1) {
         const footerStep = steps[landmarkSequence[footerIndex]!.stepIndex]!;
         violations.push(
-            createViolation(
+            createArrowNavigationViolation(
                 'reading-order-landmark-sequence',
                 `Footer/contentinfo landmark (step ${landmarkSequence[footerIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Screen reader users will hear footer content before main content.`,
                 footerStep,
@@ -279,7 +267,7 @@ export function analyzeReadingOrderLandmarkSequence({
     if (!hasMainBeforeAside && asideIndex !== -1 && mainIndex !== -1) {
         const asideStep = steps[landmarkSequence[asideIndex]!.stepIndex]!;
         violations.push(
-            createViolation(
+            createArrowNavigationViolation(
                 'reading-order-landmark-sequence',
                 `Complementary/aside landmark (step ${landmarkSequence[asideIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Consider if sidebar content should come after main content.`,
                 asideStep,
@@ -300,10 +288,6 @@ export function analyzeReadingOrderLandmarkSequence({
         },
     };
 }
-
-// =============================================================================
-// Rule: excessive-repetition (WCAG 1.3.1 A)
-// =============================================================================
 
 export interface RepetitionInfo {
     phrase: string;
@@ -412,7 +396,7 @@ export function analyzeExcessiveRepetition(
     for (const rep of repetitions) {
         const step = steps[rep.startStep]!;
         violations.push(
-            createViolation(
+            createArrowNavigationViolation(
                 'excessive-repetition',
                 `"${rep.phrase}" is announced ${rep.count} times consecutively (steps ${rep.startStep}-${rep.endStep}). This repetition may confuse screen reader users or indicate redundant content.`,
                 step,
@@ -430,10 +414,6 @@ export function analyzeExcessiveRepetition(
         },
     };
 }
-
-// =============================================================================
-// Rule: content-density-per-region (WCAG 2.4.1 A)
-// =============================================================================
 
 export interface RegionDensity {
     landmark: string;
@@ -523,7 +503,7 @@ export function analyzeContentDensityPerRegion(
         if (exceedsThreshold && current.landmark !== 'navigation') {
             const step = steps[startStep]!;
             violations.push(
-                createViolation(
+                createArrowNavigationViolation(
                     'content-density-per-region',
                     `${current.landmark} region contains ${itemCount} items (threshold: ${threshold}). This high density may overwhelm screen reader users. Consider breaking into smaller sections or adding sub-headings.`,
                     step,
@@ -542,10 +522,6 @@ export function analyzeContentDensityPerRegion(
         },
     };
 }
-
-// =============================================================================
-// Combined Analysis
-// =============================================================================
 
 export interface ArrowNavigationAnalysisResult {
     stepsToMainContent: StepsToMainContentResult;

@@ -13,6 +13,7 @@ export class LinkNavigationStrategy implements INavigationStrategy {
         type: 'link',
         name: 'link',
         description: "Navigates through links as a blind user would, using NVDA's link navigation (K key)",
+        mode: 'browse',
     };
     public constructor(public readonly config: NavigationStrategyConfig) {}
 
@@ -43,7 +44,10 @@ export class LinkNavigationStrategy implements INavigationStrategy {
 
             if (navigationSteps.length >= this.config.maxSteps) {
                 return {
-                    completionReason: 'completed',
+                    completionReason: {
+                        kind: 'limit-reached',
+                        detail: `stopped after ${this.config.maxSteps} links (safety limit)`,
+                    },
                     meta: this.meta,
                     navigationSteps,
                 };
@@ -51,7 +55,10 @@ export class LinkNavigationStrategy implements INavigationStrategy {
         }
 
         return {
-            completionReason: 'end-of-links',
+            completionReason: {
+                kind: 'exhausted',
+                detail: 'no more links found on page',
+            },
             meta: this.meta,
             navigationSteps,
         };

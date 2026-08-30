@@ -13,6 +13,7 @@ export class LandmarkNavigationStrategy implements INavigationStrategy {
         type: 'landmark',
         name: 'landmark',
         description: "Navigates through ARIA landmarks as a blind user would, using NVDA's landmark navigation (D key)",
+        mode: 'browse',
     };
     public constructor(public readonly config: NavigationStrategyConfig) {}
 
@@ -41,7 +42,10 @@ export class LandmarkNavigationStrategy implements INavigationStrategy {
 
             if (navigationSteps.length >= this.config.maxSteps) {
                 return {
-                    completionReason: 'completed',
+                    completionReason: {
+                        kind: 'limit-reached',
+                        detail: `stopped after ${this.config.maxSteps} landmarks (safety limit)`,
+                    },
                     meta: this.meta,
                     navigationSteps,
                 };
@@ -49,7 +53,10 @@ export class LandmarkNavigationStrategy implements INavigationStrategy {
         }
 
         return {
-            completionReason: 'end-of-landmarks',
+            completionReason: {
+                kind: 'exhausted',
+                detail: 'no more landmarks found on page',
+            },
             meta: this.meta,
             navigationSteps,
         };

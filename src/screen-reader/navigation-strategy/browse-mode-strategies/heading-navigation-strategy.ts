@@ -13,6 +13,7 @@ export class HeadingNavigationStrategy implements INavigationStrategy {
         type: 'heading',
         name: 'heading',
         description: 'Heading description',
+        mode: 'browse',
     };
     public constructor(public readonly config: NavigationStrategyConfig) {}
 
@@ -43,7 +44,10 @@ export class HeadingNavigationStrategy implements INavigationStrategy {
 
             if (navigationSteps.length >= this.config.maxSteps) {
                 return {
-                    completionReason: 'completed',
+                    completionReason: {
+                        kind: 'limit-reached',
+                        detail: `stopped after ${this.config.maxSteps} headings (safety limit)`,
+                    },
                     meta: this.meta,
                     navigationSteps,
                 };
@@ -51,7 +55,10 @@ export class HeadingNavigationStrategy implements INavigationStrategy {
         }
 
         return {
-            completionReason: 'end-of-headings',
+            completionReason: {
+                kind: 'exhausted',
+                detail: 'no more headings found on page',
+            },
             meta: this.meta,
             navigationSteps,
         };

@@ -3,11 +3,7 @@ import {
     type IScreenReader as IGuidepupScreenReader,
     type StartOptions,
 } from '@guidepup/guidepup';
-import { execSync } from 'node:child_process';
 
-/**
- * Item yielded by navigation iterators.
- */
 export interface NavigationItem {
     /** The phrase spoken by the screen reader */
     phrase: string;
@@ -62,10 +58,6 @@ export abstract class ScreenReader implements IScreenReader {
     }
 
     // --- Low-level navigation ---
-
-    private perform(command: unknown, options?: CommandOptions): Promise<void> {
-        return this.sr.perform(command, options);
-    }
 
     private nextHeading(options?: CommandOptions): Promise<void> {
         return this.sr.nextHeading(options);
@@ -144,8 +136,6 @@ export abstract class ScreenReader implements IScreenReader {
     }
 
     // --- High-level iterators ---
-    // NVDA announces "no next <element>" when reaching the end
-
     async *headings(): AsyncIterableIterator<NavigationItem> {
         while (true) {
             await this.nextHeading();

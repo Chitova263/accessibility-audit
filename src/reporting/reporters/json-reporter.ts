@@ -8,10 +8,6 @@
 import type { Reporter, ReportData, ReportOutput, ReporterOptions } from '../reporter';
 import { generateFilename } from '../reporter';
 
-// =============================================================================
-// JSON Reporter Options
-// =============================================================================
-
 export interface JsonReporterOptions extends ReporterOptions {
     /** Pretty print with indentation */
     pretty?: boolean;
@@ -31,10 +27,6 @@ const DEFAULT_OPTIONS: Required<JsonReporterOptions> = {
     indent: 2,
     summaryOnly: false,
 };
-
-// =============================================================================
-// JSON Reporter Implementation
-// =============================================================================
 
 export class JsonReporter implements Reporter {
     readonly name = 'json';
@@ -76,13 +68,6 @@ export class JsonReporter implements Reporter {
     }
 }
 
-// =============================================================================
-// Factory Function
-// =============================================================================
-
-/**
- * Create a JSON reporter instance.
- */
 export function createJsonReporter(): JsonReporter {
     return new JsonReporter();
 }

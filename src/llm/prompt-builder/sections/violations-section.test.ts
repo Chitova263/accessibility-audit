@@ -3,10 +3,6 @@ import { buildViolationsData, renderViolationsXml, buildViolationsSection } from
 import type { Violation } from '../../../analysis/violation';
 import type { PromptStrategySection, PromptViolationsData } from '../schemas';
 
-// =============================================================================
-// TEST DATA FIXTURES
-// =============================================================================
-
 const createViolation = (overrides: Partial<Violation> = {}): Violation => ({
     id: 'test-violation-1',
     ruleId: 'button-name',
@@ -54,7 +50,7 @@ const createStrategySection = (overrides: Partial<PromptStrategySection> = {}): 
     description: 'Tab through focusable elements',
     mode: 'focus',
     totalSteps: 10,
-    completionReason: 'focus-cycle-complete',
+    completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
     steps: [
         {
             index: 0,
@@ -81,10 +77,6 @@ const createStrategySection = (overrides: Partial<PromptStrategySection> = {}): 
     ],
     ...overrides,
 });
-
-// =============================================================================
-// SNAPSHOT TESTS FOR renderViolationsXml
-// =============================================================================
 
 describe('renderViolationsXml', () => {
     describe('empty violations', () => {
@@ -371,10 +363,6 @@ describe('renderViolationsXml', () => {
     });
 });
 
-// =============================================================================
-// SNAPSHOT TESTS FOR buildViolationsSection (end-to-end)
-// =============================================================================
-
 describe('buildViolationsSection', () => {
     it('should build complete section from violations array', () => {
         const violations: Violation[] = [
@@ -419,10 +407,6 @@ describe('buildViolationsSection', () => {
         expect(buildViolationsSection(violations, [], { maxViolationsPerGroup: 2 })).toMatchSnapshot();
     });
 });
-
-// =============================================================================
-// SNAPSHOT TESTS FOR buildViolationsData
-// =============================================================================
 
 describe('buildViolationsData', () => {
     it('should build data structure with correlations', () => {

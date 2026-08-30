@@ -6,10 +6,6 @@ import type {
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
-// =============================================================================
-// TEST DATA FIXTURES
-// =============================================================================
-
 const createStep = (
     index: number,
     overrides: Partial<{ itemText: string; role: string; name: string; href: string; backendDOMNodeId: number }> = {}
@@ -39,17 +35,17 @@ const createStep = (
 const strategies = (linkSteps: NavigationStep[], arrowSteps?: NavigationStep[]): TranscriptContext => {
     const results: StrategyResult[] = [
         {
-            meta: { name: 'link', description: 'Links', type: 'link' },
+            meta: { name: 'link', description: 'Links', type: 'link', mode: 'browse' },
             navigationSteps: linkSteps,
-            completionReason: 'end-of-links',
+            completionReason: { kind: 'exhausted', detail: 'no more links found' },
         },
     ];
 
     if (arrowSteps) {
         results.push({
-            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow' },
+            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow', mode: 'browse' },
             navigationSteps: arrowSteps,
-            completionReason: 'end-of-document',
+            completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         });
     }
 
@@ -57,10 +53,6 @@ const strategies = (linkSteps: NavigationStep[], arrowSteps?: NavigationStep[]):
 };
 
 const genericLink = createStep(0, { itemText: 'Read more', role: 'link', href: '/a', backendDOMNodeId: 42 });
-
-// =============================================================================
-// TESTS
-// =============================================================================
 
 describe('analyzeLinkText generic link text', () => {
     it('reports a generic link at full impact when the arrow walk found no context', () => {

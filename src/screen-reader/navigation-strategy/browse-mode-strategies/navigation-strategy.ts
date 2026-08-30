@@ -3,6 +3,7 @@ import type { IScreenReader } from '../../screen-reader';
 export interface StrategyMetadata {
     name: string;
     description: string;
+    mode: 'browse' | 'focus';
     type?:
         | 'tab'
         | 'arrow'
@@ -34,20 +35,22 @@ export interface NavigationStep {
     htmlSnippet: string | null;
 }
 
+export interface CompletionReason {
+    /** Why navigation stopped */
+    kind: 'exhausted' | 'limit-reached' | 'cycle-complete' | 'trapped';
+    /**
+     * Human-readable detail for LLM context. Examples:
+     * - "no more headings found on page"
+     * - "tab focus returned to first element"
+     * - "keyboard focus could not escape element"
+     */
+    detail: string;
+}
+
 export interface StrategyResult {
     meta: StrategyMetadata;
     navigationSteps: NavigationStep[];
-    completionReason:
-        | 'trapped'
-        | 'completed'
-        | 'end-of-headings'
-        | 'end-of-landmarks'
-        | 'end-of-buttons'
-        | 'end-of-links'
-        | 'end-of-heading-level'
-        | 'end-of-document'
-        | 'focus-trapped'
-        | 'focus-cycle-complete';
+    completionReason: CompletionReason;
 }
 
 export interface AxContext {

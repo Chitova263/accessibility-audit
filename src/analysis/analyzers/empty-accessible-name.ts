@@ -17,6 +17,7 @@ import type { NvdaViolation, NvdaToolDetails } from '../violation';
 import type { TranscriptContext } from '../context';
 import { createToolDetails } from '../tool-details';
 import { ruleMetadata } from '../rule-catalog';
+import { capitalize } from '../string-utils';
 
 /** Roles that require an accessible name per WCAG 4.1.2 */
 const ROLES_REQUIRING_NAME = [
@@ -74,7 +75,9 @@ export function analyzeEmptyAccessibleNames({ strategyResults }: TranscriptConte
             if (isEmpty) {
                 byRole[role] = (byRole[role] ?? 0) + 1;
 
-                violations.push(createViolation(step, role, result.meta.type ?? result.meta.name, stepIndex));
+                violations.push(
+                    createEmptyAccessibleNameViolation(step, role, result.meta.type ?? result.meta.name, stepIndex)
+                );
             }
         }
     }
@@ -89,7 +92,7 @@ export function analyzeEmptyAccessibleNames({ strategyResults }: TranscriptConte
     };
 }
 
-function createViolation(
+function createEmptyAccessibleNameViolation(
     step: NavigationStep,
     role: string,
     navigationStrategy: string,
@@ -100,7 +103,7 @@ function createViolation(
     return {
         id: step.identifier,
         ...ruleMetadata('empty-accessible-name'),
-        message: `${capitalizeFirst(role)} has no accessible name. Screen readers will announce only "${role}" with no indication of purpose.`,
+        message: `${capitalize(role)} has no accessible name. Screen readers will announce only "${role}" with no indication of purpose.`,
         element: {
             htmlSnippet: step.htmlSnippet ?? undefined,
         },
@@ -108,8 +111,4 @@ function createViolation(
         timestamp: step.timestamp,
         toolDetails,
     };
-}
-
-function capitalizeFirst(s: string): string {
-    return s.charAt(0).toUpperCase() + s.slice(1);
 }

@@ -14,6 +14,7 @@ export class TabNavigationStrategy implements INavigationStrategy {
         type: 'tab',
         name: 'tab',
         description: 'Navigates through focusable elements using Tab key (focus mode navigation)',
+        mode: 'focus',
     };
     public constructor(public readonly config: NavigationStrategyConfig) {}
 
@@ -34,7 +35,10 @@ export class TabNavigationStrategy implements INavigationStrategy {
 
             if (backendNodeId == null && lastBackendNodeId != null) {
                 return {
-                    completionReason: 'focus-cycle-complete',
+                    completionReason: {
+                        kind: 'cycle-complete',
+                        detail: 'tab focus returned to start of page',
+                    },
                     meta: this.meta,
                     navigationSteps,
                 };
@@ -44,7 +48,10 @@ export class TabNavigationStrategy implements INavigationStrategy {
                 consecutiveSameCount++;
                 if (consecutiveSameCount >= 2) {
                     return {
-                        completionReason: 'focus-trapped',
+                        completionReason: {
+                            kind: 'trapped',
+                            detail: 'keyboard focus could not escape element - potential focus trap',
+                        },
                         meta: this.meta,
                         navigationSteps,
                     };
@@ -70,7 +77,10 @@ export class TabNavigationStrategy implements INavigationStrategy {
 
             if (navigationSteps.length >= this.config.maxSteps) {
                 return {
-                    completionReason: 'completed',
+                    completionReason: {
+                        kind: 'limit-reached',
+                        detail: `stopped after ${this.config.maxSteps} focusable elements (safety limit)`,
+                    },
                     meta: this.meta,
                     navigationSteps,
                 };
@@ -78,7 +88,10 @@ export class TabNavigationStrategy implements INavigationStrategy {
         }
 
         return {
-            completionReason: 'focus-cycle-complete',
+            completionReason: {
+                kind: 'cycle-complete',
+                detail: 'tab focus cycled through all focusable elements',
+            },
             meta: this.meta,
             navigationSteps,
         };

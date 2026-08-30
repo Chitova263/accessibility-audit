@@ -1,8 +1,3 @@
-// =============================================================================
-// SCHEMAS - Source of truth for types
-// =============================================================================
-
-// Input schemas (data going into prompt)
 export {
     promptAxNodeSchema,
     promptAxNodePropertiesSchema,
@@ -16,16 +11,10 @@ export {
     promptViolationsDataSchema,
     transcriptSectionConfigSchema,
     violationsSectionConfigSchema,
-    // Config defaults
     TRANSCRIPT_CONFIG_DEFAULTS,
     VIOLATIONS_CONFIG_DEFAULTS,
-    // Config merge utilities
     mergeTranscriptConfig,
     mergeViolationsConfig,
-} from './schemas';
-
-// Output schemas (data from LLM)
-export {
     findingCategorySchema,
     findingClassificationSchema,
     confidenceLevelSchema,
@@ -37,14 +26,12 @@ export {
     llmViolationEnhancementSchema,
     llmCompleteResponseSchema,
     overallAssessmentSchema,
+    parseLlmResponse,
+    safeParseLlmResponse,
+    getLlmOutputJsonSchema,
 } from './schemas';
 
-// =============================================================================
-// TYPES - Inferred from schemas
-// =============================================================================
-
 export type {
-    // Input types
     PromptAxNode,
     PromptAxNodeProperties,
     PromptNavigationStep,
@@ -59,7 +46,6 @@ export type {
     ViolationsSectionConfig,
     ResolvedTranscriptConfig,
     ResolvedViolationsConfig,
-    // Output types
     FindingCategory,
     FindingClassification,
     ConfidenceLevel,
@@ -73,23 +59,10 @@ export type {
     OverallAssessment,
 } from './schemas';
 
-// =============================================================================
-// UTILITIES
-// =============================================================================
-
-export { getNavigationMode, parseLlmResponse, safeParseLlmResponse, getLlmOutputJsonSchema } from './schemas';
-
-// =============================================================================
-// SECTION BUILDERS
-// =============================================================================
-
-// Transcript section
 export { buildTranscriptData, buildTranscriptSection, renderTranscriptXml } from './sections/transcript-section';
 
-// Violations section
 export { buildViolationsData, buildViolationsSection, renderViolationsXml } from './sections/violations-section';
 
-// Accessibility prompt builder
 export type {
     PageContext,
     BuiltPrompt,

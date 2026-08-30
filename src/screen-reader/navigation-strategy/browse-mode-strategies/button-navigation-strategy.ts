@@ -13,6 +13,7 @@ export class ButtonNavigationStrategy implements INavigationStrategy {
         type: 'button',
         name: 'button',
         description: "Navigates through buttons as a blind user would, using NVDA's button navigation (B key)",
+        mode: 'browse',
     };
     public constructor(public readonly config: NavigationStrategyConfig) {}
 
@@ -43,7 +44,10 @@ export class ButtonNavigationStrategy implements INavigationStrategy {
 
             if (navigationSteps.length >= this.config.maxSteps) {
                 return {
-                    completionReason: 'completed',
+                    completionReason: {
+                        kind: 'limit-reached',
+                        detail: `stopped after ${this.config.maxSteps} buttons (safety limit)`,
+                    },
                     meta: this.meta,
                     navigationSteps,
                 };
@@ -51,7 +55,10 @@ export class ButtonNavigationStrategy implements INavigationStrategy {
         }
 
         return {
-            completionReason: 'end-of-buttons',
+            completionReason: {
+                kind: 'exhausted',
+                detail: 'no more buttons found on page',
+            },
             meta: this.meta,
             navigationSteps,
         };

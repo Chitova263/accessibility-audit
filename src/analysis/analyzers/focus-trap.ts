@@ -32,7 +32,7 @@ export function analyzeFocusTraps({ strategyResults }: TranscriptContext): Focus
 
         tabStrategiesChecked++;
 
-        if (result.completionReason === 'focus-trapped') {
+        if (result.completionReason.kind === 'trapped') {
             // Find the element that caused the trap (last few steps)
             const steps = result.navigationSteps;
             const trappedStep = steps[steps.length - 1];

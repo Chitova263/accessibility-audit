@@ -61,9 +61,9 @@ export const createSteps = (overrides: StepOverrides[]): NavigationStep[] =>
 export const strategyResult = (
     type: NonNullable<StrategyMetadata['type']>,
     navigationSteps: NavigationStep[],
-    completionReason: StrategyResult['completionReason'] = 'completed'
+    completionReason: StrategyResult['completionReason'] = { kind: 'exhausted', detail: `no more ${type}s found` }
 ): StrategyResult => ({
-    meta: { name: type, description: `${type} navigation`, type },
+    meta: { name: type, description: `${type} navigation`, type, mode: type === 'tab' ? 'focus' : 'browse' },
     navigationSteps,
     completionReason,
 });

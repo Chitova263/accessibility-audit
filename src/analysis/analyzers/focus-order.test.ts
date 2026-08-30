@@ -6,10 +6,6 @@ import type {
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
-// =============================================================================
-// TEST DATA FIXTURES
-// =============================================================================
-
 const createStep = (
     index: number,
     overrides: Partial<{ itemText: string; role: string; backendDOMNodeId: number; htmlSnippet: string }> = {}
@@ -36,17 +32,17 @@ const createStep = (
 const strategies = (tabSteps: NavigationStep[], arrowSteps?: NavigationStep[]): TranscriptContext => {
     const results: StrategyResult[] = [
         {
-            meta: { name: 'tab', description: 'Tab order', type: 'tab' },
+            meta: { name: 'tab', description: 'Tab order', type: 'tab', mode: 'focus' },
             navigationSteps: tabSteps,
-            completionReason: 'focus-cycle-complete',
+            completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
         },
     ];
 
     if (arrowSteps) {
         results.push({
-            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow' },
+            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow', mode: 'browse' },
             navigationSteps: arrowSteps,
-            completionReason: 'end-of-document',
+            completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         });
     }
 
@@ -58,10 +54,6 @@ const readingWalk = (): NavigationStep[] =>
     [...Array(60)].map((_, i) =>
         createStep(i, i % 10 === 0 ? { role: 'StaticText', backendDOMNodeId: i } : { role: 'StaticText' })
     );
-
-// =============================================================================
-// TESTS
-// =============================================================================
 
 describe('analyzeFocusOrder reading order comparison', () => {
     it('stays silent when tab order follows reading order', () => {

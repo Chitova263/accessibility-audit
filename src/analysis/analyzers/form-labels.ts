@@ -13,6 +13,7 @@ import type { NvdaViolation, NvdaToolDetails } from '../violation';
 import type { TranscriptContext } from '../context';
 import { createToolDetails as buildToolDetails } from '../tool-details';
 import { ruleMetadata } from '../rule-catalog';
+import { capitalize } from '../string-utils';
 
 /** Form field roles that require labels */
 const FORM_FIELD_ROLES = [
@@ -158,7 +159,7 @@ function createUnlabeledFieldViolation(field: FormFieldInfo): NvdaViolation {
     return {
         id: `unlabeled-form-field-${field.identifier}`,
         ...ruleMetadata('form-field-no-label'),
-        message: `${capitalizeFirst(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. NVDA announced: "${field.itemText || '(nothing)'}"`,
+        message: `${capitalize(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. NVDA announced: "${field.itemText || '(nothing)'}"`,
         element: {
             htmlSnippet: field.htmlSnippet ?? undefined,
         },
@@ -166,8 +167,4 @@ function createUnlabeledFieldViolation(field: FormFieldInfo): NvdaViolation {
         timestamp: field.timestamp,
         toolDetails: createToolDetails(field),
     };
-}
-
-function capitalizeFirst(s: string): string {
-    return s.charAt(0).toUpperCase() + s.slice(1);
 }

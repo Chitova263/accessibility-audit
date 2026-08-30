@@ -4,7 +4,10 @@ exports[`buildTranscriptData > should exclude HTML snippets when includeHtmlSnip
 {
   "sections": [
     {
-      "completionReason": "focus-cycle-complete",
+      "completionReason": {
+        "detail": "tab focus cycled through all elements",
+        "kind": "cycle-complete",
+      },
       "description": "Tab navigation through focusable elements",
       "mode": "focus",
       "steps": [
@@ -31,7 +34,10 @@ exports[`buildTranscriptData > should exclude axNodes when includeAxNodes is fal
 {
   "sections": [
     {
-      "completionReason": "focus-cycle-complete",
+      "completionReason": {
+        "detail": "tab focus cycled through all elements",
+        "kind": "cycle-complete",
+      },
       "description": "Tab navigation through focusable elements",
       "mode": "focus",
       "steps": [
@@ -58,7 +64,10 @@ exports[`buildTranscriptData > should filter strategies based on excludeStrategi
 {
   "sections": [
     {
-      "completionReason": "focus-cycle-complete",
+      "completionReason": {
+        "detail": "tab focus cycled through all elements",
+        "kind": "cycle-complete",
+      },
       "description": "Tab navigation",
       "mode": "focus",
       "steps": [
@@ -76,7 +85,10 @@ exports[`buildTranscriptData > should filter strategies based on excludeStrategi
       "totalSteps": 1,
     },
     {
-      "completionReason": "focus-cycle-complete",
+      "completionReason": {
+        "detail": "no more headings found",
+        "kind": "exhausted",
+      },
       "description": "Heading navigation",
       "mode": "browse",
       "steps": [
@@ -103,7 +115,10 @@ exports[`buildTranscriptData > should filter strategies based on includeStrategi
 {
   "sections": [
     {
-      "completionReason": "focus-cycle-complete",
+      "completionReason": {
+        "detail": "tab focus cycled through all elements",
+        "kind": "cycle-complete",
+      },
       "description": "Tab navigation",
       "mode": "focus",
       "steps": [
@@ -121,7 +136,10 @@ exports[`buildTranscriptData > should filter strategies based on includeStrategi
       "totalSteps": 1,
     },
     {
-      "completionReason": "focus-cycle-complete",
+      "completionReason": {
+        "detail": "no more headings found",
+        "kind": "exhausted",
+      },
       "description": "Heading navigation",
       "mode": "browse",
       "steps": [
@@ -148,7 +166,10 @@ exports[`buildTranscriptData > should handle strategy results with complex axNod
 {
   "sections": [
     {
-      "completionReason": "focus-cycle-complete",
+      "completionReason": {
+        "detail": "tab focus cycled through all elements",
+        "kind": "cycle-complete",
+      },
       "description": "Tab navigation",
       "mode": "focus",
       "steps": [
@@ -183,7 +204,10 @@ exports[`buildTranscriptData > should transform strategy results into transcript
 {
   "sections": [
     {
-      "completionReason": "end-of-headings",
+      "completionReason": {
+        "detail": "no more headings found on page",
+        "kind": "exhausted",
+      },
       "description": "Heading navigation",
       "mode": "browse",
       "steps": [
@@ -216,7 +240,10 @@ exports[`buildTranscriptData > should truncate HTML snippets based on maxHtmlSni
 {
   "sections": [
     {
-      "completionReason": "focus-cycle-complete",
+      "completionReason": {
+        "detail": "tab focus cycled through all elements",
+        "kind": "cycle-complete",
+      },
       "description": "Tab navigation through focusable elements",
       "mode": "focus",
       "steps": [
@@ -243,7 +270,7 @@ exports[`buildTranscriptSection > should build complete XML section from strateg
 "<transcript strategies="2" total_steps="3">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation through focusable elements</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="2">
             <step index="0" id="skip-link">
                 <spoken>Skip to main content link</spoken>
@@ -268,7 +295,7 @@ exports[`buildTranscriptSection > should build complete XML section from strateg
     </strategy>
     <strategy name="heading" type="heading" mode="browse">
         <description>Navigate through headings</description>
-        <completion_reason>end-of-headings</completion_reason>
+        <completion_reason kind="exhausted">no more headings found on page</completion_reason>
         <steps total="1">
             <step index="0" id="main-heading">
                 <spoken>Welcome to Our Site heading level 1</spoken>
@@ -289,7 +316,7 @@ exports[`buildTranscriptSection > should build section with all config options 1
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="btn-0">
                 <spoken>Submit button</spoken>
@@ -306,7 +333,7 @@ exports[`buildTranscriptSection > should handle real-world navigation transcript
 "<transcript strategies="2" total_steps="7">
     <strategy name="landmark" type="landmark" mode="browse">
         <description>Navigates through ARIA landmarks using NVDA's landmark navigation (D key)</description>
-        <completion_reason>end-of-landmarks</completion_reason>
+        <completion_reason kind="exhausted">no more landmarks found on page</completion_reason>
         <steps total="4">
             <step index="0" id="banner-0">
                 <spoken>banner landmark</spoken>
@@ -348,7 +375,7 @@ exports[`buildTranscriptSection > should handle real-world navigation transcript
     </strategy>
     <strategy name="ArrowNavigation" type="arrow" mode="browse">
         <description>Linear reading through page content using Down Arrow (browse mode)</description>
-        <completion_reason>end-of-document</completion_reason>
+        <completion_reason kind="exhausted">reached end of document</completion_reason>
         <steps total="3">
             <step index="0" id="arrow-0">
                 <spoken>link Homepage</spoken>
@@ -387,7 +414,7 @@ exports[`buildTranscriptSection > should handle strategy with empty navigation s
 "<transcript strategies="1" total_steps="0">
     <strategy name="heading-level-6" type="heading6" mode="browse">
         <description>Navigate through H6 headings</description>
-        <completion_reason>end-of-heading-level</completion_reason>
+        <completion_reason kind="exhausted">no more h6 headings found</completion_reason>
         <steps total="0"/>
     </strategy>
 </transcript>"
@@ -397,7 +424,7 @@ exports[`edge cases > should handle CDATA end sequence in HTML snippet 1`] = `
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="cdata-edge">
                 <spoken>Script content</spoken>
@@ -417,7 +444,7 @@ exports[`edge cases > should handle axNode with empty properties object 1`] = `
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="empty-props">
                 <spoken>Button</spoken>
@@ -436,7 +463,7 @@ exports[`edge cases > should handle steps with empty spoken phrases 1`] = `
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="empty-spoken">
                 <spoken/>
@@ -451,7 +478,7 @@ exports[`edge cases > should handle unicode and emoji in content 1`] = `
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="unicode-test">
                 <spoken>🔍 Search • Búsqueda • 搜索</spoken>
@@ -471,7 +498,7 @@ exports[`edge cases > should handle very long identifiers 1`] = `
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">
                 <spoken>Test</spoken>
@@ -486,7 +513,7 @@ exports[`renderTranscriptXml > XML escaping > should escape special characters i
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab &lt;navigation&gt; &amp; more</description>
-        <completion_reason>completed</completion_reason>
+        <completion_reason kind="limit-reached">stopped at safety limit</completion_reason>
         <steps total="1">
             <step index="0" id="ax-escape-test">
                 <spoken>Test</spoken>
@@ -507,7 +534,7 @@ exports[`renderTranscriptXml > XML escaping > should escape special characters i
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="escape-test">
                 <spoken>Price: $10 &lt; $20 &amp; "best" deal's here</spoken>
@@ -522,7 +549,7 @@ exports[`renderTranscriptXml > XML escaping > should escape special characters i
 "<transcript strategies="1" total_steps="1">
     <strategy name="custom-strategy&lt;test&gt;" type="custom&amp;type" mode="browse">
         <description>Description with "quotes"</description>
-        <completion_reason>reason with &lt;angle&gt; brackets</completion_reason>
+        <completion_reason kind="exhausted">reason with &lt;angle&gt; brackets</completion_reason>
         <steps total="1">
             <step index="0" id="id-with-&quot;quotes&quot;-&amp;-&lt;brackets&gt;">
                 <spoken>Test</spoken>
@@ -537,7 +564,7 @@ exports[`renderTranscriptXml > config options > should exclude HTML snippets whe
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="step-0">
                 <spoken>Button, button</spoken>
@@ -556,7 +583,7 @@ exports[`renderTranscriptXml > config options > should exclude axNodes when incl
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="step-0">
                 <spoken>Button, button</spoken>
@@ -572,7 +599,7 @@ exports[`renderTranscriptXml > config options > should exclude both axNodes and 
 "<transcript strategies="1" total_steps="2">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="2">
             <step index="0" id="step-0">
                 <spoken>Button, button</spoken>
@@ -593,7 +620,7 @@ exports[`renderTranscriptXml > multiple strategies > should render multiple stra
 "<transcript strategies="3" total_steps="6">
     <strategy name="landmark" type="landmark" mode="browse">
         <description>Landmark navigation</description>
-        <completion_reason>end-of-landmarks</completion_reason>
+        <completion_reason kind="exhausted">no more landmarks found on page</completion_reason>
         <steps total="2">
             <step index="0" id="landmark-0">
                 <spoken>banner landmark</spoken>
@@ -617,7 +644,7 @@ exports[`renderTranscriptXml > multiple strategies > should render multiple stra
     </strategy>
     <strategy name="heading" type="heading" mode="browse">
         <description>Heading navigation</description>
-        <completion_reason>end-of-headings</completion_reason>
+        <completion_reason kind="exhausted">no more headings found on page</completion_reason>
         <steps total="3">
             <step index="0" id="h1-0">
                 <spoken>Welcome, heading, level 1</spoken>
@@ -653,7 +680,7 @@ exports[`renderTranscriptXml > multiple strategies > should render multiple stra
     </strategy>
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="tab-0">
                 <spoken>Get Started, button</spoken>
@@ -674,7 +701,7 @@ exports[`renderTranscriptXml > single strategy with minimal steps > should rende
 "<transcript strategies="1" total_steps="2">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="2">
             <step index="0" id="step-0">
                 <spoken>Skip to main content, link</spoken>
@@ -693,7 +720,7 @@ exports[`renderTranscriptXml > steps with HTML snippets > should render step wit
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="complex-html-0">
                 <spoken>Product card</spoken>
@@ -709,7 +736,7 @@ exports[`renderTranscriptXml > steps with HTML snippets > should render step wit
 "<transcript strategies="1" total_steps="1">
     <strategy name="button" type="button" mode="browse">
         <description>Button navigation</description>
-        <completion_reason>end-of-buttons</completion_reason>
+        <completion_reason kind="exhausted">no more buttons found on page</completion_reason>
         <steps total="1">
             <step index="0" id="btn-0">
                 <spoken>Submit, button</spoken>
@@ -725,7 +752,7 @@ exports[`renderTranscriptXml > steps with axNode > should render step with all a
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="complex-0">
                 <spoken>Complex widget</spoken>
@@ -747,7 +774,7 @@ exports[`renderTranscriptXml > steps with axNode > should render step with axNod
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="input-0">
                 <spoken>Email address, edit, required</spoken>
@@ -768,7 +795,7 @@ exports[`renderTranscriptXml > steps with axNode > should render step with axNod
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" type="tab" mode="focus">
         <description>Tab navigation</description>
-        <completion_reason>focus-cycle-complete</completion_reason>
+        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
         <steps total="1">
             <step index="0" id="checkbox-0">
                 <spoken>Accept terms, checkbox, not checked, required</spoken>
@@ -788,7 +815,7 @@ exports[`renderTranscriptXml > steps with axNode > should render step with basic
 "<transcript strategies="1" total_steps="1">
     <strategy name="heading" type="heading" mode="browse">
         <description>Heading navigation</description>
-        <completion_reason>end-of-headings</completion_reason>
+        <completion_reason kind="exhausted">no more headings found on page</completion_reason>
         <steps total="1">
             <step index="0" id="heading-0">
                 <spoken>Main Content, heading, level 1</spoken>

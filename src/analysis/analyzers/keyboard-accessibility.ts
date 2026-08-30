@@ -18,6 +18,7 @@ import type { NvdaViolation, NvdaToolDetails } from '../violation';
 import type { TranscriptContext } from '../context';
 import { createToolDetails } from '../tool-details';
 import { ruleMetadata } from '../rule-catalog';
+import { capitalize } from '../string-utils';
 
 type KeyboardIssue = 'button-not-in-tab-order' | 'link-not-in-tab-order';
 
@@ -172,8 +173,4 @@ function createNotInTabOrderViolation(element: ElementSignature, role: 'button' 
         timestamp: element.step.timestamp,
         toolDetails,
     };
-}
-
-function capitalize(s: string): string {
-    return s.charAt(0).toUpperCase() + s.slice(1);
 }

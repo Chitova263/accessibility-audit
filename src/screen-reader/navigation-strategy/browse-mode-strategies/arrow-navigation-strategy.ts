@@ -24,8 +24,9 @@ import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
  */
 export class ArrowNavigationStrategy implements INavigationStrategy {
     public readonly meta: StrategyMetadata = {
-        name: 'ArrowNavigation',
+        name: 'arrow',
         description: 'Linear reading through page content using Down Arrow (browse mode)',
+        mode: 'browse',
         type: 'arrow',
     };
 
@@ -58,7 +59,10 @@ export class ArrowNavigationStrategy implements INavigationStrategy {
 
             if (navigationSteps.length >= this.config.maxSteps) {
                 return {
-                    completionReason: 'completed',
+                    completionReason: {
+                        kind: 'limit-reached',
+                        detail: `stopped after ${this.config.maxSteps} elements (safety limit)`,
+                    },
                     meta: this.meta,
                     navigationSteps,
                 };
@@ -66,7 +70,10 @@ export class ArrowNavigationStrategy implements INavigationStrategy {
         }
 
         return {
-            completionReason: 'end-of-document',
+            completionReason: {
+                kind: 'exhausted',
+                detail: 'reached end of document in linear reading order',
+            },
             meta: this.meta,
             navigationSteps,
         };

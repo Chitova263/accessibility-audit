@@ -185,9 +185,9 @@ describe('analyzeContentGrouping inputs', () => {
 
     it('finds the linear reading walk by strategy name when the type is missing', () => {
         const arrow: StrategyResult = {
-            meta: { name: 'ArrowNavigation', description: 'Linear reading' },
+            meta: { name: 'ArrowNavigation', description: 'Linear reading', mode: 'browse' },
             navigationSteps: createSteps(plain(20)),
-            completionReason: 'end-of-document',
+            completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         };
 
         const result = analyzeContentGrouping({ strategyResults: [arrow, headingWalk] });

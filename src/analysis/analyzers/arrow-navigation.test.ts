@@ -11,10 +11,6 @@ import type {
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
-// =============================================================================
-// TEST DATA FIXTURES
-// =============================================================================
-
 const createStep = (
     index: number,
     overrides: Partial<{ itemText: string; spokenPhrases: string[]; role: string }> = {}
@@ -32,16 +28,12 @@ const createStep = (
 const arrowResult = (navigationSteps: NavigationStep[]): TranscriptContext => ({
     strategyResults: [
         {
-            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow' },
+            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow', mode: 'browse' },
             navigationSteps,
-            completionReason: 'end-of-document',
+            completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         },
     ],
 });
-
-// =============================================================================
-// steps-to-main-content
-// =============================================================================
 
 describe('analyzeStepsToMainContent', () => {
     it('reports a missing main landmark when linear reading never announces one', () => {
@@ -77,10 +69,6 @@ describe('analyzeStepsToMainContent', () => {
         expect(result.violations.map((v) => v.ruleId)).toEqual(['steps-to-main-content']);
     });
 });
-
-// =============================================================================
-// reading-order-landmark-sequence
-// =============================================================================
 
 describe('analyzeReadingOrderLandmarkSequence', () => {
     it('does not treat ordinary content containing landmark words as landmarks', () => {
@@ -135,10 +123,6 @@ describe('analyzeReadingOrderLandmarkSequence', () => {
     });
 });
 
-// =============================================================================
-// excessive-repetition
-// =============================================================================
-
 describe('analyzeExcessiveRepetition', () => {
     it('tolerates short runs of repeated announcements by default', () => {
         const steps = [...Array(4)].map((_, i) => createStep(i, { itemText: 'Add to basket' }));
@@ -158,10 +142,6 @@ describe('analyzeExcessiveRepetition', () => {
         expect(result.summary.repetitions[0]?.count).toBe(6);
     });
 });
-
-// =============================================================================
-// content-density-per-region
-// =============================================================================
 
 describe('analyzeContentDensityPerRegion', () => {
     it('records dense navigation regions but leaves the violation to navigation-size', () => {

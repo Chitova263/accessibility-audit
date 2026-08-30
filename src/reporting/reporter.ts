@@ -9,13 +9,6 @@ import type { LlmCompleteResponse } from '../llm/prompt-builder';
 import type { Violation } from '../analysis/violation';
 import type { StrategyResult } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
-// =============================================================================
-// Report Data Types
-// =============================================================================
-
-/**
- * Page information for the report.
- */
 export interface ReportPage {
     /** URL of the audited page */
     url: string;
@@ -24,9 +17,6 @@ export interface ReportPage {
     title: string;
 }
 
-/**
- * Metadata about the audit run.
- */
 export interface ReportMeta {
     /** Timestamp when audit was run (ms since epoch) */
     timestamp: number;
@@ -41,9 +31,6 @@ export interface ReportMeta {
     strategies?: string[];
 }
 
-/**
- * Complete data passed to reporters.
- */
 export interface ReportData {
     /** Page that was audited */
     page: ReportPage;
@@ -61,13 +48,6 @@ export interface ReportData {
     meta: ReportMeta;
 }
 
-// =============================================================================
-// Report Output Types
-// =============================================================================
-
-/**
- * Output from a reporter.
- */
 export interface ReportOutput {
     /** Output format identifier (e.g., 'html', 'json', 'pdf') */
     format: string;
@@ -82,14 +62,6 @@ export interface ReportOutput {
     mimeType: string;
 }
 
-// =============================================================================
-// Reporter Interface
-// =============================================================================
-
-/**
- * Configuration options for reporters.
- * Extended by specific reporter implementations.
- */
 export interface ReporterOptions {
     /** Include transcript in report */
     includeTranscript?: boolean;
@@ -137,29 +109,16 @@ export interface Reporter {
     generate(data: ReportData, options?: ReporterOptions): Promise<ReportOutput>;
 }
 
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-/**
- * Generate a filename with timestamp.
- */
 export function generateFilename(prefix: string, extension: string): string {
     const date = new Date();
     const timestamp = date.toISOString().replace(/[:.]/g, '-').slice(0, 19);
     return `${prefix}-${timestamp}.${extension}`;
 }
 
-/**
- * Format a timestamp as a human-readable string.
- */
 export function formatTimestamp(timestamp: number): string {
     return new Date(timestamp).toLocaleString();
 }
 
-/**
- * Format duration in milliseconds to human-readable string.
- */
 export function formatDuration(ms: number): string {
     if (ms < 1000) return `${ms}ms`;
     if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
@@ -168,9 +127,6 @@ export function formatDuration(ms: number): string {
     return `${minutes}m ${seconds}s`;
 }
 
-/**
- * Get severity color for styling.
- */
 export function getSeverityColor(severity: string): string {
     const colors: Record<string, string> = {
         critical: '#d32f2f',
@@ -181,9 +137,6 @@ export function getSeverityColor(severity: string): string {
     return colors[severity.toLowerCase()] ?? '#757575';
 }
 
-/**
- * Get assessment color for styling.
- */
 export function getAssessmentColor(assessment: string): string {
     const colors: Record<string, string> = {
         good: '#388e3c',
@@ -193,9 +146,6 @@ export function getAssessmentColor(assessment: string): string {
     return colors[assessment.toLowerCase()] ?? '#757575';
 }
 
-/**
- * Get confidence badge color.
- */
 export function getConfidenceColor(confidence: string): string {
     const colors: Record<string, string> = {
         high: '#388e3c',
@@ -208,9 +158,6 @@ export function getConfidenceColor(confidence: string): string {
     return colors[confidence.toLowerCase()] ?? '#757575';
 }
 
-/**
- * Escape HTML special characters.
- */
 export function escapeHtml(text: string): string {
     return text
         .replace(/&/g, '&amp;')
@@ -220,9 +167,6 @@ export function escapeHtml(text: string): string {
         .replace(/'/g, '&#039;');
 }
 
-/**
- * Truncate text with ellipsis.
- */
 export function truncate(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength - 3) + '...';

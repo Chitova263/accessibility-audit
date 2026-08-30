@@ -63,10 +63,6 @@ try {
     console.log('  - violations.json (all violations for reporting)');
     console.log('  - transcript.json (strategy results for HTML report)');
 
-    // ==========================================================================
-    // Build LLM Prompt (for reference/debugging)
-    // ==========================================================================
-
     const promptBuilder = createPromptBuilder({
         transcript: {
             includeHtmlSnippets: true,

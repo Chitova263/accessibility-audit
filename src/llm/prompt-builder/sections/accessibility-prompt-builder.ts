@@ -6,10 +6,6 @@ import { buildTranscriptData, buildTranscriptSection } from './transcript-sectio
 import { buildViolationsSection } from './violations-section';
 import { getLlmOutputJsonSchema } from '../schemas';
 
-// =============================================================================
-// Types
-// =============================================================================
-
 export interface PageContext {
     url: string;
     title: string;
@@ -54,10 +50,6 @@ export interface AccessibilityPromptConfig {
 export type AnalysisCategory =
     'reading-order' | 'cognitive-load' | 'semantic-mismatch' | 'consistency' | 'missing-context';
 
-// =============================================================================
-// Category Definitions
-// =============================================================================
-
 const CATEGORY_INSTRUCTIONS: Record<AnalysisCategory, string> = {
     'reading-order': `READING ORDER ANOMALIES
    - Content announced in illogical sequence
@@ -94,10 +86,6 @@ const ALL_CATEGORIES: AnalysisCategory[] = [
     'consistency',
     'missing-context',
 ];
-
-// =============================================================================
-// LLM-Specific Analysis Guidance
-// =============================================================================
 
 /**
  * Concise guidance for what ONLY the LLM can analyze.
@@ -174,10 +162,6 @@ Rules flag the *where* (large gaps, dense landmarks). You judge the *whether* (d
 - Your job is to ADD insights, not to excuse violations
 `;
 
-// =============================================================================
-// Default Config
-// =============================================================================
-
 const DEFAULT_CONFIG: Required<AccessibilityPromptConfig> = {
     transcript: {
         includeHtmlSnippets: true,
@@ -196,10 +180,6 @@ const DEFAULT_CONFIG: Required<AccessibilityPromptConfig> = {
     customInstructions: '',
 };
 
-// =============================================================================
-// Prompt Builder Class
-// =============================================================================
-
 export class AccessibilityPromptBuilder {
     private strategyResults: StrategyResult[] = [];
     private violations: Violation[] = [];
@@ -216,38 +196,22 @@ export class AccessibilityPromptBuilder {
         };
     }
 
-    // -------------------------------------------------------------------------
-    // Fluent API
-    // -------------------------------------------------------------------------
-
-    /**
-     * Set navigation strategy results (transcript source).
-     */
     withStrategyResults(results: StrategyResult[]): this {
         this.strategyResults = results;
-        this.transcriptData = null; // Reset cached data
+        this.transcriptData = null;
         return this;
     }
 
-    /**
-     * Set violations from analyzers.
-     */
     withViolations(violations: Violation[]): this {
         this.violations = violations;
         return this;
     }
 
-    /**
-     * Set page context manually.
-     */
     withPageContext(context: PageContext): this {
         this.pageContext = context;
         return this;
     }
 
-    /**
-     * Extract page context from Playwright page.
-     */
     async withPage(page: Page): Promise<this> {
         this.pageContext = {
             url: page.url(),
@@ -256,72 +220,43 @@ export class AccessibilityPromptBuilder {
         return this;
     }
 
-    /**
-     * Configure transcript section.
-     */
     withTranscriptConfig(config: TranscriptSectionConfig): this {
         this.config.transcript = { ...this.config.transcript, ...config };
-        this.transcriptData = null; // Reset cached data
+        this.transcriptData = null;
         return this;
     }
 
-    /**
-     * Configure violations section.
-     */
     withViolationsConfig(config: ViolationsSectionConfig): this {
         this.config.violations = { ...this.config.violations, ...config };
         return this;
     }
 
-    /**
-     * Set which analysis categories to include.
-     */
     withCategories(categories: AnalysisCategory[]): this {
         this.config.analysisCategories = categories;
         return this;
     }
 
-    /**
-     * Include all analysis categories.
-     */
     withAllCategories(): this {
         this.config.analysisCategories = ALL_CATEGORIES;
         return this;
     }
 
-    /**
-     * Add custom instructions to the prompt.
-     */
     withCustomInstructions(instructions: string): this {
         this.config.customInstructions = instructions;
         return this;
     }
 
-    /**
-     * Add custom content to the system prompt.
-     */
     withSystemPromptAdditions(additions: string): this {
         this.config.systemPromptAdditions = additions;
         return this;
     }
 
-    /**
-     * Whether to include JSON output schema.
-     */
     withOutputSchema(include: boolean): this {
         this.config.includeOutputSchema = include;
         return this;
     }
 
-    // -------------------------------------------------------------------------
-    // Build Methods
-    // -------------------------------------------------------------------------
-
-    /**
-     * Build the complete prompt.
-     */
     build(): BuiltPrompt {
-        // Ensure transcript data is built
         if (!this.transcriptData) {
             this.transcriptData = buildTranscriptData(this.strategyResults, this.config.transcript);
         }
@@ -330,7 +265,6 @@ export class AccessibilityPromptBuilder {
         const user = this.buildUserPrompt();
         const combined = this.buildCombinedPrompt(system, user);
 
-        // Rough token estimate (1 token ≈ 4 chars for English)
         const estimatedTokens = Math.ceil((system.length + user.length) / 4);
 
         return {
@@ -349,9 +283,6 @@ export class AccessibilityPromptBuilder {
         };
     }
 
-    /**
-     * Build a single combined prompt for copy-paste into AI chat.
-     */
     buildCombinedPrompt(system?: string, user?: string): string {
         const systemPrompt = system ?? this.buildSystemPrompt();
         const userPrompt = user ?? this.buildUserPrompt();
@@ -363,9 +294,6 @@ export class AccessibilityPromptBuilder {
 ${userPrompt}`;
     }
 
-    /**
-     * Build only the system prompt.
-     */
     buildSystemPrompt(): string {
         const parts: string[] = [];
 
@@ -381,7 +309,6 @@ Your task is to:
 2. Enhance existing violations with severity rationale, remediation suggestions, and user impact
 3. Identify patterns across multiple violations`);
 
-        // Add LLM-specific analysis guidance
         parts.push(LLM_UNIQUE_ANALYSIS_GUIDANCE);
 
         parts.push(`EVIDENCE RULES:
@@ -401,11 +328,7 @@ Your task is to:
         return parts.join('\n\n');
     }
 
-    /**
-     * Build only the user prompt.
-     */
     buildUserPrompt(): string {
-        // Ensure transcript data is built
         if (!this.transcriptData) {
             this.transcriptData = buildTranscriptData(this.strategyResults, this.config.transcript);
         }
@@ -414,7 +337,6 @@ Your task is to:
 
         parts.push('Analyze this accessibility audit data:');
 
-        // Page context
         if (this.pageContext) {
             parts.push(`
 <page_context>
@@ -423,11 +345,9 @@ Your task is to:
 </page_context>`);
         }
 
-        // Transcript
         const transcriptXml = buildTranscriptSection(this.strategyResults, this.config.transcript);
         parts.push(transcriptXml);
 
-        // Violations
         const violationsXml = buildViolationsSection(
             this.violations,
             this.transcriptData.sections,
@@ -435,10 +355,8 @@ Your task is to:
         );
         parts.push(violationsXml);
 
-        // Analysis instructions
         parts.push(this.buildAnalysisInstructions());
 
-        // Output schema
         if (this.config.includeOutputSchema) {
             parts.push(`
 <output_format>
@@ -450,19 +368,12 @@ ${JSON.stringify(getLlmOutputJsonSchema(), null, 2)}
         return parts.join('\n');
     }
 
-    /**
-     * Get the transcript data (useful for metadata).
-     */
     getTranscriptData(): PromptTranscript {
         if (!this.transcriptData) {
             this.transcriptData = buildTranscriptData(this.strategyResults, this.config.transcript);
         }
         return this.transcriptData;
     }
-
-    // -------------------------------------------------------------------------
-    // Private Methods
-    // -------------------------------------------------------------------------
 
     private buildAnalysisInstructions(): string {
         const categories = this.config.analysisCategories;
@@ -498,20 +409,10 @@ Remember: Your job is to ADD insights. Do not dismiss rule findings without stro
     }
 }
 
-// =============================================================================
-// Factory Functions
-// =============================================================================
-
-/**
- * Create a prompt builder with default settings.
- */
 export function createPromptBuilder(config?: AccessibilityPromptConfig): AccessibilityPromptBuilder {
     return new AccessibilityPromptBuilder(config);
 }
 
-/**
- * Quick build: create and build prompt in one call.
- */
 export async function buildAccessibilityPrompt(
     strategyResults: StrategyResult[],
     violations: Violation[],
@@ -522,10 +423,6 @@ export async function buildAccessibilityPrompt(
     await builder.withPage(page);
     return builder.withStrategyResults(strategyResults).withViolations(violations).build();
 }
-
-// =============================================================================
-// Utilities
-// =============================================================================
 
 function escapeXml(text: string): string {
     return text
