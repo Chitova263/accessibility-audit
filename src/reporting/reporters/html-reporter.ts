@@ -290,6 +290,11 @@ export class HtmlReporter implements Reporter {
         // Find original violation
         const violation = data.violations.find((v) => v.id === enhancement.violationId);
 
+        // Get screenshot from violation context (for NVDA violations with embedded screenshots)
+        const nvdaContext = violation?.context as
+            { screenshot?: { data: string; width: number; height: number } } | undefined;
+        const screenshot = nvdaContext?.screenshot;
+
         return `
 <article class="enhancement-card">
     <div class="enhancement-header">
@@ -301,10 +306,10 @@ export class HtmlReporter implements Reporter {
             ? `
     <div class="original-violation-full">
         <div class="violation-meta">
-            <strong>${escapeHtml(violation.ruleId)}</strong>
-            <span class="wcag-badge">${escapeHtml(violation.wcag?.primary?.criterion ?? 'N/A')}</span>
+            <strong>${escapeHtml(violation.rule.id)}</strong>
+            <span class="wcag-badge">${escapeHtml(violation.rule.wcag?.primary?.criterion ?? 'N/A')}</span>
             <span class="tool-badge">${escapeHtml(violation.tool ?? 'unknown')}</span>
-            <span class="impact-badge">${escapeHtml(violation.impact)}</span>
+            <span class="impact-badge">${escapeHtml(violation.rule.impact)}</span>
         </div>
         <p class="violation-message">${escapeHtml(violation.message)}</p>
         ${
@@ -320,6 +325,21 @@ export class HtmlReporter implements Reporter {
     </div>
     `
             : `<p class="no-items">Violation not found: ${escapeHtml(enhancement.violationId)}</p>`
+    }
+
+    ${
+        screenshot
+            ? `
+    <div class="violation-screenshot">
+        <h4>Element Screenshot</h4>
+        <img src="data:image/png;base64,${screenshot.data}" 
+             alt="Screenshot of the violation element highlighted on the page" 
+             width="${screenshot.width}" 
+             height="${screenshot.height}"
+             loading="lazy">
+    </div>
+    `
+            : ''
     }
 
     ${
@@ -356,11 +376,11 @@ export class HtmlReporter implements Reporter {
     }
 
     ${
-        violation?.toolDetails
+        violation?.context
             ? `
     <details class="debug-details">
         <summary>Debug Info</summary>
-        <pre class="debug-json"><code>${escapeHtml(JSON.stringify(violation.toolDetails, null, 2))}</code></pre>
+        <pre class="debug-json"><code>${escapeHtml(JSON.stringify(violation.context, (key, value) => (key === 'screenshot' ? '[embedded]' : value), 2))}</code></pre>
     </details>
     `
             : ''
@@ -386,7 +406,7 @@ export class HtmlReporter implements Reporter {
     }
 
     private buildTranscript(data: ReportData): string {
-        if (!data.strategyResults || data.strategyResults.length === 0) {
+        if (!data.transcript || data.transcript.length === 0) {
             return `
 <section class="transcript" aria-labelledby="transcript-heading">
     <h2 id="transcript-heading">Screen Reader Transcript</h2>
@@ -394,7 +414,7 @@ export class HtmlReporter implements Reporter {
 </section>`;
         }
 
-        const strategies = data.strategyResults.filter((s) => s.navigationSteps.length > 0);
+        const strategies = data.transcript.filter((s) => s.navigationSteps.length > 0);
         const totalSteps = strategies.reduce((sum, s) => sum + s.navigationSteps.length, 0);
         const cited = this.citedStepIdentifiers(data);
 
@@ -1094,6 +1114,27 @@ footer {
 
 .violation-html code {
     color: var(--text-secondary);
+}
+
+/* Violation screenshot */
+.violation-screenshot {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.violation-screenshot h4 {
+    margin-bottom: 0.5rem;
+}
+
+.violation-screenshot img {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid var(--error-color);
+    border-radius: 4px;
+    display: block;
 }
 
 .violation-id {

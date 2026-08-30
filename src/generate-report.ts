@@ -7,7 +7,11 @@ program
     .requiredOption('--url <url>', 'Page URL for the report')
     .requiredOption('--title <title>', 'Page title for the report')
     .option('--llm-response <path>', 'Path to LLM response JSON', './llm-response.json')
-    .option('--violations <path>', 'Path to violations JSON', './violations.json')
+    .option(
+        '--violations <path>',
+        'Path to violations JSON (screenshots embedded in NVDA violations)',
+        './violations.json'
+    )
     .option('--transcript <path>', 'Path to transcript JSON', './transcript.json')
     .option('-f, --format <format>', 'Output format: html or json', 'html')
     .option('-o, --output <path>', 'Output file path', './report.html')

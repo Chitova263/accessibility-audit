@@ -6,7 +6,7 @@
  */
 
 import type { LlmCompleteResponse } from '../llm/prompt-builder';
-import type { Violation } from '../analysis/violation';
+import type { Violation } from '../analysis/core/violation';
 import type { StrategyResult } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 export interface ReportPage {
@@ -38,11 +38,11 @@ export interface ReportData {
     /** LLM analysis response (validated by Zod schema) */
     analysis: LlmCompleteResponse;
 
-    /** Raw violations from rule-based analyzers */
+    /** Raw violations from rule-based analyzers (screenshots embedded in context for NVDA violations) */
     violations: Violation[];
 
     /** Navigation strategy results (optional, for transcript inclusion) */
-    strategyResults?: StrategyResult[] | undefined;
+    transcript?: StrategyResult[] | undefined;
 
     /** Audit metadata */
     meta: ReportMeta;

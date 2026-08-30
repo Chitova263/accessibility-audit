@@ -121,3 +121,13 @@ export const broadTranscript = (): StrategyResult[] => [
         ])
     ),
 ];
+
+/**
+ * Create a mock AuditContext for tests that only need transcript.
+ * Provides null-ish stubs for page and cdp that satisfy the type system.
+ */
+export const mockContext = (transcript: StrategyResult[]): import('../core/context').AuditContext => ({
+    transcript,
+    page: null as never,
+    cdp: null as never,
+});

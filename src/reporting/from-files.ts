@@ -10,7 +10,7 @@
 
 import { readFile, writeFile } from 'fs/promises';
 import { parseLlmResponse, type LlmCompleteResponse } from '../llm/prompt-builder/schemas';
-import type { Violation } from '../analysis/violation';
+import type { Violation } from '../analysis/core/violation';
 import type { ReportData, ReportOutput } from './reporter';
 import type { StrategyResult } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { getReporter } from './index';
@@ -19,7 +19,7 @@ export interface ReportFromFilesOptions {
     /** Path to LLM response JSON file (required) */
     llmResponsePath: string;
 
-    /** Path to violations JSON file (optional) */
+    /** Path to violations JSON file (screenshots embedded in NVDA violations) */
     violationsPath?: string;
 
     /** Path to strategy results / transcript JSON file (optional) */
@@ -78,7 +78,7 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
     const llmData = JSON.parse(llmJson) as unknown;
     const analysis = parseLlmResponse(llmData);
 
-    // Read violations if provided
+    // Read violations if provided (screenshots are now embedded in NVDA violations)
     let violations: Violation[] = [];
     if (options.violationsPath) {
         const violationsJson = await readFile(options.violationsPath, 'utf-8');
@@ -86,10 +86,10 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
     }
 
     // Read transcript/strategy results if provided
-    let strategyResults: StrategyResult[] | undefined;
+    let transcript: StrategyResult[] | undefined;
     if (options.transcriptPath) {
         const transcriptJson = await readFile(options.transcriptPath, 'utf-8');
-        strategyResults = JSON.parse(transcriptJson) as StrategyResult[];
+        transcript = JSON.parse(transcriptJson) as StrategyResult[];
     }
 
     // Build report data
@@ -100,7 +100,7 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
         },
         analysis,
         violations,
-        strategyResults,
+        transcript,
         meta: {
             timestamp: Date.now(),
         },
@@ -134,7 +134,7 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
  * const result = await generateReport({
  *     analysis,
  *     violations: myViolations,
- *     strategyResults: myTranscript,
+ *     transcript: myTranscript,
  *     pageUrl: 'https://example.com',
  * });
  * ```
@@ -143,11 +143,11 @@ export async function generateReport(options: {
     /** LLM analysis (already parsed or raw JSON) */
     analysis: LlmCompleteResponse | unknown;
 
-    /** Violations array */
+    /** Violations array (screenshots embedded in NVDA violations) */
     violations?: Violation[];
 
     /** Strategy results / transcript data */
-    strategyResults?: StrategyResult[];
+    transcript?: StrategyResult[];
 
     /** Page URL */
     pageUrl?: string;
@@ -168,7 +168,7 @@ export async function generateReport(options: {
         },
         analysis,
         violations: options.violations ?? [],
-        strategyResults: options.strategyResults,
+        transcript: options.transcript,
         meta: {
             timestamp: Date.now(),
         },
