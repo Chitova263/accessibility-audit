@@ -1,4 +1,3 @@
-import type { CDPSession, Page } from 'playwright';
 import type { IScreenReader } from '../../screen-reader';
 
 export interface StrategyMetadata {
@@ -51,13 +50,20 @@ export interface StrategyResult {
         | 'focus-cycle-complete';
 }
 
+export interface AxContext {
+    // @ts-ignore
+    tree: Protocol.Accessibility.getFullAXTreeReturnValue;
+    getNodeOuterHtml(backendDOMNodeId: number): Promise<string>;
+    getFocusedHtmlElementBackendNodeId(): Promise<number | null>;
+    getFocusedNodeHtml(): Promise<string | null>;
+}
+
+export interface NavigationContext {
+    sr: IScreenReader;
+    ax: AxContext;
+}
+
 export interface INavigationStrategy {
     meta: StrategyMetadata;
-    execute(
-        sr: IScreenReader,
-        page: Page,
-        // @ts-ignore
-        accessibilityTree: Protocol.Accessibility.getFullAXTreeReturnValue,
-        cdpSession: CDPSession
-    ): Promise<StrategyResult>;
+    execute(ctx: NavigationContext): Promise<StrategyResult>;
 }

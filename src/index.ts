@@ -13,15 +13,15 @@ import { createPromptBuilder } from './llm/prompt-builder';
 import { formatTranscriptAsText, generateReportFromFiles } from './reporting';
 import { ArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/arrow-navigation-strategy';
 
-await generateReportFromFiles({
-    llmResponsePath: './llm-response.json',
-    violationsPath: './violations.json',
-    transcriptPath: './transcript.json',
-    pageUrl: 'https://www.swisscom.ch/tv-subscription-center-web/step/1',
-    pageTitle: 'TV Subscription Center',
-    format: 'html',
-    outputPath: './report.html',
-});
+// await generateReportFromFiles({
+//     llmResponsePath: './llm-response.json',
+//     violationsPath: './violations.json',
+//     transcriptPath: './transcript.json',
+//     pageUrl: 'https://www.swisscom.ch/tv-subscription-center-web/step/1',
+//     pageTitle: 'TV Subscription Center',
+//     format: 'html',
+//     outputPath: './report.html',
+// });
 
 let chromeDevToolsProtocolConnection: ChromeDevToolsProtocolConnection | undefined = undefined;
 try {
@@ -44,7 +44,8 @@ try {
     const url = 'https://www.swisscom.ch/de/privatkunden/mobile-handy-abo.html';
     let chTvSubscriptionCenterWebStep1 = 'https://www.swisscom.ch/tv-subscription-center-web/step/1';
     const pageUrl = new URL('https://www.swisscom.ch/myswisscom/benefits/overview');
-    const pageSession = new PageSession(pageUrl, new NvdaScreenReader(), strategies, chromeDevToolsProtocolConnection);
+    const page = await chromeDevToolsProtocolConnection.goToPage(pageUrl);
+    const pageSession = new PageSession(pageUrl, new NvdaScreenReader(), strategies, page);
     await pageSession.startSession();
     const result = await pageSession.run();
 

@@ -1,4 +1,4 @@
-import { chromium, type Browser } from 'playwright';
+import { chromium, type Browser, type Page, type BrowserContext } from 'playwright';
 
 export interface ChromeDevToolsProtocolConnectionOptions {
     port?: number;
@@ -27,10 +27,20 @@ export class ChromeDevToolsProtocolConnection {
         }
     }
 
-    public getBrowser(): Browser {
+    public async goToPage(url: URL): Promise<Page> {
         if (!this.browser || !this.browser.isConnected()) {
             throw new Error('Could not connect to browser');
         }
-        return this.browser;
+        let page = this.browser
+            ?.contexts()
+            .flatMap((context): Page[] => context.pages())
+            .find((page: Page): boolean => page.url() === url.href);
+        if (!page) {
+            // If page is not already open
+            const context: BrowserContext = await this.browser.newContext();
+            page = await context.newPage();
+            await page.goto(url.href);
+        }
+        return page;
     }
 }

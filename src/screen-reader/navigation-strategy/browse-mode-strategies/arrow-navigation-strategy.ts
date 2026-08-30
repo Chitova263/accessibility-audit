@@ -1,22 +1,12 @@
-import type { CDPSession, Page } from 'playwright';
-import type { IScreenReader } from '../../screen-reader';
 import type {
     INavigationStrategy,
+    NavigationContext,
     NavigationStrategyConfig,
     NavigationStep,
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
-import { AxTreeCursor } from '../../ax-tree-cursor';
-
-async function getOuterHtml(cdpSession: CDPSession, backendDOMNodeId: number): Promise<string> {
-    try {
-        const { outerHTML } = await cdpSession.send('DOM.getOuterHTML', { backendNodeId: backendDOMNodeId });
-        return outerHTML;
-    } catch {
-        return '';
-    }
-}
+import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 
 /**
  * Arrow Navigation Strategy - Linear reading through the page.
@@ -41,80 +31,42 @@ export class ArrowNavigationStrategy implements INavigationStrategy {
 
     public constructor(public readonly config: NavigationStrategyConfig) {}
 
-    public async execute(
-        sr: IScreenReader,
-        page: Page,
-        // @ts-ignore
-        accessibilityTree: Protocol.Accessibility.getFullAXTreeReturnValue,
-        cdpSession: CDPSession
-    ): Promise<StrategyResult> {
-        const cursor = new AxTreeCursor(accessibilityTree.nodes);
+    public async execute(ctx: NavigationContext): Promise<StrategyResult> {
+        const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        // Track content to detect end of document
-        let previousSpoken = '';
-        let sameContentCount = 0;
-        const maxSameContent = 3; // Stop after hearing same thing 3 times
-
-        for (let steps = 0; steps < this.config.maxSteps; steps++) {
-            await sr.clearSpokenPhraseLog();
-
-            // Press Down Arrow to move to next element/line in browse mode
-            await sr.press('Down');
-
-            const spokenPhrases = await sr.spokenPhraseLog();
-            const itemText = await sr.itemText();
-            const currentSpoken = spokenPhrases.join(' ');
-
-            // Detect end of document (same content repeated)
-            if (currentSpoken === previousSpoken && currentSpoken !== '') {
-                sameContentCount++;
-                if (sameContentCount >= maxSameContent) {
-                    return {
-                        completionReason: 'end-of-document',
-                        meta: this.meta,
-                        navigationSteps,
-                    };
-                }
-            } else {
-                sameContentCount = 0;
-            }
-            previousSpoken = currentSpoken;
-
-            // Skip empty announcements but count them toward limit
-            if (!itemText && spokenPhrases.length === 0) {
-                continue;
-            }
-
-            // Try to match spoken output to an AX node
-            // Arrow navigation can land on any element type, so don't filter by role
+        for await (const { phrase, itemText } of ctx.sr.arrowElements()) {
             let matchResult = cursor.matchNextAny(itemText);
-            if (!matchResult && spokenPhrases.length > 0) {
-                for (const phrase of spokenPhrases) {
-                    matchResult = cursor.matchNextAny(phrase);
-                    if (matchResult) break;
-                }
+            if (!matchResult && phrase) {
+                matchResult = cursor.matchNextAny(phrase);
             }
 
-            // Fetch HTML for the matched AX node
             const axNode = matchResult?.node;
             const htmlSnippet =
-                axNode?.backendDOMNodeId != null ? await getOuterHtml(cdpSession, axNode.backendDOMNodeId) : null;
+                axNode?.backendDOMNodeId != null ? await ctx.ax.getNodeOuterHtml(axNode.backendDOMNodeId) : null;
 
             navigationSteps.push({
                 index: navigationSteps.length,
                 identifier: crypto.randomUUID(),
-                spokenPhrases,
+                spokenPhrases: [phrase],
                 itemText,
-                itemTextLog: await sr.itemTextLog(),
+                itemTextLog: [itemText],
                 timestamp: Date.now(),
                 axNode,
                 htmlSnippet,
             });
+
+            if (navigationSteps.length >= this.config.maxSteps) {
+                return {
+                    completionReason: 'completed',
+                    meta: this.meta,
+                    navigationSteps,
+                };
+            }
         }
 
         return {
-            completionReason: 'completed',
+            completionReason: 'end-of-document',
             meta: this.meta,
             navigationSteps,
         };
