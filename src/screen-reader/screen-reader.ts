@@ -5,143 +5,275 @@ import {
 } from '@guidepup/guidepup';
 import { execSync } from 'node:child_process';
 
+/**
+ * Item yielded by navigation iterators.
+ */
+export interface NavigationItem {
+    /** The phrase spoken by the screen reader */
+    phrase: string;
+    /** The accessible text of the current item */
+    itemText: string;
+}
+
 export interface IScreenReader {
+    // Lifecycle
     start(options?: StartOptions): Promise<void>;
     stop(options?: CommandOptions): Promise<void>;
-    nextHeading(options?: CommandOptions): Promise<void>;
-    nextHeadingLevel1(options?: CommandOptions): Promise<void>;
-    nextHeadingLevel2(options?: CommandOptions): Promise<void>;
-    nextHeadingLevel3(options?: CommandOptions): Promise<void>;
-    nextHeadingLevel4(options?: CommandOptions): Promise<void>;
-    nextHeadingLevel5(options?: CommandOptions): Promise<void>;
-    nextHeadingLevel6(options?: CommandOptions): Promise<void>;
-    nextLink(options?: CommandOptions): Promise<void>;
-    nextLandmark(options?: CommandOptions): Promise<void>;
-    nextButton(options?: CommandOptions): Promise<void>;
-    press(key: string, options?: CommandOptions): Promise<void>;
-    /** Press Tab key to move to next focusable element */
-    pressTab(options?: CommandOptions): Promise<void>;
-    perform(command: unknown, options?: CommandOptions): Promise<void>;
+    navigateToDocumentStart(options?: CommandOptions): Promise<void>;
+
+    // State
     lastSpokenPhrase(): Promise<string>;
     itemText(): Promise<string>;
     spokenPhraseLog(): Promise<string[]>;
     clearSpokenPhraseLog(): Promise<void>;
     itemTextLog(): Promise<string[]>;
     clearItemTextLog(): Promise<void>;
-    toggleBetweenBrowseAndFocusMode(): Promise<'Browse' | 'Focus' | undefined>;
-    /** Move NVDA cursor to the beginning of the document (Ctrl+Home) */
-    navigateToDocumentStart(options?: CommandOptions): Promise<void>;
+
+    // Iterators each handles its own end detection
+    headings(): AsyncIterableIterator<NavigationItem>;
+    headingsLevel1(): AsyncIterableIterator<NavigationItem>;
+    headingsLevel2(): AsyncIterableIterator<NavigationItem>;
+    headingsLevel3(): AsyncIterableIterator<NavigationItem>;
+    headingsLevel4(): AsyncIterableIterator<NavigationItem>;
+    headingsLevel5(): AsyncIterableIterator<NavigationItem>;
+    headingsLevel6(): AsyncIterableIterator<NavigationItem>;
+    links(): AsyncIterableIterator<NavigationItem>;
+    landmarks(): AsyncIterableIterator<NavigationItem>;
+    buttons(): AsyncIterableIterator<NavigationItem>;
+    focusableElements(): AsyncIterableIterator<NavigationItem>;
+    arrowElements(): AsyncIterableIterator<NavigationItem>;
 }
 
 export function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Abstract base class for real screen readers (NVDA, VoiceOver).
+ */
 export abstract class ScreenReader implements IScreenReader {
     protected constructor(public readonly sr: IGuidepupScreenReader) {}
 
-    public async toggleBetweenBrowseAndFocusMode(): Promise<'Browse' | 'Focus' | undefined> {
-        return undefined;
-    }
-
-    public perform(command: unknown, options?: CommandOptions): Promise<void> {
-        return this.sr.perform(command, options);
-    }
-
-    public lastSpokenPhrase(): Promise<string> {
-        return this.sr.lastSpokenPhrase();
-    }
-
-    public start(options?: StartOptions): Promise<void> {
-        // Powershell script to bring the browser process window to foreground for the screen reader to act on
-        execSync(
-            `powershell -Command "` +
-                `$hwnd = (Get-Process chrome | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle;` +
-                `Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class W32 { ` +
-                `[DllImport(\\\"user32.dll\\\")] public static extern bool SetForegroundWindow(IntPtr h); ` +
-                `[DllImport(\\\"user32.dll\\\")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo); ` +
-                `}';` +
-                `[W32]::keybd_event(0x12, 0, 0, 0);` +
-                `[W32]::keybd_event(0x12, 0, 2, 0);` +
-                `[W32]::SetForegroundWindow($hwnd)"`,
-            { stdio: 'ignore' }
-        );
-        return this.sr.start(options);
-    }
+    // --- Lifecycle ---
+    public abstract start(options?: StartOptions): Promise<void>;
 
     public stop(options?: CommandOptions): Promise<void> {
         return this.sr.stop(options);
     }
 
-    public clearItemTextLog(): Promise<void> {
-        return this.sr.clearItemTextLog();
+    // --- Low-level navigation ---
+
+    private perform(command: unknown, options?: CommandOptions): Promise<void> {
+        return this.sr.perform(command, options);
     }
 
-    public clearSpokenPhraseLog(): Promise<void> {
-        return this.sr.clearSpokenPhraseLog();
-    }
-
-    public spokenPhraseLog(): Promise<string[]> {
-        return this.sr.spokenPhraseLog();
-    }
-
-    public nextHeading(options?: CommandOptions): Promise<void> {
+    private nextHeading(options?: CommandOptions): Promise<void> {
         return this.sr.nextHeading(options);
     }
 
-    public nextHeadingLevel1(options?: CommandOptions): Promise<void> {
+    private nextHeadingLevel1(options?: CommandOptions): Promise<void> {
         return this.sr.press('1', options);
     }
 
-    public nextHeadingLevel2(options?: CommandOptions): Promise<void> {
+    private nextHeadingLevel2(options?: CommandOptions): Promise<void> {
         return this.sr.press('2', options);
     }
 
-    public nextHeadingLevel3(options?: CommandOptions): Promise<void> {
+    private nextHeadingLevel3(options?: CommandOptions): Promise<void> {
         return this.sr.press('3', options);
     }
 
-    public nextHeadingLevel4(options?: CommandOptions): Promise<void> {
+    private nextHeadingLevel4(options?: CommandOptions): Promise<void> {
         return this.sr.press('4', options);
     }
 
-    public nextHeadingLevel5(options?: CommandOptions): Promise<void> {
+    private nextHeadingLevel5(options?: CommandOptions): Promise<void> {
         return this.sr.press('5', options);
     }
 
-    public nextHeadingLevel6(options?: CommandOptions): Promise<void> {
+    private nextHeadingLevel6(options?: CommandOptions): Promise<void> {
         return this.sr.press('6', options);
     }
 
-    public nextLink(options?: CommandOptions): Promise<void> {
+    private nextLink(options?: CommandOptions): Promise<void> {
         return this.sr.nextLink(options);
     }
 
-    public nextLandmark(options?: CommandOptions): Promise<void> {
+    private nextLandmark(options?: CommandOptions): Promise<void> {
         return this.sr.nextLandmark(options);
     }
 
-    public nextButton(options?: CommandOptions): Promise<void> {
+    private nextButton(options?: CommandOptions): Promise<void> {
         return this.sr.press('b', options);
+    }
+
+    private press(key: string, options?: CommandOptions): Promise<void> {
+        return this.sr.press(key, options);
+    }
+
+    private pressTab(options?: CommandOptions): Promise<void> {
+        return this.sr.press('Tab', options);
+    }
+
+    public abstract navigateToDocumentStart(options?: CommandOptions): Promise<void>;
+
+    // --- State ---
+
+    public lastSpokenPhrase(): Promise<string> {
+        return this.sr.lastSpokenPhrase();
     }
 
     public itemText(): Promise<string> {
         return this.sr.itemText();
     }
 
+    public spokenPhraseLog(): Promise<string[]> {
+        return this.sr.spokenPhraseLog();
+    }
+
+    public clearSpokenPhraseLog(): Promise<void> {
+        return this.sr.clearSpokenPhraseLog();
+    }
+
     public itemTextLog(): Promise<string[]> {
         return this.sr.itemTextLog();
     }
 
-    public press(key: string, options?: CommandOptions): Promise<void> {
-        return this.sr.press(key, options);
+    public clearItemTextLog(): Promise<void> {
+        return this.sr.clearItemTextLog();
     }
 
-    public pressTab(options?: CommandOptions): Promise<void> {
-        return this.sr.press('Tab', options);
+    // --- High-level iterators ---
+    // NVDA announces "no next <element>" when reaching the end
+
+    async *headings(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextHeading();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next heading')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
     }
 
-    public navigateToDocumentStart(options?: CommandOptions): Promise<void> {
-        return this.sr.press('Control+Home', options);
+    async *headingsLevel1(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextHeadingLevel1();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *headingsLevel2(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextHeadingLevel2();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *headingsLevel3(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextHeadingLevel3();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *headingsLevel4(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextHeadingLevel4();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *headingsLevel5(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextHeadingLevel5();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *headingsLevel6(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextHeadingLevel6();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *links(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextLink();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next link')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *landmarks(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextLandmark();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next landmark')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *buttons(): AsyncIterableIterator<NavigationItem> {
+        while (true) {
+            await this.nextButton();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase.toLowerCase().includes('no next button')) return;
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *focusableElements(): AsyncIterableIterator<NavigationItem> {
+        // Tab navigation: detect when we cycle back to the first element
+        await this.pressTab();
+        const firstPhrase = await this.lastSpokenPhrase();
+        yield { phrase: firstPhrase, itemText: await this.itemText() };
+
+        while (true) {
+            await this.pressTab();
+            const phrase = await this.lastSpokenPhrase();
+            if (phrase === firstPhrase) return; // cycled back
+            yield { phrase, itemText: await this.itemText() };
+        }
+    }
+
+    async *arrowElements(): AsyncIterableIterator<NavigationItem> {
+        // Arrow navigation: detect end by repeated content (same phrase N times)
+        const maxSameContent = 3;
+        let previousPhrase = '';
+        let sameContentCount = 0;
+
+        while (true) {
+            await this.press('Down');
+            const phrase = await this.lastSpokenPhrase();
+            const itemText = await this.itemText();
+
+            // Detect end of document (same content repeated)
+            if (phrase === previousPhrase && phrase !== '') {
+                sameContentCount++;
+                if (sameContentCount >= maxSameContent) return;
+            } else {
+                sameContentCount = 0;
+            }
+            previousPhrase = phrase;
+
+            // Skip empty announcements but don't yield them
+            if (!itemText && !phrase) continue;
+
+            yield { phrase, itemText };
+        }
     }
 }

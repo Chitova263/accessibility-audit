@@ -538,7 +538,7 @@ ${blocks}
     <span class="t-text">${escapeHtml(spoken)}</span>
     <span class="t-actions">${citedBadge}${markupToggle}</span>
     ${markupBlock}
-</div>`
+</div>`;
     }
 
     /**

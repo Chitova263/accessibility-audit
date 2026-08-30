@@ -1,11 +1,11 @@
-import type { BrowserContext, Page, CDPSession } from 'playwright';
-import { delay, type ScreenReader } from './screen-reader';
+import type { CDPSession, Page } from 'playwright';
+import { delay, type IScreenReader } from './screen-reader';
 import type {
     INavigationStrategy,
+    NavigationContext,
     StrategyResult,
 } from './navigation-strategy/browse-mode-strategies/navigation-strategy';
-import type { ChromeDevToolsProtocolConnection } from '../chrome-dev-tools-protocol-connection';
-import { nvda } from '@guidepup/guidepup';
+import { AxTreeUtil } from './accessibility-tree/ax-tree-util';
 
 export interface PageSessionResult {
     page: Page;
@@ -17,29 +17,16 @@ export interface PageSessionResult {
 }
 
 export class PageSession {
-    private page: Page | undefined = undefined;
-    private cdpSession: CDPSession | undefined = undefined;
+    private cdpSession: CDPSession | null = null;
 
     public constructor(
         private readonly pageUrl: URL,
-        private readonly sr: ScreenReader,
+        private readonly sr: IScreenReader,
         private readonly strategies: INavigationStrategy[],
-        private readonly chromeDevToolsProtocolConnection: ChromeDevToolsProtocolConnection
+        private readonly page: Page
     ) {}
 
     public async startSession(): Promise<void> {
-        const browser = this.chromeDevToolsProtocolConnection.getBrowser();
-        // Find page from all open browser sessions
-        this.page = browser
-            .contexts()
-            .flatMap((context): Page[] => context.pages())
-            .find((page: Page): boolean => page.url() === this.pageUrl.href);
-        if (!this.page) {
-            // If page is not already open
-            const context: BrowserContext = await browser.newContext();
-            this.page = await context.newPage();
-            await this.page.goto(this.pageUrl.href);
-        }
         this.cdpSession = await this.page.context().newCDPSession(this.page);
         await this.page.bringToFront();
         await this.sr.start();
@@ -51,19 +38,16 @@ export class PageSession {
     }
 
     async run(): Promise<PageSessionResult> {
-        // Get the accessibility tree
         if (!this.page || !this.cdpSession) {
             throw new Error('Page session not created');
         }
-        // Turns on the CDP Accessibility domain for current cdp session.
-        await this.cdpSession?.send('Accessibility.enable');
-        const axTree = await this.cdpSession?.send('Accessibility.getFullAXTree');
-        // Turns off the CDP Accessibility domain for current cdp session.
-        await this.cdpSession?.send('Accessibility.disable');
+        await this.cdpSession.send('Accessibility.enable');
+        const axTree = await this.cdpSession.send('Accessibility.getFullAXTree');
+        await this.cdpSession.send('Accessibility.disable');
 
         const results: StrategyResult[] = [];
         for (const strategy of this.strategies) {
-            const result = await strategy.execute(this.sr, this.page, axTree, this.cdpSession);
+            const result = await strategy.execute(this.buildContext(axTree));
             results.push(result);
             await this.sr.navigateToDocumentStart();
             await delay(2000);
@@ -75,6 +59,25 @@ export class PageSession {
             page: this.page,
             results,
             url: this.pageUrl.href,
+        };
+    }
+
+    private buildContext(
+        // @ts-ignore
+        axTree: Protocol.Accessibility.getFullAXTreeReturnValue
+    ): NavigationContext {
+        if (!this.cdpSession) {
+            throw new Error('CDPSession not created');
+        }
+        const session = this.cdpSession;
+        return {
+            sr: this.sr,
+            ax: {
+                tree: axTree,
+                getNodeOuterHtml: (nodeId: number) => AxTreeUtil.getNodeOuterHtml(session, nodeId),
+                getFocusedHtmlElementBackendNodeId: () => AxTreeUtil.getFocusedHtmlElementBackendNodeId(session),
+                getFocusedNodeHtml: () => AxTreeUtil.getFocusedNodeHtml(this.page),
+            },
         };
     }
 }

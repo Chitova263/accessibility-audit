@@ -1,22 +1,13 @@
 import type {
     INavigationStrategy,
+    NavigationContext,
     NavigationStep,
     NavigationStrategyConfig,
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
-import type { CDPSession, Page } from 'playwright';
-import type { IScreenReader } from '../../screen-reader';
-import { AxTreeCursor } from '../../ax-tree-cursor';
-
-async function getOuterHtml(cdpSession: CDPSession, backendDOMNodeId: number): Promise<string> {
-    try {
-        const { outerHTML } = await cdpSession.send('DOM.getOuterHTML', { backendNodeId: backendDOMNodeId });
-        return outerHTML;
-    } catch {
-        return '';
-    }
-}
+import type { NavigationItem } from '../../screen-reader';
+import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 
 export interface HeadingHierarchyConfig extends NavigationStrategyConfig {
     /** The heading level to navigate (1-6) */
@@ -44,76 +35,51 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
         };
     }
 
-    public async execute(
-        sr: IScreenReader,
-        page: Page,
-        // @ts-ignore
-        accessibilityTree: Protocol.Accessibility.getFullAXTreeReturnValue,
-        cdpSession: CDPSession
-    ): Promise<StrategyResult> {
-        const cursor = new AxTreeCursor(accessibilityTree.nodes);
+    public async execute(ctx: NavigationContext): Promise<StrategyResult> {
+        const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        // Map level to the corresponding screen reader method
-        const nextHeadingMethod = {
-            1: () => sr.nextHeadingLevel1(),
-            2: () => sr.nextHeadingLevel2(),
-            3: () => sr.nextHeadingLevel3(),
-            4: () => sr.nextHeadingLevel4(),
-            5: () => sr.nextHeadingLevel5(),
-            6: () => sr.nextHeadingLevel6(),
-        }[this.level];
+        const iteratorMap: Record<1 | 2 | 3 | 4 | 5 | 6, () => AsyncIterableIterator<NavigationItem>> = {
+            1: () => ctx.sr.headingsLevel1(),
+            2: () => ctx.sr.headingsLevel2(),
+            3: () => ctx.sr.headingsLevel3(),
+            4: () => ctx.sr.headingsLevel4(),
+            5: () => ctx.sr.headingsLevel5(),
+            6: () => ctx.sr.headingsLevel6(),
+        };
 
-        // NVDA error message pattern: "no next heading at level X"
-        const noMorePattern = `no next heading at level ${this.level}`;
-
-        for (let steps = 0; steps < this.config.maxSteps; steps++) {
-            await sr.clearSpokenPhraseLog();
-            await nextHeadingMethod();
-
-            const spokenPhrases = await sr.spokenPhraseLog();
-            const itemText = await sr.itemText();
-
-            // NVDA announces "No next heading at level X" when there are no more headings at that level
-            const noMoreHeadings = spokenPhrases.some((p) => p.toLowerCase().includes(noMorePattern));
-            if (noMoreHeadings) {
-                return {
-                    completionReason: 'end-of-heading-level',
-                    meta: this.meta,
-                    navigationSteps,
-                };
-            }
-
-            // Try to match the spoken output to an AX node.
-            // Use itemText first as it's usually the accessible name,
-            // fall back to spoken phrases if needed.
+        for await (const { phrase, itemText } of iteratorMap[this.level]()) {
             let matchResult = cursor.matchNext(itemText, 'heading');
-            if (!matchResult && spokenPhrases.length > 0) {
-                for (const phrase of spokenPhrases) {
-                    matchResult = cursor.matchNext(phrase, 'heading');
-                    if (matchResult) break;
-                }
+            if (!matchResult) {
+                matchResult = cursor.matchNext(phrase, 'heading');
             }
 
-            // Fetch the outer HTML for the matched AX node via its backendDOMNodeId
             const axNode = matchResult?.node;
             const htmlSnippet =
-                axNode?.backendDOMNodeId != null ? await getOuterHtml(cdpSession, axNode.backendDOMNodeId) : null;
+                axNode?.backendDOMNodeId != null ? await ctx.ax.getNodeOuterHtml(axNode.backendDOMNodeId) : null;
 
             navigationSteps.push({
                 index: navigationSteps.length,
                 axNode,
                 htmlSnippet,
                 identifier: crypto.randomUUID(),
-                spokenPhrases,
+                spokenPhrases: [phrase],
                 timestamp: Date.now(),
                 itemText,
-                itemTextLog: await sr.itemTextLog(),
+                itemTextLog: [itemText],
             });
+
+            if (navigationSteps.length >= this.config.maxSteps) {
+                return {
+                    completionReason: 'completed',
+                    meta: this.meta,
+                    navigationSteps,
+                };
+            }
         }
 
         return {
-            completionReason: 'completed',
+            completionReason: 'end-of-heading-level',
             meta: this.meta,
             navigationSteps,
         };
