@@ -1,15 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { buildViolationsData, renderViolationsXml, buildViolationsSection } from './violations-section';
-import type { Violation } from '../../../analysis/violation';
+import type { Violation, NvdaViolation } from '../../../analysis/core/violation';
 import type { PromptStrategySection, PromptViolationsData } from '../schemas';
 
-const createViolation = (overrides: Partial<Violation> = {}): Violation => ({
+interface AxeContext {
+    nodes: unknown[];
+    tags: string[];
+}
+
+const createViolation = (overrides: Partial<Violation<AxeContext>> = {}): Violation<AxeContext> => ({
     id: 'test-violation-1',
-    ruleId: 'button-name',
-    wcag: {
-        primary: { criterion: '4.1.2', level: 'A' },
+    rule: {
+        id: 'button-name',
+        summary: 'Buttons must have discernible text',
+        wcag: {
+            primary: { criterion: '4.1.2', level: 'A' },
+        },
+        impact: 'critical',
     },
-    impact: 'critical',
     message: 'Buttons must have discernible text',
     element: {
         htmlSnippet: '<button class="submit-btn"></button>',
@@ -17,17 +25,23 @@ const createViolation = (overrides: Partial<Violation> = {}): Violation => ({
     },
     tool: 'axe-core',
     timestamp: 1234567890,
-    toolDetails: {},
+    context: {
+        nodes: [],
+        tags: [],
+    },
     ...overrides,
 });
 
-const createNvdaViolation = (overrides: Partial<Violation> = {}): Violation => ({
+const createNvdaViolation = (overrides: Partial<NvdaViolation> = {}): NvdaViolation => ({
     id: 'nvda-violation-1',
-    ruleId: 'empty-accessible-name',
-    wcag: {
-        primary: { criterion: '4.1.2', level: 'A' },
+    rule: {
+        id: 'empty-accessible-name',
+        summary: 'Button has no accessible name',
+        wcag: {
+            primary: { criterion: '4.1.2', level: 'A' },
+        },
+        impact: 'serious',
     },
-    impact: 'serious',
     message: 'Button has no accessible name',
     element: {
         htmlSnippet: '<button></button>',
@@ -35,11 +49,13 @@ const createNvdaViolation = (overrides: Partial<Violation> = {}): Violation => (
     },
     tool: 'nvda-audit',
     timestamp: 1234567890,
-    toolDetails: {
-        spokenPhrases: ['button'],
-        itemText: 'button',
-        navigationStrategy: 'tab',
-        stepIndex: 5,
+    context: {
+        step: {
+            strategy: 'tab',
+            index: 5,
+            id: 'step-5',
+            spokenPhrase: 'button',
+        },
     },
     ...overrides,
 });
@@ -367,7 +383,16 @@ describe('buildViolationsSection', () => {
     it('should build complete section from violations array', () => {
         const violations: Violation[] = [
             createViolation({ id: 'v1' }),
-            createViolation({ id: 'v2', ruleId: 'link-name', message: 'Links must have text' }),
+            createViolation({
+                id: 'v2',
+                rule: {
+                    id: 'link-name',
+                    summary: 'Links must have text',
+                    wcag: { primary: { criterion: '4.1.2', level: 'A' } },
+                    impact: 'critical',
+                },
+                message: 'Links must have text',
+            }),
             createNvdaViolation({ id: 'v3' }),
         ];
 
@@ -387,9 +412,33 @@ describe('buildViolationsSection', () => {
 
     it('should filter by impact', () => {
         const violations: Violation[] = [
-            createViolation({ id: 'v1', impact: 'critical' }),
-            createViolation({ id: 'v2', impact: 'moderate' }),
-            createViolation({ id: 'v3', impact: 'minor' }),
+            createViolation({
+                id: 'v1',
+                rule: {
+                    id: 'button-name',
+                    summary: 'Buttons must have discernible text',
+                    wcag: { primary: { criterion: '4.1.2', level: 'A' } },
+                    impact: 'critical',
+                },
+            }),
+            createViolation({
+                id: 'v2',
+                rule: {
+                    id: 'button-name',
+                    summary: 'Buttons must have discernible text',
+                    wcag: { primary: { criterion: '4.1.2', level: 'A' } },
+                    impact: 'moderate',
+                },
+            }),
+            createViolation({
+                id: 'v3',
+                rule: {
+                    id: 'button-name',
+                    summary: 'Buttons must have discernible text',
+                    wcag: { primary: { criterion: '4.1.2', level: 'A' } },
+                    impact: 'minor',
+                },
+            }),
         ];
 
         expect(buildViolationsSection(violations, [], { includeImpacts: ['critical', 'moderate'] })).toMatchSnapshot();

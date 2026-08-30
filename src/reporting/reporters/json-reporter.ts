@@ -53,7 +53,7 @@ export class JsonReporter implements Reporter {
                 meta: data.meta,
                 analysis: data.analysis,
                 violations: data.violations,
-                strategyResults: opts.includeTranscript ? data.strategyResults : undefined,
+                transcript: opts.includeTranscript ? data.transcript : undefined,
             };
         }
 

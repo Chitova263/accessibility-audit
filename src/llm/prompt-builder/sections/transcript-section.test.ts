@@ -629,7 +629,7 @@ describe('renderTranscriptXml', () => {
 
 describe('buildTranscriptData', () => {
     it('should transform strategy results into transcript data', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 meta: { name: 'heading', type: 'heading', description: 'Heading navigation' },
                 completionReason: { kind: 'exhausted', detail: 'no more headings found on page' },
@@ -648,12 +648,12 @@ describe('buildTranscriptData', () => {
             }),
         ];
 
-        const data = buildTranscriptData(strategyResults);
+        const data = buildTranscriptData(transcript);
         expect(data).toMatchSnapshot();
     });
 
     it('should handle strategy results with complex axNodes', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
                 navigationSteps: [
@@ -673,12 +673,12 @@ describe('buildTranscriptData', () => {
             }),
         ];
 
-        const data = buildTranscriptData(strategyResults);
+        const data = buildTranscriptData(transcript);
         expect(data).toMatchSnapshot();
     });
 
     it('should filter strategies based on includeStrategies config', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
                 navigationSteps: [createNavigationStep(0, { spokenPhrases: ['Tab step'] })],
@@ -693,12 +693,12 @@ describe('buildTranscriptData', () => {
             }),
         ];
 
-        const data = buildTranscriptData(strategyResults, { includeStrategies: ['tab', 'heading'] });
+        const data = buildTranscriptData(transcript, { includeStrategies: ['tab', 'heading'] });
         expect(data).toMatchSnapshot();
     });
 
     it('should filter strategies based on excludeStrategies config', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
                 navigationSteps: [createNavigationStep(0, { spokenPhrases: ['Tab step'] })],
@@ -713,14 +713,14 @@ describe('buildTranscriptData', () => {
             }),
         ];
 
-        const data = buildTranscriptData(strategyResults, { excludeStrategies: ['landmark'] });
+        const data = buildTranscriptData(transcript, { excludeStrategies: ['landmark'] });
         expect(data).toMatchSnapshot();
     });
 
     it('should truncate HTML snippets based on maxHtmlSnippetLength', () => {
         const longHtml = '<div class="container">' + 'x'.repeat(600) + '</div>';
 
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 navigationSteps: [
                     makeStep({
@@ -735,12 +735,12 @@ describe('buildTranscriptData', () => {
             }),
         ];
 
-        const data = buildTranscriptData(strategyResults, { maxHtmlSnippetLength: 100 });
+        const data = buildTranscriptData(transcript, { maxHtmlSnippetLength: 100 });
         expect(data).toMatchSnapshot();
     });
 
     it('should exclude HTML snippets when includeHtmlSnippets is false', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 navigationSteps: [
                     makeStep({
@@ -755,12 +755,12 @@ describe('buildTranscriptData', () => {
             }),
         ];
 
-        const data = buildTranscriptData(strategyResults, { includeHtmlSnippets: false });
+        const data = buildTranscriptData(transcript, { includeHtmlSnippets: false });
         expect(data).toMatchSnapshot();
     });
 
     it('should exclude axNodes when includeAxNodes is false', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 navigationSteps: [
                     makeStep({
@@ -775,14 +775,14 @@ describe('buildTranscriptData', () => {
             }),
         ];
 
-        const data = buildTranscriptData(strategyResults, { includeAxNodes: false });
+        const data = buildTranscriptData(transcript, { includeAxNodes: false });
         expect(data).toMatchSnapshot();
     });
 });
 
 describe('buildTranscriptSection', () => {
     it('should build complete XML section from strategy results', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 meta: { name: 'tab', type: 'tab', description: 'Tab navigation through focusable elements' },
                 completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -825,11 +825,11 @@ describe('buildTranscriptSection', () => {
             }),
         ];
 
-        expect(buildTranscriptSection(strategyResults)).toMatchSnapshot();
+        expect(buildTranscriptSection(transcript)).toMatchSnapshot();
     });
 
     it('should build section with all config options', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
                 navigationSteps: [
@@ -860,7 +860,7 @@ describe('buildTranscriptSection', () => {
 
         // Only include tab strategy, exclude HTML and axNodes
         expect(
-            buildTranscriptSection(strategyResults, {
+            buildTranscriptSection(transcript, {
                 includeStrategies: ['tab'],
                 includeHtmlSnippets: false,
                 includeAxNodes: false,
@@ -869,7 +869,7 @@ describe('buildTranscriptSection', () => {
     });
 
     it('should handle real-world navigation transcript structure', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 meta: {
                     name: 'landmark',
@@ -950,7 +950,7 @@ describe('buildTranscriptSection', () => {
             }),
         ];
 
-        expect(buildTranscriptSection(strategyResults)).toMatchSnapshot();
+        expect(buildTranscriptSection(transcript)).toMatchSnapshot();
     });
 
     it('should handle empty strategy results', () => {
@@ -958,7 +958,7 @@ describe('buildTranscriptSection', () => {
     });
 
     it('should handle strategy with empty navigation steps', () => {
-        const strategyResults: StrategyResult[] = [
+        const transcript: StrategyResult[] = [
             createStrategyResult({
                 meta: { name: 'heading-level-6', type: 'heading6', description: 'Navigate through H6 headings' },
                 completionReason: { kind: 'exhausted', detail: 'no more h6 headings found' },
@@ -966,7 +966,7 @@ describe('buildTranscriptSection', () => {
             }),
         ];
 
-        expect(buildTranscriptSection(strategyResults)).toMatchSnapshot();
+        expect(buildTranscriptSection(transcript)).toMatchSnapshot();
     });
 });
 

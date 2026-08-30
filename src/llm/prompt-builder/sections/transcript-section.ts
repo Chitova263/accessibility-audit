@@ -263,12 +263,12 @@ function shouldIncludeStrategy(strategyName: string, config: ResolvedTranscriptC
  * Builds the transcript data structure from strategy results.
  */
 export function buildTranscriptData(
-    strategyResults: StrategyResult[],
+    transcript: StrategyResult[],
     config: TranscriptSectionConfig = {}
 ): PromptTranscript {
     const mergedConfig = mergeTranscriptConfig(config);
 
-    const sections = strategyResults
+    const sections = transcript
         .filter((result) => shouldIncludeStrategy(result.meta.name, mergedConfig))
         .map((result) => transformStrategy(result, mergedConfig));
 
@@ -389,10 +389,7 @@ export function renderTranscriptXml(transcript: PromptTranscript, config: Transc
 /**
  * Convenience function: builds and renders transcript XML in one call.
  */
-export function buildTranscriptSection(
-    strategyResults: StrategyResult[],
-    config: TranscriptSectionConfig = {}
-): string {
-    const transcript = buildTranscriptData(strategyResults, config);
-    return renderTranscriptXml(transcript, config);
+export function buildTranscriptSection(transcript: StrategyResult[], config: TranscriptSectionConfig = {}): string {
+    const data = buildTranscriptData(transcript, config);
+    return renderTranscriptXml(data, config);
 }

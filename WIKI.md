@@ -22,14 +22,14 @@ flowchart TB
         direction TB
         BrowseMode["Browse Mode Strategies"]
         FocusMode["Focus Mode Strategies"]
-        
+
         BrowseMode --> Heading["HeadingStrategy<br/>H key navigation"]
         BrowseMode --> Landmark["LandmarkStrategy<br/>D key navigation"]
         BrowseMode --> Link["LinkStrategy<br/>K key navigation"]
         BrowseMode --> Button["ButtonStrategy<br/>B key navigation"]
         BrowseMode --> HeadingLevel["HeadingHierarchyStrategy<br/>1-6 key navigation"]
         BrowseMode --> Arrow["ArrowStrategy<br/>Down arrow linear reading"]
-        
+
         FocusMode --> Tab["TabStrategy<br/>Tab key navigation"]
     end
 
@@ -42,7 +42,7 @@ flowchart TB
 
     subgraph Analysis["Rule-Based Analysis"]
         AuditContext["Audit Context<br/>strategyResults + page"]
-        
+
         subgraph Analyzers["18 Analyzers"]
             HeadingAnalyzer["Heading Structure<br/>missing-h1, skipped-level"]
             LandmarkAnalyzer["Landmark Structure<br/>missing-main, duplicate"]
@@ -75,9 +75,9 @@ flowchart TB
     CDP --> Playwright
     Playwright --> NVDA
     NVDA --> SRInterface
-    
+
     SRInterface --> Navigation
-    
+
     Heading --> DataCapture
     Landmark --> DataCapture
     Link --> DataCapture
@@ -85,21 +85,21 @@ flowchart TB
     HeadingLevel --> DataCapture
     Arrow --> DataCapture
     Tab --> DataCapture
-    
+
     DataCapture --> AuditContext
     Playwright -.->|"Live page for axe-core"| AuditContext
-    
+
     AuditContext --> Analyzers
-    
+
     Analyzers --> Violations
     DataCapture --> Transcript
     Transcript --> TranscriptTxt
-    
+
     Violations --> LLMUser
     Transcript --> LLMUser
     LLMSystem --> LLMCombined
     LLMUser --> LLMCombined
-    
+
     LLMResponse --> HTMLReport
     Violations --> HTMLReport
     Transcript --> HTMLReport
@@ -145,6 +145,7 @@ PageSession.run()
 **Output:** StrategyResult (steps + completion reason)
 
 Each strategy:
+
 1. Iterates using NVDA navigation commands (H, D, K, B, 1-6, Tab, Arrow)
 2. Captures spoken phrase and item text per step
 3. Matches to accessibility tree node using AxTreeCursor
@@ -152,6 +153,7 @@ Each strategy:
 5. Detects completion: exhausted, cycle-complete, trapped, or limit-reached
 
 **Navigation Step Structure:**
+
 ```typescript
 {
   index: number,
@@ -164,6 +166,7 @@ Each strategy:
 ```
 
 **Completion Reasons:**
+
 - `exhausted` - No more elements of type (e.g., "no next heading")
 - `cycle-complete` - Tab returned to first element
 - `trapped` - Same element focused 3+ consecutive times
@@ -176,19 +179,20 @@ Each strategy:
 
 Each analyzer receives the same context and returns violations:
 
-| Analyzer | Algorithm | Rules |
-|----------|-----------|-------|
-| Heading Structure | Parse heading levels from AX nodes, check sequence gaps | missing-h1, multiple-h1, heading-level-skipped, empty-heading |
-| Landmark Structure | Count landmark types, check for unique names | missing-main-landmark, duplicate-landmark |
-| Focus Trap | Check TabStrategy completion reason for `trapped` | focus-trap |
-| Keyboard Accessibility | Compare ButtonStrategy items vs TabStrategy items | button-not-in-tab-order, link-not-in-tab-order |
-| Link Text | Pattern match against generic phrases, group by text | generic-link-text, duplicate-link-text |
-| Focus Order | Track DOM positions, detect backwards jumps | focus-order-anomaly, positive-tabindex |
-| Content Grouping | Measure steps between headings, count items per landmark | large-content-gap, landmark-without-heading |
-| Arrow Navigation | Analyze linear reading sequence | steps-to-main-content, reading-order-landmark-sequence, excessive-repetition, content-density-per-region |
-| axe-core | Run axe-core against live Playwright page | 90+ DOM-based rules |
+| Analyzer               | Algorithm                                                | Rules                                                                                                    |
+| ---------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Heading Structure      | Parse heading levels from AX nodes, check sequence gaps  | missing-h1, multiple-h1, heading-level-skipped, empty-heading                                            |
+| Landmark Structure     | Count landmark types, check for unique names             | missing-main-landmark, duplicate-landmark                                                                |
+| Focus Trap             | Check TabStrategy completion reason for `trapped`        | focus-trap                                                                                               |
+| Keyboard Accessibility | Compare ButtonStrategy items vs TabStrategy items        | button-not-in-tab-order, link-not-in-tab-order                                                           |
+| Link Text              | Pattern match against generic phrases, group by text     | generic-link-text, duplicate-link-text                                                                   |
+| Focus Order            | Track DOM positions, detect backwards jumps              | focus-order-anomaly, positive-tabindex                                                                   |
+| Content Grouping       | Measure steps between headings, count items per landmark | large-content-gap, landmark-without-heading                                                              |
+| Arrow Navigation       | Analyze linear reading sequence                          | steps-to-main-content, reading-order-landmark-sequence, excessive-repetition, content-density-per-region |
+| axe-core               | Run axe-core against live Playwright page                | 90+ DOM-based rules                                                                                      |
 
 **Violation Structure:**
+
 ```typescript
 {
   id: string,
@@ -216,6 +220,7 @@ AccessibilityPromptBuilder
 ```
 
 **System Prompt Contains:**
+
 - Role definition (accessibility expert)
 - Analysis categories (reading order, cognitive load, semantic mismatch, etc.)
 - Image analysis guidance for "graphic" announcements
@@ -223,6 +228,7 @@ AccessibilityPromptBuilder
 - Output JSON schema (Zod-validated)
 
 **User Prompt Contains:**
+
 - Transcript XML with navigation steps per strategy
 - Violations XML grouped by rule
 - Page context (URL, title)
@@ -254,7 +260,7 @@ matchNext(text, expectedRole?)
   → Advances cursor through AX tree
   → Compares node name/value against spoken text
   → Returns matched node or null
-  
+
 findByBackendDOMNodeId(id)
   → Direct lookup for Tab navigation
   → Returns node at specific DOM position

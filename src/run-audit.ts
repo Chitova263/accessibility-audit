@@ -67,9 +67,15 @@ try {
     await pageSession.startSession();
     const result = await pageSession.run();
 
-    // Run every registered check. axe-core drives the live page, so this has to
-    // happen before the connection is closed.
-    const checkResults = await runChecks({ strategyResults: result.results, page: result.page });
+    // Create CDP session for screenshot capture
+    const cdp = await result.page.context().newCDPSession(result.page);
+
+    // Enable DOM for screenshot capture
+    await cdp.send('DOM.enable');
+
+    // Run every registered check. Analyzers capture screenshots inline.
+    // axe-core drives the live page, so this has to happen before the connection is closed.
+    const checkResults = await runChecks({ transcript: result.results, page: result.page, cdp });
     const allViolations = collectViolations(checkResults);
 
     // Write audit data to files
@@ -81,9 +87,10 @@ try {
 
     await fs.writeFile(violationsPath, JSON.stringify(allViolations, null, 2), 'utf-8');
     await fs.writeFile(transcriptPath, JSON.stringify(result.results, null, 2), 'utf-8');
+
     console.log('\nAudit data written to:');
-    console.log(`  - ${violationsPath} (all violations for reporting)`);
-    console.log(`  - ${transcriptPath} (strategy results for HTML report)`);
+    console.log(`  - ${violationsPath}`);
+    console.log(`  - ${transcriptPath}`);
 
     const promptBuilder = createPromptBuilder({
         transcript: {

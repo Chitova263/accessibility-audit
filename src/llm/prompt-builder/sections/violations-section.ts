@@ -1,6 +1,7 @@
 import { parse } from 'node-html-parser';
 import { create } from 'xmlbuilder2';
-import type { Violation, NvdaViolation, NvdaToolDetails } from '../../../analysis/violation';
+import type { Violation, NvdaViolation, NvdaContext } from '../../../analysis/core/violation';
+import { isNvdaViolation } from '../../../analysis/core/violation';
 import type {
     PromptNavigationStep,
     PromptStrategySection,
@@ -40,27 +41,14 @@ function cleanHtmlSnippet(html: string, maxLength: number): string {
 }
 
 /**
- * Checks if a violation is an NVDA violation with tool details.
- */
-function isNvdaViolation(violation: Violation): violation is NvdaViolation {
-    const details = violation.toolDetails as NvdaToolDetails | undefined;
-    return (
-        violation.tool === 'nvda-audit' &&
-        details !== undefined &&
-        typeof details.stepIndex === 'number' &&
-        typeof details.navigationStrategy === 'string'
-    );
-}
-
-/**
  * Extracts correlation from NVDA violation.
  */
 function extractCorrelation(violation: NvdaViolation): TranscriptCorrelation {
-    const details = violation.toolDetails;
+    const context = violation.context;
     return {
-        strategyName: details.navigationStrategy,
-        stepIndex: details.stepIndex,
-        spoken: details.spokenPhrases.join(' ').trim(),
+        strategyName: context.step.strategy,
+        stepIndex: context.step.index,
+        spoken: context.step.spokenPhrase,
         confidence: 'high', // Direct from same audit run
     };
 }
@@ -78,8 +66,8 @@ function findCorrelation(
     }
 
     // For other tools, try to match by selector or content
-    const selector = violation.element.selector;
-    const htmlSnippet = violation.element.htmlSnippet;
+    const selector = violation.element?.selector;
+    const htmlSnippet = violation.element?.htmlSnippet;
 
     if (!selector && !htmlSnippet) {
         return undefined;
@@ -107,7 +95,7 @@ function findCorrelation(
             }
 
             // Try to match by role + name
-            if (step.axNode && violation.ruleId.includes(step.axNode.role)) {
+            if (step.axNode && violation.rule.id.includes(step.axNode.role)) {
                 return {
                     strategyName: section.strategyName,
                     stepIndex: step.index,
@@ -141,10 +129,10 @@ function transformViolation(
     strategySections: PromptStrategySection[],
     config: ResolvedViolationsConfig
 ): PromptViolation {
-    const wcag = `${violation.wcag.primary.criterion} ${violation.wcag.primary.level}`;
+    const wcag = `${violation.rule.wcag.primary.criterion} ${violation.rule.wcag.primary.level}`;
 
     let htmlSnippet: string | undefined;
-    if (config.includeHtmlSnippets && violation.element.htmlSnippet) {
+    if (config.includeHtmlSnippets && violation.element?.htmlSnippet) {
         htmlSnippet = cleanHtmlSnippet(violation.element.htmlSnippet, config.maxHtmlSnippetLength);
     }
 
@@ -155,12 +143,12 @@ function transformViolation(
 
     return {
         id: violation.id,
-        ruleId: violation.ruleId,
+        ruleId: violation.rule.id,
         wcag,
-        wcagLevel: violation.wcag.primary.level,
-        impact: violation.impact,
+        wcagLevel: violation.rule.wcag.primary.level,
+        impact: violation.rule.impact,
         message: violation.message,
-        selector: violation.element.selector,
+        selector: violation.element?.selector,
         htmlSnippet,
         correlation,
     };
@@ -201,10 +189,10 @@ function groupViolations(violations: PromptViolation[], config: ResolvedViolatio
  */
 function filterViolations(violations: Violation[], config: ResolvedViolationsConfig): Violation[] {
     return violations.filter((v) => {
-        if (config.includeImpacts.length > 0 && !config.includeImpacts.includes(v.impact)) {
+        if (config.includeImpacts.length > 0 && !config.includeImpacts.includes(v.rule.impact)) {
             return false;
         }
-        if (config.includeRules.length > 0 && !config.includeRules.includes(v.ruleId)) {
+        if (config.includeRules.length > 0 && !config.includeRules.includes(v.rule.id)) {
             return false;
         }
         return true;

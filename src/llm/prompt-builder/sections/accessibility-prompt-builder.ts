@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 import type { StrategyResult } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import type { Violation } from '../../../analysis/violation';
+import type { Violation } from '../../../analysis/core/violation';
 import type { TranscriptSectionConfig, ViolationsSectionConfig, PromptTranscript } from '../schemas';
 import { buildTranscriptData, buildTranscriptSection } from './transcript-section';
 import { buildViolationsSection } from './violations-section';
@@ -181,7 +181,7 @@ const DEFAULT_CONFIG: Required<AccessibilityPromptConfig> = {
 };
 
 export class AccessibilityPromptBuilder {
-    private strategyResults: StrategyResult[] = [];
+    private transcript: StrategyResult[] = [];
     private violations: Violation[] = [];
     private pageContext: PageContext | null = null;
     private config: Required<AccessibilityPromptConfig>;
@@ -197,7 +197,7 @@ export class AccessibilityPromptBuilder {
     }
 
     withStrategyResults(results: StrategyResult[]): this {
-        this.strategyResults = results;
+        this.transcript = results;
         this.transcriptData = null;
         return this;
     }
@@ -258,7 +258,7 @@ export class AccessibilityPromptBuilder {
 
     build(): BuiltPrompt {
         if (!this.transcriptData) {
-            this.transcriptData = buildTranscriptData(this.strategyResults, this.config.transcript);
+            this.transcriptData = buildTranscriptData(this.transcript, this.config.transcript);
         }
 
         const system = this.buildSystemPrompt();
@@ -330,7 +330,7 @@ Your task is to:
 
     buildUserPrompt(): string {
         if (!this.transcriptData) {
-            this.transcriptData = buildTranscriptData(this.strategyResults, this.config.transcript);
+            this.transcriptData = buildTranscriptData(this.transcript, this.config.transcript);
         }
 
         const parts: string[] = [];
@@ -345,7 +345,7 @@ Your task is to:
 </page_context>`);
         }
 
-        const transcriptXml = buildTranscriptSection(this.strategyResults, this.config.transcript);
+        const transcriptXml = buildTranscriptSection(this.transcript, this.config.transcript);
         parts.push(transcriptXml);
 
         const violationsXml = buildViolationsSection(
@@ -370,7 +370,7 @@ ${JSON.stringify(getLlmOutputJsonSchema(), null, 2)}
 
     getTranscriptData(): PromptTranscript {
         if (!this.transcriptData) {
-            this.transcriptData = buildTranscriptData(this.strategyResults, this.config.transcript);
+            this.transcriptData = buildTranscriptData(this.transcript, this.config.transcript);
         }
         return this.transcriptData;
     }
@@ -414,14 +414,14 @@ export function createPromptBuilder(config?: AccessibilityPromptConfig): Accessi
 }
 
 export async function buildAccessibilityPrompt(
-    strategyResults: StrategyResult[],
+    transcript: StrategyResult[],
     violations: Violation[],
     page: Page,
     config?: AccessibilityPromptConfig
 ): Promise<BuiltPrompt> {
     const builder = new AccessibilityPromptBuilder(config);
     await builder.withPage(page);
-    return builder.withStrategyResults(strategyResults).withViolations(violations).build();
+    return builder.withStrategyResults(transcript).withViolations(violations).build();
 }
 
 function escapeXml(text: string): string {
