@@ -5,17 +5,19 @@ export interface WcagCriterion {
 
 export type Impact = 'critical' | 'serious' | 'moderate' | 'minor';
 
+type Rule = {
+    id: string;
+    summary: string;
+    wcag: {
+        primary: WcagCriterion;
+        related?: WcagCriterion[];
+    };
+    impact: Impact;
+};
+
 export interface Violation<TContext = unknown> {
     id: string;
-    rule: {
-        id: string;
-        summary: string;
-        wcag: {
-            primary: WcagCriterion;
-            related?: WcagCriterion[];
-        };
-        impact: Impact;
-    };
+    rule: Rule;
     element?: {
         selector?: string;
         htmlSnippet?: string;
@@ -26,28 +28,40 @@ export interface Violation<TContext = unknown> {
     timestamp: number;
 }
 
+export interface ScreenshotSuccess {
+    path: string;
+    width: number;
+    height: number;
+}
+
+export interface ScreenshotFailure {
+    error: string;
+    backendNodeId: number;
+    boundingBox: { x: number; y: number; width: number; height: number } | null;
+    viewport: { width: number; height: number } | null;
+}
+
+export type Screenshot = ScreenshotSuccess | ScreenshotFailure;
+
+/** Type guard to check if screenshot capture succeeded */
+export function isScreenshotSuccess(screenshot: Screenshot): screenshot is ScreenshotSuccess {
+    return 'path' in screenshot;
+}
+
 export interface NvdaContext {
-    step: {
+    source: {
         strategy: string;
-        index: number;
-        id: string;
+        stepIndex: number;
+        stepId: string;
         spokenPhrase: string;
     };
-    axNode?:
-        | {
-              nodeId: string;
-              role?: string | undefined;
-              name?: string | undefined;
-              properties?: unknown | undefined;
-          }
-        | undefined;
-    screenshot?:
-        | {
-              data: string;
-              width: number;
-              height: number;
-          }
-        | undefined;
+    axNode?: {
+        nodeId: string;
+        role?: string;
+        name?: string;
+        properties?: unknown;
+    };
+    screenshot?: Screenshot;
 }
 
 export type NvdaViolation = Violation<NvdaContext>;
@@ -66,5 +80,5 @@ export interface AxeContext {
 export type AxeViolation = Violation<AxeContext>;
 
 export function isNvdaViolation(violation: Violation): violation is NvdaViolation {
-    return violation.tool === 'nvda-audit' && violation.context != null && 'step' in (violation.context as object);
+    return violation.tool === 'nvda-audit' && violation.context != null && 'source' in (violation.context as object);
 }

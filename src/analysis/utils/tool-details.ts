@@ -8,18 +8,19 @@ export interface ContextSource {
 }
 
 export function createNvdaContext(source: ContextSource, strategy: string, stepIndex: number): NvdaContext {
+    const axNode = projectAxNode(source.axNode);
     return {
-        step: {
+        source: {
             strategy,
-            index: stepIndex,
-            id: source.identifier,
+            stepIndex,
+            stepId: source.identifier,
             spokenPhrase: source.spokenPhrases.join(' ').trim() || source.itemText,
         },
-        axNode: projectAxNode(source.axNode),
+        ...(axNode && { axNode }),
     };
 }
 
-function projectAxNode(node: unknown): NvdaContext['axNode'] {
+function projectAxNode(node: unknown): NvdaContext['axNode'] | undefined {
     if (typeof node !== 'object' || node === null) return undefined;
 
     const axNode = node as {
@@ -29,10 +30,16 @@ function projectAxNode(node: unknown): NvdaContext['axNode'] {
         properties?: unknown;
     };
 
-    return {
+    const role = typeof axNode.role?.value === 'string' ? axNode.role.value : undefined;
+    const name = typeof axNode.name?.value === 'string' ? axNode.name.value : undefined;
+
+    const result: NvdaContext['axNode'] = {
         nodeId: typeof axNode.nodeId === 'string' ? axNode.nodeId : String(axNode.nodeId ?? ''),
-        role: typeof axNode.role?.value === 'string' ? axNode.role.value : undefined,
-        name: typeof axNode.name?.value === 'string' ? axNode.name.value : undefined,
-        properties: axNode.properties,
     };
+
+    if (role) result.role = role;
+    if (name) result.name = name;
+    if (axNode.properties) result.properties = axNode.properties;
+
+    return result;
 }

@@ -9,6 +9,7 @@
  */
 
 import { readFile, writeFile } from 'fs/promises';
+import { dirname, resolve } from 'path';
 import { parseLlmResponse, type LlmCompleteResponse } from '../llm/prompt-builder/schemas';
 import type { Violation } from '../analysis/core/violation';
 import type { ReportData, ReportOutput } from './reporter';
@@ -36,6 +37,9 @@ export interface ReportFromFilesOptions {
 
     /** Output file path (optional - if not provided, returns content only) */
     outputPath?: string;
+
+    /** Base path for resolving screenshot file paths (defaults to violations file directory) */
+    screenshotsBasePath?: string;
 }
 
 export interface ReportFromFilesResult {
@@ -109,7 +113,16 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
     // Generate report
     const format = options.format ?? 'html';
     const reporter = getReporter(format);
-    const report = await reporter.generate(reportData);
+
+    // Determine base path for screenshots:
+    // 1. Explicitly provided screenshotsBasePath
+    // 2. Directory containing violations file
+    // 3. Current working directory
+    const screenshotsBasePath =
+        options.screenshotsBasePath ??
+        (options.violationsPath ? dirname(resolve(options.violationsPath)) : process.cwd());
+
+    const report = await reporter.generate(reportData, { screenshotsBasePath });
 
     // Write to file if outputPath provided
     let writtenTo: string | undefined;
@@ -143,7 +156,7 @@ export async function generateReport(options: {
     /** LLM analysis (already parsed or raw JSON) */
     analysis: LlmCompleteResponse | unknown;
 
-    /** Violations array (screenshots embedded in NVDA violations) */
+    /** Violations array (screenshots referenced by path in NVDA violations) */
     violations?: Violation[];
 
     /** Strategy results / transcript data */
@@ -157,6 +170,9 @@ export async function generateReport(options: {
 
     /** Output format */
     format?: 'html' | 'json';
+
+    /** Base path for resolving screenshot file paths */
+    screenshotsBasePath?: string;
 }): Promise<ReportOutput> {
     // Parse if needed
     const analysis = isLlmCompleteResponse(options.analysis) ? options.analysis : parseLlmResponse(options.analysis);
@@ -175,7 +191,10 @@ export async function generateReport(options: {
     };
 
     const reporter = getReporter(options.format ?? 'html');
-    return reporter.generate(reportData);
+    return reporter.generate(
+        reportData,
+        options.screenshotsBasePath ? { screenshotsBasePath: options.screenshotsBasePath } : undefined
+    );
 }
 
 // Type guard for LlmCompleteResponse

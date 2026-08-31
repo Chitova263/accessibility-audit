@@ -71,6 +71,9 @@ export interface ReporterOptions {
 
     /** Custom title for the report */
     title?: string;
+
+    /** Base path for resolving screenshot file paths (for file-based screenshots) */
+    screenshotsBasePath?: string;
 }
 
 /**

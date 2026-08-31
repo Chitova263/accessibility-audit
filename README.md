@@ -47,12 +47,13 @@ npx tsx src/run-audit.ts https://example.com -o ./audit-results --verbose
 
 **Output files:**
 
-- `violations.json` - All detected violations
+- `violations.json` - All detected violations (with embedded screenshot references)
 - `transcript.json` - Screen reader navigation transcript
 - `transcript-readable.txt` - Human-readable transcript
 - `llm-prompt-system.txt` - System prompt for LLM API
 - `llm-prompt-user.txt` - User prompt for LLM API
 - `llm-prompt-combined.txt` - Combined prompt for chat interfaces
+- `screenshots/` - Element screenshots for violations (when available)
 
 ### 2. Generate Report
 
@@ -84,19 +85,31 @@ npx tsx src/generate-report.ts --url https://example.com --title "Example Site" 
 1. Run the audit to collect violations and generate LLM prompts:
 
     ```bash
-    npx tsx src/run-audit.ts https://example.com
+    npx tsx src/run-audit.ts https://example.com -o ./audit-results
     ```
 
 2. (Optional) Send `llm-prompt-combined.txt` to an LLM and save the response to `llm-response.json`
 
 3. Generate the HTML report:
     ```bash
-    npx tsx src/generate-report.ts --url https://example.com --title "My Page"
+    npx tsx src/generate-report.ts --url https://example.com --title "My Page" --violations ./audit-results/violations.json --transcript ./audit-results/transcript.json
     ```
 
 ## Rules
 
-The tool includes custom analyzers that detect violations beyond what axe-core covers. Each rule maps to specific WCAG success criteria.
+The tool includes custom rules that detect violations beyond what axe-core covers. Each rule maps to specific WCAG success criteria. Rules are organized into categories under `src/analysis/rules/`:
+
+```
+rules/
+├── heading-structure/      # missing-h1, multiple-h1, heading-level-skipped, empty-heading
+├── landmark-structure/     # missing-main-landmark, duplicate-landmark
+├── focus-and-keyboard/     # focus-trap, focus-order-anomaly, positive-tabindex, button/link-not-in-tab-order
+├── link-text/              # generic-link-text, duplicate-link-text
+├── content-structure/      # large-content-gap, landmark-without-heading, steps-to-main-content, etc.
+├── interactive-elements/   # empty-accessible-name, aria-hidden-focusable, form-field-no-label, missing-skip-link
+├── semantic/               # filename-as-alt, role-mismatch
+└── axe-core/               # Integration with axe-core (90+ rules)
+```
 
 ### Rule Summary
 
@@ -121,7 +134,7 @@ The tool includes custom analyzers that detect violations beyond what axe-core c
 | `missing-skip-link`                | No skip link found in the first tab stops                       | 2.4.1 | A     | serious  | `bypass`, `skip-link`                           | -                                                           |
 | `form-field-no-label`              | Form field has no accessible label                              | 3.3.2 | A     | critical | `label`, `aria-input-field-name`                | -                                                           |
 | `aria-hidden-focusable`            | Focusable element has aria-hidden="true", creating silent focus | 4.1.2 | A     | critical | `aria-hidden-focus`                             | -                                                           |
-| `excessive-navigation-links`       | Page has an excessive number of links                           | 2.4.1 | A     | moderate | -                                               | Requires understanding what count is "excessive" for users  |
+| `excessive-navigation-links`       | Page has an excessive number of navigation links                | 2.4.1 | A     | moderate | -                                               | Requires understanding what count is "excessive" for users  |
 | `large-content-gap`                | Long run of content with no heading between items               | 1.3.1 | A     | moderate | -                                               | Requires analyzing content structure from user perspective  |
 | `landmark-without-heading`         | Landmark contains many items but no heading                     | 1.3.1 | A     | moderate | -                                               | Requires analyzing content density and structure            |
 | `repeated-pattern-without-heading` | Repeated content pattern with no heading introducing the group  | 1.3.1 | A     | minor    | -                                               | Requires pattern recognition across content                 |
@@ -129,6 +142,8 @@ The tool includes custom analyzers that detect violations beyond what axe-core c
 | `reading-order-landmark-sequence`  | Landmarks announced out of logical reading order                | 1.3.2 | A     | serious  | -                                               | Requires analyzing actual reading order experience          |
 | `excessive-repetition`             | Same phrase announced many times consecutively                  | 1.3.1 | A     | minor    | -                                               | Requires analyzing screen reader output patterns            |
 | `content-density-per-region`       | Landmark region contains an overwhelming number of items        | 2.4.1 | A     | moderate | -                                               | Requires understanding cognitive load from user perspective |
+
+In addition to the above rules, the tool also runs **axe-core** (90+ rules) for industry-standard automated checks.
 
 ### Impact Levels
 
@@ -138,32 +153,6 @@ The tool includes custom analyzers that detect violations beyond what axe-core c
 | **serious**  | Significant barrier; high priority fix      |
 | **moderate** | Causes difficulty; should fix               |
 | **minor**    | Inconvenience; fix when possible            |
-
-### Analyzers
-
-The rules are organized into analyzers, each focusing on a specific aspect of accessibility:
-
-| Analyzer               | Rules                                                                               | Description                                           |
-| ---------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Empty Accessible Names | `empty-accessible-name`                                                             | Detects interactive elements without accessible names |
-| Heading Structure      | `missing-h1`, `multiple-h1`, `heading-level-skipped`, `empty-heading`               | Validates heading hierarchy                           |
-| Landmark Structure     | `missing-main-landmark`, `duplicate-landmark`                                       | Checks ARIA landmark usage                            |
-| Link Text              | `generic-link-text`, `duplicate-link-text`                                          | Analyzes link text quality                            |
-| Focus Traps            | `focus-trap`                                                                        | Detects keyboard traps                                |
-| Keyboard Accessibility | `button-not-in-tab-order`, `link-not-in-tab-order`                                  | Verifies keyboard navigation                          |
-| Image Alt Text         | `filename-as-alt`                                                                   | Checks image alternative text                         |
-| Role Mismatch          | `role-mismatch`                                                                     | Validates ARIA role usage                             |
-| Focus Order            | `focus-order-anomaly`, `positive-tabindex`                                          | Analyzes focus sequence                               |
-| Skip Link              | `missing-skip-link`                                                                 | Checks for bypass mechanisms                          |
-| Form Labels            | `form-field-no-label`                                                               | Validates form field labeling                         |
-| Aria Hidden Focusable  | `aria-hidden-focusable`                                                             | Detects hidden focusable elements                     |
-| Navigation Size        | `excessive-navigation-links`                                                        | Checks navigation complexity                          |
-| Content Grouping       | `large-content-gap`, `landmark-without-heading`, `repeated-pattern-without-heading` | Analyzes content structure                            |
-| Steps To Main Content  | `steps-to-main-content`, `missing-main-landmark`                                    | Measures effort to reach main content                 |
-| Reading Order          | `reading-order-landmark-sequence`                                                   | Validates reading order                               |
-| Excessive Repetition   | `excessive-repetition`                                                              | Detects repetitive announcements                      |
-| Content Density        | `content-density-per-region`                                                        | Checks region complexity                              |
-| axe-core               | _(90+ rules)_                                                                       | Industry-standard automated checks                    |
 
 ## Development
 
@@ -177,9 +166,14 @@ npm test
 # Run tests in watch mode
 npm run test:watch
 
+# Update test snapshots
+npm run test:update
+
 # Format code
-npm run format
+npm run formart
 ```
+
+> **Note**: The format script is named `formart` (typo in package.json).
 
 ## License
 

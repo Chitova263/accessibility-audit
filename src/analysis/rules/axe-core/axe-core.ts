@@ -26,7 +26,6 @@ export class AxeCoreRule implements Rule<AxeContext, AxeCoreStats> {
 
     readonly meta: RuleMeta = {
         wcag: {
-            // axe-core covers multiple WCAG criteria; this is a placeholder
             primary: { criterion: '4.1.2', level: 'A' },
         },
         impact: 'moderate',
@@ -36,7 +35,6 @@ export class AxeCoreRule implements Rule<AxeContext, AxeCoreStats> {
     async run(ctx: AuditContext): Promise<RuleResult<AxeContext, AxeCoreStats>> {
         const { page } = ctx;
 
-        // Skip if page is not available (e.g., in tests without a real page)
         if (!page) {
             return {
                 violations: [],
@@ -69,16 +67,11 @@ export class AxeCoreRule implements Rule<AxeContext, AxeCoreStats> {
         };
     }
 
-    /**
-     * Extract WCAG criterion from axe-core tags
-     */
     private extractWcagFromTags(tags: string[]): { criterion: string; level: 'A' | 'AA' | 'AAA' } {
-        // Look for specific criterion tags like "wcag111" (1.1.1)
         for (const tag of tags) {
             const criterionMatch = tag.match(/^wcag(\d)(\d)(\d+)$/);
             if (criterionMatch) {
                 const criterion = `${criterionMatch[1]}.${criterionMatch[2]}.${criterionMatch[3]}`;
-                // Determine level from other tags
                 const levelTag = tags.find((t) => /^wcag\d+a{1,3}$/i.test(t));
                 const level = levelTag
                     ? ((levelTag.match(/a{1,3}$/i)?.[0]?.toUpperCase() as 'A' | 'AA' | 'AAA') ?? 'A')
@@ -87,7 +80,6 @@ export class AxeCoreRule implements Rule<AxeContext, AxeCoreStats> {
             }
         }
 
-        // Look for tags like "wcag2a", "wcag2aa", "wcag21a", etc.
         for (const tag of tags) {
             const match = tag.match(/^wcag(\d+)(a{1,3})$/i);
             if (match) {
@@ -96,7 +88,6 @@ export class AxeCoreRule implements Rule<AxeContext, AxeCoreStats> {
             }
         }
 
-        // Fallback for best-practice rules
         return { criterion: 'best-practice', level: 'A' };
     }
 

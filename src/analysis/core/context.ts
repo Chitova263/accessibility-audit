@@ -5,4 +5,5 @@ export interface AuditContext {
     transcript: StrategyResult[];
     page: Page;
     cdp: CDPSession;
+    screenshotsDir: string;
 }

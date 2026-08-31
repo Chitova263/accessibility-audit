@@ -5,6 +5,8 @@
  * The report is self-contained with embedded CSS and can be opened in any browser.
  */
 
+import { readFile } from 'fs/promises';
+import { resolve, dirname } from 'path';
 import type { Reporter, ReportData, ReportOutput, ReporterOptions } from '../reporter';
 import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import {
@@ -34,6 +36,9 @@ export interface HtmlReporterOptions extends ReporterOptions {
 
     /** Custom CSS to inject */
     customCss?: string;
+
+    /** Base path for resolving screenshot paths (defaults to cwd) */
+    screenshotsBasePath?: string;
 }
 
 const DEFAULT_OPTIONS: Required<HtmlReporterOptions> = {
@@ -45,6 +50,7 @@ const DEFAULT_OPTIONS: Required<HtmlReporterOptions> = {
     interactive: true,
     logoUrl: '',
     customCss: '',
+    screenshotsBasePath: process.cwd(),
 };
 
 export class HtmlReporter implements Reporter {
@@ -52,7 +58,11 @@ export class HtmlReporter implements Reporter {
 
     async generate(data: ReportData, options?: HtmlReporterOptions): Promise<ReportOutput> {
         const opts = { ...DEFAULT_OPTIONS, ...options };
-        const html = this.buildHtml(data, opts);
+
+        // Preload screenshots from files for violations that have path references
+        const screenshotCache = await this.preloadScreenshots(data, opts.screenshotsBasePath);
+
+        const html = this.buildHtml(data, opts, screenshotCache);
 
         return {
             format: 'html',
@@ -62,7 +72,42 @@ export class HtmlReporter implements Reporter {
         };
     }
 
-    private buildHtml(data: ReportData, opts: Required<HtmlReporterOptions>): string {
+    /**
+     * Preload all screenshots from file paths into base64 data.
+     * This allows the HTML to be self-contained with embedded images.
+     */
+    private async preloadScreenshots(data: ReportData, basePath: string): Promise<Map<string, string>> {
+        const cache = new Map<string, string>();
+
+        for (const violation of data.violations) {
+            const nvdaContext = violation.context as
+                { screenshot?: { path?: string; error?: string; width?: number; height?: number } } | undefined;
+
+            const screenshot = nvdaContext?.screenshot;
+            if (!screenshot) continue;
+
+            // Only load if it's a success (has path, no error)
+            if ('path' in screenshot && screenshot.path) {
+                try {
+                    const fullPath = resolve(basePath, screenshot.path);
+                    const buffer = await readFile(fullPath);
+                    const base64 = buffer.toString('base64');
+                    cache.set(screenshot.path, base64);
+                } catch (e) {
+                    // Screenshot file not found or unreadable - skip it
+                    console.warn(`Warning: Could not load screenshot from ${screenshot.path}: ${e}`);
+                }
+            }
+        }
+
+        return cache;
+    }
+
+    private buildHtml(
+        data: ReportData,
+        opts: Required<HtmlReporterOptions>,
+        screenshotCache: Map<string, string>
+    ): string {
         return `<!DOCTYPE html>
 <html lang="en" data-theme="${opts.theme}">
 <head>
@@ -75,8 +120,8 @@ export class HtmlReporter implements Reporter {
     ${this.buildHeader(data, opts)}
     <main>
         ${this.buildSummary(data)}
+        ${this.buildViolations(data, screenshotCache)}
         ${this.buildFindings(data)}
-        ${this.buildEnhancements(data)}
         ${opts.includeTranscript ? this.buildTranscript(data) : ''}
         ${this.buildLimitations(data)}
     </main>
@@ -263,125 +308,135 @@ export class HtmlReporter implements Reporter {
         return category;
     }
 
-    private buildEnhancements(data: ReportData): string {
-        const enhancements = data.analysis.enhancements;
+    private buildViolations(data: ReportData, screenshotCache: Map<string, string>): string {
+        const violations = data.violations;
 
-        if (enhancements.length === 0) {
+        if (violations.length === 0) {
             return `
-<section class="enhancements" aria-labelledby="enhancements-heading">
-    <h2 id="enhancements-heading">Violation Enhancements</h2>
-    <p class="no-items">No enhancements provided for existing violations.</p>
+<section class="violations" aria-labelledby="violations-heading">
+    <h2 id="violations-heading">Violations</h2>
+    <p class="no-items">No violations detected.</p>
 </section>`;
         }
 
+        const enhancementMap = new Map(
+            data.analysis.enhancements.map((e) => [e.violationId, e])
+        );
+
+        const byRule = this.groupBy(violations, (v) => v.rule.id);
+
         return `
-<section class="enhancements" aria-labelledby="enhancements-heading">
-    <h2 id="enhancements-heading">Violation Enhancements <span class="count">(${enhancements.length})</span></h2>
+<section class="violations" aria-labelledby="violations-heading">
+    <h2 id="violations-heading">Violations <span class="count">(${violations.length})</span></h2>
     
-    <div class="enhancements-list">
-        ${enhancements.map((e) => this.buildEnhancementCard(e, data)).join('\n')}
+    ${Object.entries(byRule)
+        .map(
+            ([ruleId, items]) => `
+    <div class="rule-group">
+        <h3 class="rule-heading">
+            <span class="rule-id">${escapeHtml(ruleId)}</span>
+            <span class="rule-wcag">${escapeHtml(items[0]?.rule.wcag?.primary?.criterion ?? '')}</span>
+            <span class="rule-impact impact-${items[0]?.rule.impact ?? 'moderate'}">${escapeHtml(items[0]?.rule.impact ?? '')}</span>
+            <span class="count">(${items.length})</span>
+        </h3>
+        <p class="rule-summary">${escapeHtml(items[0]?.rule.summary ?? '')}</p>
+        ${items.map((v) => this.buildViolationCard(v, enhancementMap.get(v.id), screenshotCache)).join('\n')}
     </div>
+    `
+        )
+        .join('\n')}
 </section>`;
     }
 
-    private buildEnhancementCard(enhancement: LlmViolationEnhancement, data: ReportData): string {
-        const confidenceColor = getConfidenceColor(enhancement.confidence);
+    private buildViolationCard(
+        violation: ReportData['violations'][0],
+        enhancement: LlmViolationEnhancement | undefined,
+        screenshotCache: Map<string, string>
+    ): string {
+        const ctx = violation.context as {
+            source?: { strategy: string; stepIndex: number; stepId: string; spokenPhrase: string };
+            axNode?: { nodeId: string; role?: string; name?: string; properties?: unknown };
+            screenshot?: { path?: string; error?: string; width?: number; height?: number };
+        } | undefined;
 
-        // Find original violation
-        const violation = data.violations.find((v) => v.id === enhancement.violationId);
+        const source = ctx?.source;
+        const axNode = ctx?.axNode;
+        const screenshot = ctx?.screenshot;
 
-        // Get screenshot from violation context (for NVDA violations with embedded screenshots)
-        const nvdaContext = violation?.context as
-            { screenshot?: { data: string; width: number; height: number } } | undefined;
-        const screenshot = nvdaContext?.screenshot;
+        let screenshotHtml = '';
+        if (screenshot && 'path' in screenshot && screenshot.path) {
+            const base64 = screenshotCache.get(screenshot.path);
+            if (base64) {
+                screenshotHtml = `
+                <div class="v-screenshot">
+                    <img src="data:image/png;base64,${base64}" 
+                         alt="Element highlighted on page" 
+                         width="${screenshot.width}" 
+                         height="${screenshot.height}"
+                         loading="lazy">
+                </div>`;
+            }
+        }
 
         return `
-<article class="enhancement-card">
-    <div class="enhancement-header">
-        <span class="badge confidence" style="--badge-color: ${confidenceColor}">${enhancement.confidence}</span>
+<article class="violation-card" id="violation-${escapeHtml(violation.id)}">
+    <p class="v-message">${escapeHtml(violation.message)}</p>
+
+    <div class="v-context">
+        ${
+            source
+                ? `
+        <div class="v-source">
+            <span class="v-label">Source</span>
+            <a href="#step-${escapeHtml(source.stepId)}" class="v-step-link">
+                ${escapeHtml(source.strategy)} [${source.stepIndex}]
+            </a>
+            <span class="v-spoken">"${escapeHtml(source.spokenPhrase)}"</span>
+        </div>
+        `
+                : ''
+        }
+
+        ${
+            axNode
+                ? `
+        <div class="v-axnode">
+            <span class="v-label">Node</span>
+            ${axNode.role ? `<span class="v-role">${escapeHtml(axNode.role)}</span>` : ''}
+            ${axNode.name ? `<span class="v-name">"${escapeHtml(axNode.name)}"</span>` : '<span class="v-name v-empty">(no name)</span>'}
+        </div>
+        `
+                : ''
+        }
     </div>
 
     ${
-        violation
+        violation.element?.htmlSnippet || screenshotHtml
             ? `
-    <div class="original-violation-full">
-        <div class="violation-meta">
-            <strong>${escapeHtml(violation.rule.id)}</strong>
-            <span class="wcag-badge">${escapeHtml(violation.rule.wcag?.primary?.criterion ?? 'N/A')}</span>
-            <span class="tool-badge">${escapeHtml(violation.tool ?? 'unknown')}</span>
-            <span class="impact-badge">${escapeHtml(violation.rule.impact)}</span>
-        </div>
-        <p class="violation-message">${escapeHtml(violation.message)}</p>
-        ${
-            violation.element?.selector
-                ? `<p class="violation-selector"><code>${escapeHtml(violation.element.selector)}</code></p>`
-                : ''
-        }
+    <div class="v-element">
         ${
             violation.element?.htmlSnippet
-                ? `<pre class="violation-html"><code>${escapeHtml(truncate(violation.element.htmlSnippet, 500))}</code></pre>`
+                ? `
+        <div class="v-html">
+            <pre><code>${escapeHtml(truncate(violation.element.htmlSnippet, 400))}</code></pre>
+            ${violation.element?.selector ? `<span class="v-selector">${escapeHtml(violation.element.selector)}</span>` : ''}
+        </div>
+        `
                 : ''
         }
-    </div>
-    `
-            : `<p class="no-items">Violation not found: ${escapeHtml(enhancement.violationId)}</p>`
-    }
-
-    ${
-        screenshot
-            ? `
-    <div class="violation-screenshot">
-        <h4>Element Screenshot</h4>
-        <img src="data:image/png;base64,${screenshot.data}" 
-             alt="Screenshot of the violation element highlighted on the page" 
-             width="${screenshot.width}" 
-             height="${screenshot.height}"
-             loading="lazy">
+        ${screenshotHtml}
     </div>
     `
             : ''
     }
 
     ${
-        enhancement.severityRationale
+        enhancement
             ? `
-    <div class="detail-section">
-        <h4>Severity Rationale</h4>
-        <p>${escapeHtml(enhancement.severityRationale)}</p>
+    <div class="v-enhancement">
+        ${enhancement.userImpactDescription ? `<p class="v-impact">${escapeHtml(enhancement.userImpactDescription)}</p>` : ''}
+        ${enhancement.remediationSuggestion ? `<p class="v-remediation"><strong>Fix:</strong> ${escapeHtml(enhancement.remediationSuggestion)}</p>` : ''}
     </div>
-    `
-            : ''
-    }
-
-    ${
-        enhancement.userImpactDescription
-            ? `
-    <div class="detail-section">
-        <h4>User Impact</h4>
-        <p>${escapeHtml(enhancement.userImpactDescription)}</p>
-    </div>
-    `
-            : ''
-    }
-
-    ${
-        enhancement.remediationSuggestion
-            ? `
-    <div class="detail-section">
-        <h4>Remediation</h4>
-        <p>${escapeHtml(enhancement.remediationSuggestion)}</p>
-    </div>
-    `
-            : ''
-    }
-
-    ${
-        violation?.context
-            ? `
-    <details class="debug-details">
-        <summary>Debug Info</summary>
-        <pre class="debug-json"><code>${escapeHtml(JSON.stringify(violation.context, (key, value) => (key === 'screenshot' ? '[embedded]' : value), 2))}</code></pre>
-    </details>
     `
             : ''
     }
@@ -1069,6 +1124,194 @@ footer {
     border-radius: 4px;
     margin-bottom: 1rem;
     border-left: 3px solid var(--accent-color);
+}
+
+/* Violations section */
+.violations {
+    background: var(--bg-primary);
+}
+
+.rule-group {
+    margin-bottom: 1.5rem;
+}
+
+.rule-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.25rem;
+}
+
+.rule-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1rem;
+}
+
+.rule-wcag {
+    background: var(--bg-secondary);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: normal;
+}
+
+.rule-impact {
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.rule-impact.impact-critical { background: var(--error-color); color: white; }
+.rule-impact.impact-serious { background: #e65100; color: white; }
+.rule-impact.impact-moderate { background: var(--warning-color); color: white; }
+.rule-impact.impact-minor { background: var(--text-secondary); color: white; }
+
+.rule-summary {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.violation-card {
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.v-message {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.v-context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.v-source, .v-axnode {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.v-label {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.v-step-link {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    text-decoration: none;
+}
+
+.v-step-link:hover {
+    background: var(--text-primary);
+}
+
+.v-spoken {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.v-role {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+}
+
+.v-name {
+    color: var(--text-primary);
+}
+
+.v-name.v-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.v-element {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .v-element {
+        grid-template-columns: 1fr;
+    }
+}
+
+.v-html {
+    min-width: 0;
+}
+
+.v-html pre {
+    margin: 0;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    overflow-x: auto;
+}
+
+.v-html code {
+    color: var(--text-secondary);
+}
+
+.v-selector {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.v-screenshot {
+    flex-shrink: 0;
+}
+
+.v-screenshot img {
+    max-width: 200px;
+    height: auto;
+    border: 2px solid var(--error-color);
+    border-radius: 4px;
+    display: block;
+}
+
+.v-enhancement {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-color);
+    font-size: 0.85rem;
+}
+
+.v-impact {
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.v-remediation {
+    color: var(--success-color);
 }
 
 .violation-meta {

@@ -30,21 +30,16 @@ describe('createNvdaContext', () => {
     it('drops backendDOMNodeId and childIds from the axNode', async () => {
         const axNode = { nodeId: '1', role: { value: 'link' }, childIds: ['2', '3'], backendDOMNodeId: 44 };
 
-        expect(Object.keys(createNvdaContext({ ...source, axNode }, 'link', 0).axNode!)).toEqual([
-            'nodeId',
-            'role',
-            'name',
-            'properties',
-        ]);
+        expect(Object.keys(createNvdaContext({ ...source, axNode }, 'link', 0).axNode!)).toEqual(['nodeId', 'role']);
     });
 
-    it('carries step info through', async () => {
+    it('carries source info through', async () => {
         const context = createNvdaContext(source, 'tab', 3);
 
-        expect(context.step).toEqual({
+        expect(context.source).toEqual({
             strategy: 'tab',
-            index: 3,
-            id: 'step-0',
+            stepIndex: 3,
+            stepId: 'step-0',
             spokenPhrase: 'button Submit',
         });
     });
@@ -56,9 +51,6 @@ describe('createNvdaContext', () => {
     it('survives a node missing its role and name', async () => {
         expect(createNvdaContext({ ...source, axNode: { nodeId: '9' } }, 'tab', 0).axNode).toEqual({
             nodeId: '9',
-            role: undefined,
-            name: undefined,
-            properties: undefined,
         });
     });
 });
@@ -66,7 +58,6 @@ describe('createNvdaContext', () => {
 describe('context shape across all rules', () => {
     const transcript = broadTranscript();
 
-    // Filter out axe-core rule since it uses AxeContext, not NvdaContext
     const nvdaRules = RULES.filter((rule) => rule.id !== 'axe-core');
 
     it('reports axNode.role as a string, never a raw AXValue', async () => {
