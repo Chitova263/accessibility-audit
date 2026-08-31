@@ -48,5 +48,3 @@ describe('empty-accessible-name rule', () => {
         expect(result.violations).toHaveLength(1);
     });
 });
-
-

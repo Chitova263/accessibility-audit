@@ -258,5 +258,3 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
 }
 
 export const rule = new RoleMismatchRule();
-
-

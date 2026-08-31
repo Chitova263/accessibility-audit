@@ -68,5 +68,3 @@ describe('missing-main-landmark rule', () => {
         expect(result.stats!.totalLandmarks).toBe(0);
     });
 });
-
-

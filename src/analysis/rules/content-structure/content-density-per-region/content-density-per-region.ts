@@ -163,5 +163,3 @@ export class ContentDensityPerRegionRule implements Rule<NvdaContext, ContentDen
 }
 
 export const rule = new ContentDensityPerRegionRule();
-
-

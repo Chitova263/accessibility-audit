@@ -6,6 +6,7 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
+import { Result } from './result';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 
 export class HeadingNavigationStrategy implements INavigationStrategy {
@@ -21,7 +22,7 @@ export class HeadingNavigationStrategy implements INavigationStrategy {
         const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        for await (const { phrase, itemText } of ctx.sr.headings()) {
+        for await (const { phrase, itemText } of ctx.navigator.headings()) {
             let matchResult = cursor.matchNext(itemText, 'heading');
             if (!matchResult) {
                 matchResult = cursor.matchNext(phrase, 'heading');
@@ -43,24 +44,14 @@ export class HeadingNavigationStrategy implements INavigationStrategy {
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {
-                return {
-                    completionReason: {
-                        kind: 'limit-reached',
-                        detail: `stopped after ${this.config.maxSteps} headings (safety limit)`,
-                    },
-                    meta: this.meta,
-                    navigationSteps,
-                };
+                return Result.limitReached(
+                    `stopped after ${this.config.maxSteps} headings (safety limit)`,
+                    this.meta,
+                    navigationSteps
+                );
             }
         }
 
-        return {
-            completionReason: {
-                kind: 'exhausted',
-                detail: 'no more headings found on page',
-            },
-            meta: this.meta,
-            navigationSteps,
-        };
+        return Result.exhausted('no more headings found on page', this.meta, navigationSteps);
     }
 }

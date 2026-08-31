@@ -71,5 +71,3 @@ describe('empty-heading rule', () => {
         expect(result.stats!.totalHeadings).toBe(0);
     });
 });
-
-

@@ -150,5 +150,3 @@ export class ExcessiveRepetitionRule implements Rule<NvdaContext, ExcessiveRepet
 }
 
 export const rule = new ExcessiveRepetitionRule();
-
-

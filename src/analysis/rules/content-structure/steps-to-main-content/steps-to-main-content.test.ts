@@ -80,5 +80,3 @@ describe('steps-to-main-content rule', () => {
         expect(result.stats!.totalSteps).toBe(0);
     });
 });
-
-

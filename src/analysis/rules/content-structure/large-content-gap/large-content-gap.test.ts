@@ -84,5 +84,3 @@ describe('large-content-gap rule', () => {
         expect(result.stats!.totalStepsAnalyzed).toBe(0);
     });
 });
-
-

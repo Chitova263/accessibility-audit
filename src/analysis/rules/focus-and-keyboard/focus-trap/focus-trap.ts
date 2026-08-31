@@ -90,5 +90,3 @@ export class FocusTrapRule implements Rule<NvdaContext, FocusTrapStats> {
 }
 
 export const rule = new FocusTrapRule();
-
-

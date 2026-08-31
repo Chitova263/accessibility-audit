@@ -27,8 +27,21 @@ export {
 } from './analysis';
 
 export { PageSession } from './screen-reader/page-session';
-export { NvdaScreenReader } from './screen-reader/nvda-screen-reader';
 export { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-connection';
+
+// New screen reader architecture
+export { Nvda, type ScreenReader } from './screen-reader/drivers/nvda';
+export { ElementNavigator } from './screen-reader/navigators/element-navigator/element-navigator';
+export { TabNavigator } from './screen-reader/navigators/tab-navigator/tab-navigator';
+export { ArrowNavigator } from './screen-reader/navigators/arrow-navigator/arrow-navigator';
+export { Navigator } from './screen-reader/navigators/navigator';
+export { nvdaKeyBindings, nvdaEndPatterns } from './screen-reader/navigators/config/nvda';
+export type {
+    NavigationItem,
+    NavigatorConfig,
+    IElementNavigator,
+    ScreenReaderConfig,
+} from './screen-reader/navigators/types';
 
 export type {
     INavigationStrategy,

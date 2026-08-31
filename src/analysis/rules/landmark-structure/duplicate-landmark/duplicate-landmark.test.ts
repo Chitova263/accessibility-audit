@@ -95,5 +95,3 @@ describe('duplicate-landmark rule', () => {
         expect(result.stats!.totalLandmarks).toBe(0);
     });
 });
-
-

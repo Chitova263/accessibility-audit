@@ -100,5 +100,3 @@ describe('form-field-no-label rule', () => {
         });
     });
 });
-
-

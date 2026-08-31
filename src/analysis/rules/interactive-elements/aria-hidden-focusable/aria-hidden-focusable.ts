@@ -114,5 +114,3 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
 }
 
 export const rule = new AriaHiddenFocusableRule();
-
-

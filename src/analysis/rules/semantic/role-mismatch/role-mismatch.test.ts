@@ -98,5 +98,3 @@ describe('role-mismatch rule', () => {
         expect(result.stats).toMatchObject({ totalElementsChecked: 1, violationsFound: 1 });
     });
 });
-
-

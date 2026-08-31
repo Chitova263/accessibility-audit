@@ -1,4 +1,5 @@
-import type { IScreenReader } from '../../screen-reader';
+import type { Navigator } from '../../navigators/navigator';
+import type { ScreenReader } from '../../drivers/nvda';
 
 export interface StrategyMetadata {
     name: string;
@@ -39,10 +40,7 @@ export interface CompletionReason {
     /** Why navigation stopped */
     kind: 'exhausted' | 'limit-reached' | 'cycle-complete' | 'trapped';
     /**
-     * Human-readable detail for LLM context. Examples:
-     * - "no more headings found on page"
-     * - "tab focus returned to first element"
-     * - "keyboard focus could not escape element"
+     * Human-readable detail for LLM context:
      */
     detail: string;
 }
@@ -61,8 +59,12 @@ export interface AxContext {
     getFocusedNodeHtml(): Promise<string | null>;
 }
 
+/**
+ * Context provided to navigation strategies.
+ */
 export interface NavigationContext {
-    sr: IScreenReader;
+    navigator: Navigator;
+    reader: ScreenReader;
     ax: AxContext;
 }
 

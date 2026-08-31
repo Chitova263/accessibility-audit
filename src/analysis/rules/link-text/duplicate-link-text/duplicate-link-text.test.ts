@@ -117,5 +117,3 @@ describe('duplicate-link-text rule', () => {
         expect(result.stats!.duplicateGroups).toBe(2);
     });
 });
-
-

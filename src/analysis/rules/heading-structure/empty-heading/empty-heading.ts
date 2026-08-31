@@ -72,5 +72,3 @@ export class EmptyHeadingRule implements Rule<NvdaContext, EmptyHeadingStats> {
 }
 
 export const rule = new EmptyHeadingRule();
-
-

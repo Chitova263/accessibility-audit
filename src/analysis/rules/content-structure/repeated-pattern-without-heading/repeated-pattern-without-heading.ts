@@ -179,5 +179,3 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
 }
 
 export const rule = new RepeatedPatternWithoutHeadingRule();
-
-

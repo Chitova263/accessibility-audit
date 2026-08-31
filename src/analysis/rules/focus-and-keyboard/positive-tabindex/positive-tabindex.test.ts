@@ -95,5 +95,3 @@ describe('positive-tabindex rule', () => {
         expect(result.stats!.totalFocusableElements).toBe(3);
     });
 });
-
-

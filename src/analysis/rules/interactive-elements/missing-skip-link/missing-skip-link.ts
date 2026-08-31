@@ -143,5 +143,3 @@ export class MissingSkipLinkRule implements Rule<NvdaContext, MissingSkipLinkSta
 }
 
 export const rule = new MissingSkipLinkRule();
-
-

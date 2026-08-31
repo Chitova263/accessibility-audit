@@ -149,5 +149,3 @@ export class PositiveTabindexRule implements Rule<NvdaContext, PositiveTabindexS
 }
 
 export const rule = new PositiveTabindexRule();
-
-

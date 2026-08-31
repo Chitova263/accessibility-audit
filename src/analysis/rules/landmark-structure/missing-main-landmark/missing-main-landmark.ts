@@ -72,5 +72,3 @@ export class MissingMainLandmarkRule implements Rule<NvdaContext, MissingMainLan
 }
 
 export const rule = new MissingMainLandmarkRule();
-
-

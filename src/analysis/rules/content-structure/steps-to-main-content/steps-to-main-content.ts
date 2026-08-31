@@ -145,5 +145,3 @@ export class StepsToMainContentRule implements Rule<NvdaContext, StepsToMainCont
 }
 
 export const rule = new StepsToMainContentRule();
-
-

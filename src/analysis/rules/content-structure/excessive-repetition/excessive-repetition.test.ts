@@ -69,5 +69,3 @@ describe('excessive-repetition rule', () => {
         expect(result.stats!.repetitions).toEqual([]);
     });
 });
-
-

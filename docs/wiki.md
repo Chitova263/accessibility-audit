@@ -182,19 +182,19 @@ Each rule receives the same context and returns violations. Rules are defined in
 
 **Rule Categories:**
 
-| Category               | Rules                                                                                            | Detection Method                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| Heading Structure      | `missing-h1`, `multiple-h1`, `heading-level-skipped`, `empty-heading`                            | Parse heading levels from AX nodes, check sequence    |
-| Landmark Structure     | `missing-main-landmark`, `duplicate-landmark`                                                    | Count landmark types, check for unique names          |
-| Focus & Keyboard       | `focus-trap`, `focus-order-anomaly`, `positive-tabindex`                                         | Analyze TabStrategy completion and sequence           |
-| Keyboard Accessibility | `button-not-in-tab-order`, `link-not-in-tab-order`                                               | Compare B/K strategy items vs Tab strategy items      |
-| Link Text              | `generic-link-text`, `duplicate-link-text`                                                       | Pattern match against generic phrases, group by text  |
-| Content Structure      | `large-content-gap`, `landmark-without-heading`, `repeated-pattern-without-heading`              | Measure steps between headings, count items           |
-| Reading Experience     | `steps-to-main-content`, `reading-order-landmark-sequence`, `excessive-repetition`               | Analyze ArrowStrategy linear reading sequence         |
-| Navigation Complexity  | `excessive-navigation-links`, `content-density-per-region`                                       | Count items per region/landmark                       |
-| Interactive Elements   | `empty-accessible-name`, `aria-hidden-focusable`, `form-field-no-label`                          | Check AX node properties for missing/invalid names    |
-| Semantic              | `filename-as-alt`, `role-mismatch`, `missing-skip-link`                                           | Pattern recognition and role validation               |
-| axe-core               | 90+ DOM-based rules                                                                              | Run axe-core against live Playwright page             |
+| Category               | Rules                                                                               | Detection Method                                     |
+| ---------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Heading Structure      | `missing-h1`, `multiple-h1`, `heading-level-skipped`, `empty-heading`               | Parse heading levels from AX nodes, check sequence   |
+| Landmark Structure     | `missing-main-landmark`, `duplicate-landmark`                                       | Count landmark types, check for unique names         |
+| Focus & Keyboard       | `focus-trap`, `focus-order-anomaly`, `positive-tabindex`                            | Analyze TabStrategy completion and sequence          |
+| Keyboard Accessibility | `button-not-in-tab-order`, `link-not-in-tab-order`                                  | Compare B/K strategy items vs Tab strategy items     |
+| Link Text              | `generic-link-text`, `duplicate-link-text`                                          | Pattern match against generic phrases, group by text |
+| Content Structure      | `large-content-gap`, `landmark-without-heading`, `repeated-pattern-without-heading` | Measure steps between headings, count items          |
+| Reading Experience     | `steps-to-main-content`, `reading-order-landmark-sequence`, `excessive-repetition`  | Analyze ArrowStrategy linear reading sequence        |
+| Navigation Complexity  | `excessive-navigation-links`, `content-density-per-region`                          | Count items per region/landmark                      |
+| Interactive Elements   | `empty-accessible-name`, `aria-hidden-focusable`, `form-field-no-label`             | Check AX node properties for missing/invalid names   |
+| Semantic               | `filename-as-alt`, `role-mismatch`, `missing-skip-link`                             | Pattern recognition and role validation              |
+| axe-core               | 90+ DOM-based rules                                                                 | Run axe-core against live Playwright page            |
 
 **Violation Structure:**
 

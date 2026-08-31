@@ -65,5 +65,3 @@ describe('excessive-navigation-links rule', () => {
         expect(result.stats).toEqual({ totalLinks: 0, navigationLandmarks: 0, linksPerNavigation: {} });
     });
 });
-
-

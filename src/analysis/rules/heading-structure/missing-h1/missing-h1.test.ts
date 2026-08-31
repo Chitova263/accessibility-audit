@@ -59,5 +59,3 @@ describe('missing-h1 rule', () => {
         expect(result.stats!.totalHeadings).toBe(0);
     });
 });
-
-

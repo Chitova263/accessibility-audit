@@ -74,5 +74,3 @@ describe('focus-trap rule', () => {
         });
     });
 });
-
-

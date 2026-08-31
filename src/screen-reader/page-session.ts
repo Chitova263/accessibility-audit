@@ -1,11 +1,16 @@
 import type { CDPSession, Page } from 'playwright';
-import { delay, type IScreenReader } from './screen-reader';
+import type { ScreenReader } from './drivers/nvda';
+import type { Navigator } from './navigators/navigator';
 import type {
     INavigationStrategy,
     NavigationContext,
     StrategyResult,
 } from './navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { AxTreeUtil } from './accessibility-tree/ax-tree-util';
+
+function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export interface PageSessionResult {
     page: Page;
@@ -21,7 +26,8 @@ export class PageSession {
 
     public constructor(
         private readonly pageUrl: URL,
-        private readonly sr: IScreenReader,
+        private readonly reader: ScreenReader,
+        private readonly navigator: Navigator,
         private readonly strategies: INavigationStrategy[],
         private readonly page: Page
     ) {}
@@ -29,12 +35,12 @@ export class PageSession {
     public async startSession(): Promise<void> {
         this.cdpSession = await this.page.context().newCDPSession(this.page);
         await this.page.bringToFront();
-        await this.sr.start();
+        await this.reader.start();
     }
 
     public async endEndSession(): Promise<void> {
         this.cdpSession?.detach();
-        await this.sr.stop();
+        await this.reader.stop();
     }
 
     async run(): Promise<PageSessionResult> {
@@ -49,7 +55,7 @@ export class PageSession {
         for (const strategy of this.strategies) {
             const result = await strategy.execute(this.buildContext(axTree));
             results.push(result);
-            await this.sr.navigateToDocumentStart();
+            await this.navigator.navigateToDocumentStart();
             await delay(2000);
         }
         const html = await this.page.content();
@@ -71,7 +77,8 @@ export class PageSession {
         }
         const session = this.cdpSession;
         return {
-            sr: this.sr,
+            navigator: this.navigator,
+            reader: this.reader,
             ax: {
                 tree: axTree,
                 getNodeOuterHtml: (nodeId: number) => AxTreeUtil.getNodeOuterHtml(session, nodeId),

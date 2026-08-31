@@ -139,5 +139,3 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
 }
 
 export const rule = new ExcessiveNavigationLinksRule();
-
-

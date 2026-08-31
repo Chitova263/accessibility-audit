@@ -125,5 +125,3 @@ function findDuplicates(arr: string[]): string[] {
 }
 
 export const rule = new DuplicateLandmarkRule();
-
-

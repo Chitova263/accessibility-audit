@@ -119,5 +119,3 @@ export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibl
 }
 
 export const rule = new EmptyAccessibleNameRule();
-
-

@@ -78,5 +78,3 @@ describe('content-density-per-region rule', () => {
         expect(result.stats!.regions).toEqual([]);
     });
 });
-
-

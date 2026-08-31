@@ -71,5 +71,3 @@ describe('heading-level-skipped rule', () => {
         expect(result.stats!.totalHeadings).toBe(0);
     });
 });
-
-

@@ -128,5 +128,3 @@ function isGenericLinkText(text: string): boolean {
 }
 
 export const rule = new GenericLinkTextRule();
-
-

@@ -78,5 +78,3 @@ export class HeadingLevelSkippedRule implements Rule<NvdaContext, HeadingLevelSk
 }
 
 export const rule = new HeadingLevelSkippedRule();
-
-

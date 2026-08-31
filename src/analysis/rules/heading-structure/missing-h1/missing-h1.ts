@@ -61,5 +61,3 @@ export class MissingH1Rule implements Rule<NvdaContext, MissingH1Stats> {
 }
 
 export const rule = new MissingH1Rule();
-
-

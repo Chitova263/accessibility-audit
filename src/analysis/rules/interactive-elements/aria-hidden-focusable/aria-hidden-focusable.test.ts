@@ -78,5 +78,3 @@ describe('aria-hidden-focusable rule', () => {
         expect(result.stats).toEqual({ totalFocusableElements: 2, ariaHiddenFocusableCount: 1 });
     });
 });
-
-

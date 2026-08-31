@@ -197,5 +197,3 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
 }
 
 export const rule = new FormFieldNoLabelRule();
-
-

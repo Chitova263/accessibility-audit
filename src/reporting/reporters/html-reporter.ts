@@ -319,9 +319,7 @@ export class HtmlReporter implements Reporter {
 </section>`;
         }
 
-        const enhancementMap = new Map(
-            data.analysis.enhancements.map((e) => [e.violationId, e])
-        );
+        const enhancementMap = new Map(data.analysis.enhancements.map((e) => [e.violationId, e]));
 
         const byRule = this.groupBy(violations, (v) => v.rule.id);
 
@@ -353,11 +351,13 @@ export class HtmlReporter implements Reporter {
         enhancement: LlmViolationEnhancement | undefined,
         screenshotCache: Map<string, string>
     ): string {
-        const ctx = violation.context as {
-            source?: { strategy: string; stepIndex: number; stepId: string; spokenPhrase: string };
-            axNode?: { nodeId: string; role?: string; name?: string; properties?: unknown };
-            screenshot?: { path?: string; error?: string; width?: number; height?: number };
-        } | undefined;
+        const ctx = violation.context as
+            | {
+                  source?: { strategy: string; stepIndex: number; stepId: string; spokenPhrase: string };
+                  axNode?: { nodeId: string; role?: string; name?: string; properties?: unknown };
+                  screenshot?: { path?: string; error?: string; width?: number; height?: number };
+              }
+            | undefined;
 
         const source = ctx?.source;
         const axNode = ctx?.axNode;

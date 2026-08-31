@@ -85,5 +85,3 @@ export class LinkNotInTabOrderRule implements Rule<NvdaContext, LinkNotInTabOrde
 }
 
 export const rule = new LinkNotInTabOrderRule();
-
-

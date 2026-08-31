@@ -6,8 +6,12 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from '../browse-mode-strategies/navigation-strategy';
-import { delay } from '../../screen-reader';
+import { Result } from '../browse-mode-strategies/result';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
+
+function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export class TabNavigationStrategy implements INavigationStrategy {
     public readonly meta: StrategyMetadata = {
@@ -19,10 +23,10 @@ export class TabNavigationStrategy implements INavigationStrategy {
     public constructor(public readonly config: NavigationStrategyConfig) {}
 
     public async execute(ctx: NavigationContext): Promise<StrategyResult> {
-        await ctx.sr.navigateToDocumentStart();
-        await ctx.sr.navigateToDocumentStart();
+        await ctx.navigator.navigateToDocumentStart();
+        await ctx.navigator.navigateToDocumentStart();
         await delay(2000);
-        await ctx.sr.clearSpokenPhraseLog();
+        await ctx.reader.clearSpokenPhraseLog();
 
         const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
@@ -30,31 +34,21 @@ export class TabNavigationStrategy implements INavigationStrategy {
         let lastBackendNodeId: number | null = null;
         let consecutiveSameCount = 0;
 
-        for await (const { phrase, itemText } of ctx.sr.focusableElements()) {
+        for await (const { phrase, itemText } of ctx.navigator.focusableElements()) {
             const backendNodeId = await ctx.ax.getFocusedHtmlElementBackendNodeId();
 
             if (backendNodeId == null && lastBackendNodeId != null) {
-                return {
-                    completionReason: {
-                        kind: 'cycle-complete',
-                        detail: 'tab focus returned to start of page',
-                    },
-                    meta: this.meta,
-                    navigationSteps,
-                };
+                return Result.cycleComplete('tab focus returned to start of page', this.meta, navigationSteps);
             }
 
             if (backendNodeId != null && backendNodeId === lastBackendNodeId) {
                 consecutiveSameCount++;
                 if (consecutiveSameCount >= 2) {
-                    return {
-                        completionReason: {
-                            kind: 'trapped',
-                            detail: 'keyboard focus could not escape element - potential focus trap',
-                        },
-                        meta: this.meta,
-                        navigationSteps,
-                    };
+                    return Result.trapped(
+                        'keyboard focus could not escape element - potential focus trap',
+                        this.meta,
+                        navigationSteps
+                    );
                 }
             } else {
                 consecutiveSameCount = 0;
@@ -76,24 +70,14 @@ export class TabNavigationStrategy implements INavigationStrategy {
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {
-                return {
-                    completionReason: {
-                        kind: 'limit-reached',
-                        detail: `stopped after ${this.config.maxSteps} focusable elements (safety limit)`,
-                    },
-                    meta: this.meta,
-                    navigationSteps,
-                };
+                return Result.limitReached(
+                    `stopped after ${this.config.maxSteps} focusable elements (safety limit)`,
+                    this.meta,
+                    navigationSteps
+                );
             }
         }
 
-        return {
-            completionReason: {
-                kind: 'cycle-complete',
-                detail: 'tab focus cycled through all focusable elements',
-            },
-            meta: this.meta,
-            navigationSteps,
-        };
+        return Result.cycleComplete('tab focus cycled through all focusable elements', this.meta, navigationSteps);
     }
 }

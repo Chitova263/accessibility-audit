@@ -115,5 +115,3 @@ describe('focus-order-anomaly rule', () => {
         expect(result.violations).toHaveLength(0);
     });
 });
-
-

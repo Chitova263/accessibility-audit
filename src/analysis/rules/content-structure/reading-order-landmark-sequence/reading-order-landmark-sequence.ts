@@ -169,5 +169,3 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, Readi
 }
 
 export const rule = new ReadingOrderLandmarkSequenceRule();
-
-

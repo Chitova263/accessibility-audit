@@ -85,5 +85,3 @@ export class ButtonNotInTabOrderRule implements Rule<NvdaContext, ButtonNotInTab
 }
 
 export const rule = new ButtonNotInTabOrderRule();
-
-

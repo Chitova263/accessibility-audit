@@ -157,5 +157,3 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
 }
 
 export const rule = new LargeContentGapRule();
-
-

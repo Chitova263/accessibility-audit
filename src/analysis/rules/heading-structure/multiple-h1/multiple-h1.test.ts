@@ -59,5 +59,3 @@ describe('multiple-h1 rule', () => {
         expect(result.stats!.totalHeadings).toBe(0);
     });
 });
-
-

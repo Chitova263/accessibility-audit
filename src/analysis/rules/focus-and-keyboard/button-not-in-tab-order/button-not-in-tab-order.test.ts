@@ -88,5 +88,3 @@ describe('button-not-in-tab-order rule', () => {
         expect(result.stats!.buttonsInBrowseMode).toBe(0);
     });
 });
-
-

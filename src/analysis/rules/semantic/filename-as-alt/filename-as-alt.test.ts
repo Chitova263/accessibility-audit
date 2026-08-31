@@ -90,5 +90,3 @@ describe('filename-as-alt rule', () => {
         expect(result.stats).toMatchObject({ totalImages: 3, violationsFound: 2 });
     });
 });
-
-

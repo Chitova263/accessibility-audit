@@ -6,6 +6,7 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
+import { Result } from './result';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 
 export class LinkNavigationStrategy implements INavigationStrategy {
@@ -21,7 +22,7 @@ export class LinkNavigationStrategy implements INavigationStrategy {
         const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        for await (const { phrase, itemText } of ctx.sr.links()) {
+        for await (const { phrase, itemText } of ctx.navigator.links()) {
             let matchResult = cursor.matchNext(itemText, 'link');
             if (!matchResult) {
                 matchResult = cursor.matchNext(phrase, 'link');
@@ -43,24 +44,14 @@ export class LinkNavigationStrategy implements INavigationStrategy {
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {
-                return {
-                    completionReason: {
-                        kind: 'limit-reached',
-                        detail: `stopped after ${this.config.maxSteps} links (safety limit)`,
-                    },
-                    meta: this.meta,
-                    navigationSteps,
-                };
+                return Result.limitReached(
+                    `stopped after ${this.config.maxSteps} links (safety limit)`,
+                    this.meta,
+                    navigationSteps
+                );
             }
         }
 
-        return {
-            completionReason: {
-                kind: 'exhausted',
-                detail: 'no more links found on page',
-            },
-            meta: this.meta,
-            navigationSteps,
-        };
+        return Result.exhausted('no more links found on page', this.meta, navigationSteps);
     }
 }

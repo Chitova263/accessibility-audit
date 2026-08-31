@@ -75,5 +75,3 @@ describe('repeated-pattern-without-heading rule', () => {
         expect(result.stats!.totalStepsAnalyzed).toBe(0);
     });
 });
-
-

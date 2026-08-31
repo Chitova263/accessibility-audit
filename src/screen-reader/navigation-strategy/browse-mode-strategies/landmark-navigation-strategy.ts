@@ -6,6 +6,7 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
+import { Result } from './result';
 import { AxTreeCursor, extractLandmarkRole } from '../../accessibility-tree/ax-tree-cursor';
 
 export class LandmarkNavigationStrategy implements INavigationStrategy {
@@ -21,7 +22,7 @@ export class LandmarkNavigationStrategy implements INavigationStrategy {
         const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        for await (const { phrase, itemText } of ctx.sr.landmarks()) {
+        for await (const { phrase, itemText } of ctx.navigator.landmarks()) {
             const landmarkRole = extractLandmarkRole(phrase) ?? extractLandmarkRole(itemText);
             const matchResult = landmarkRole ? cursor.matchNextByRole(landmarkRole) : null;
 
@@ -41,24 +42,14 @@ export class LandmarkNavigationStrategy implements INavigationStrategy {
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {
-                return {
-                    completionReason: {
-                        kind: 'limit-reached',
-                        detail: `stopped after ${this.config.maxSteps} landmarks (safety limit)`,
-                    },
-                    meta: this.meta,
-                    navigationSteps,
-                };
+                return Result.limitReached(
+                    `stopped after ${this.config.maxSteps} landmarks (safety limit)`,
+                    this.meta,
+                    navigationSteps
+                );
             }
         }
 
-        return {
-            completionReason: {
-                kind: 'exhausted',
-                detail: 'no more landmarks found on page',
-            },
-            meta: this.meta,
-            navigationSteps,
-        };
+        return Result.exhausted('no more landmarks found on page', this.meta, navigationSteps);
     }
 }

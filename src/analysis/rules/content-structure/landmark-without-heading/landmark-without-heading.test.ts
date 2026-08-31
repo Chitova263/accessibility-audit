@@ -72,5 +72,3 @@ describe('landmark-without-heading rule', () => {
         expect(result.stats!.totalStepsAnalyzed).toBe(0);
     });
 });
-
-

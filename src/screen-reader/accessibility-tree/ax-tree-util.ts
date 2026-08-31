@@ -35,7 +35,7 @@ export class AxTreeUtil {
         }
     }
 
-    public static async getFocusedNodeHtml(page: Page): Promise<string | null> {
+    public static getFocusedNodeHtml(page: Page): Promise<string | null> {
         return page.evaluate(`
             (function() {
                 let el = document.activeElement;

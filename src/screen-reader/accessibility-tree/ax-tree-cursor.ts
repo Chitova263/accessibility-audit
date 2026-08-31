@@ -19,18 +19,15 @@ export function flattenAxTree(nodes: AXNode[]): AXNode[] {
     const byId = new Map<string, AXNode>(nodes.map((node) => [node.nodeId, node]));
     const order: AXNode[] = [];
 
-    // Find the root node (the one without a parentId)
     const root = nodes.find((node) => !node.parentId);
     if (!root) return order;
 
     function visit(id: string): void {
         const node = byId.get(id);
         if (!node) return;
-        // Only add non-ignored nodes to the output
         if (!node.ignored) {
             order.push(node);
         }
-        // Always traverse children, even for ignored nodes
         (node.childIds ?? []).forEach(visit);
     }
 
@@ -86,12 +83,9 @@ export class AxTreeCursor {
         const normalizedPhrase = spokenPhrase.toLowerCase();
 
         const index = this.flat.findIndex((n, i) => {
-            // Only search forward from current position
             if (i <= this.cursorIndex) return false;
-            // Filter by role if specified
             // @ts-ignore
             if (role && n.role?.value !== role) return false;
-            // Match by name
             // @ts-ignore
             const name = n.name?.value as string | undefined;
             if (!name) return false;
@@ -115,9 +109,7 @@ export class AxTreeCursor {
         const normalizedPhrase = spokenPhrase.toLowerCase();
 
         const index = this.flat.findIndex((n, i) => {
-            // Only search forward from current position
             if (i <= this.cursorIndex) return false;
-            // Match by name (any role)
             // @ts-ignore
             const name = n.name?.value as string | undefined;
             if (!name) return false;

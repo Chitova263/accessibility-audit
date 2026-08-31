@@ -91,5 +91,3 @@ describe('link-not-in-tab-order rule', () => {
         });
     });
 });
-
-

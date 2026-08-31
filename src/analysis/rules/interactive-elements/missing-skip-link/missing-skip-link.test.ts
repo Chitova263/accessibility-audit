@@ -103,5 +103,3 @@ describe('missing-skip-link rule', () => {
         expect(result.stats!.skipLinkFound).toBe(false);
     });
 });
-
-

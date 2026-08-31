@@ -185,5 +185,3 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
 }
 
 export const rule = new FilenameAsAltRule();
-
-

@@ -91,5 +91,3 @@ describe('reading-order-landmark-sequence rule', () => {
         expect(result.stats!.landmarkSequence).toEqual([]);
     });
 });
-
-

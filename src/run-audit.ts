@@ -1,5 +1,7 @@
 import { program } from 'commander';
-import { NvdaScreenReader } from './screen-reader/nvda-screen-reader';
+import { Nvda } from './screen-reader/drivers/nvda';
+import { Navigator } from './screen-reader/navigators/navigator';
+import { nvdaKeyBindings, nvdaEndPatterns } from './screen-reader/navigators/config/nvda';
 import { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-connection';
 import type { INavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { PageSession } from './screen-reader/page-session';
@@ -64,7 +66,11 @@ try {
 
     const pageUrl = new URL(url);
     const page = await chromeDevToolsProtocolConnection.goToPage(pageUrl);
-    const pageSession = new PageSession(pageUrl, new NvdaScreenReader(), strategies, page);
+
+    const nvda = new Nvda();
+    const navigator = new Navigator(nvda, nvdaKeyBindings, nvdaEndPatterns);
+
+    const pageSession = new PageSession(pageUrl, nvda, navigator, strategies, page);
     await pageSession.startSession();
     const result = await pageSession.run();
 

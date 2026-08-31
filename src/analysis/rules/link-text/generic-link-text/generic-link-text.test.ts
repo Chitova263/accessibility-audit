@@ -116,5 +116,3 @@ describe('generic-link-text rule', () => {
         expect(result.violations).toHaveLength(0);
     });
 });
-
-

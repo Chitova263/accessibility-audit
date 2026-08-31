@@ -173,5 +173,3 @@ export class FocusOrderAnomalyRule implements Rule<NvdaContext, FocusOrderAnomal
 }
 
 export const rule = new FocusOrderAnomalyRule();
-
-

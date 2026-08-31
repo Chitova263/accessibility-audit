@@ -147,5 +147,3 @@ export class LandmarkWithoutHeadingRule implements Rule<NvdaContext, LandmarkWit
 }
 
 export const rule = new LandmarkWithoutHeadingRule();
-
-
