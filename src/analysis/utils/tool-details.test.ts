@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createNvdaContext } from './tool-details';
-import { CHECKS, runChecks } from '../registry/registry';
-import { broadTranscript, mockContext } from '../analyzers/test-fixtures';
+import { runRules, RULES } from '../rules/runner';
+import { broadTranscript, mockContext } from '../rules/test-fixtures';
 import type { NvdaViolation } from '../core/violation';
 
 describe('createNvdaContext', () => {
@@ -63,35 +63,32 @@ describe('createNvdaContext', () => {
     });
 });
 
-describe('context shape across every analyzer', () => {
+describe('context shape across all rules', () => {
     const transcript = broadTranscript();
 
-    it('reports axNode.role as a string, never a raw AXValue', async () => {
-        const nvdaChecks = CHECKS.filter((check) => check.id !== 'axe-core');
-        const results = await runChecks(mockContext(transcript), nvdaChecks);
+    // Filter out axe-core rule since it uses AxeContext, not NvdaContext
+    const nvdaRules = RULES.filter((rule) => rule.id !== 'axe-core');
 
-        const withNodes = results
-            .flatMap(({ check, violations }) =>
-                (violations as NvdaViolation[]).map((violation) => ({ check: check.id, violation }))
-            )
-            .filter(({ violation }) => violation.context.axNode !== undefined);
+    it('reports axNode.role as a string, never a raw AXValue', async () => {
+        const { violations } = await runRules(mockContext(transcript), nvdaRules);
+
+        const withNodes = (violations as NvdaViolation[]).filter(
+            (violation) => violation.context?.axNode !== undefined
+        );
 
         expect(withNodes.length).toBeGreaterThan(0);
 
-        const wrongShape = withNodes
-            .filter(({ violation }) => typeof violation.context.axNode?.role !== 'string')
-            .map(({ check }) => check);
+        const wrongShape = withNodes.filter((violation) => typeof violation.context.axNode?.role !== 'string');
 
         expect(wrongShape).toEqual([]);
     });
 
     it('produces the same violations on repeated runs', async () => {
         const context = mockContext(transcript);
-        const nvdaChecks = CHECKS.filter((check) => check.id !== 'axe-core');
 
-        const first = await runChecks(context, nvdaChecks);
-        const second = await runChecks(context, nvdaChecks);
+        const first = await runRules(context, nvdaRules);
+        const second = await runRules(context, nvdaRules);
 
-        expect(JSON.stringify(second.map((r) => r.violations))).toBe(JSON.stringify(first.map((r) => r.violations)));
+        expect(JSON.stringify(second.violations)).toBe(JSON.stringify(first.violations));
     });
 });
