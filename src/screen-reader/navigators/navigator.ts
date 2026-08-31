@@ -2,7 +2,7 @@ import type { ScreenReader } from '../drivers/nvda';
 import type { IElementNavigator, ScreenReaderKeyBindings, ScreenReaderEndPatterns } from './types';
 import { ElementNavigator } from './element-navigator/element-navigator';
 import { TabNavigator } from './tab-navigator/tab-navigator';
-import { ArrowNavigator } from './arrow-navigator/arrow-navigator';
+import { DownArrowNavigator } from './down-arrow-navigator/down-arrow-navigator';
 
 export class Navigator {
     constructor(
@@ -112,7 +112,7 @@ export class Navigator {
     }
 
     linearElements(): IElementNavigator {
-        return new ArrowNavigator(this.sr, this.keyBindings.arrowDown);
+        return new DownArrowNavigator(this.sr, this.keyBindings.arrowDown);
     }
 
     async navigateToDocumentStart(): Promise<void> {

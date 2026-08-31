@@ -363,68 +363,143 @@ export class HtmlReporter implements Reporter {
         const axNode = ctx?.axNode;
         const screenshot = ctx?.screenshot;
 
-        let screenshotHtml = '';
-        if (screenshot && 'path' in screenshot && screenshot.path) {
+        // Build attachment tabs content
+        const hasScreenshot = screenshot && 'path' in screenshot && screenshot.path && screenshotCache.has(screenshot.path);
+        const hasHtml = !!violation.element?.htmlSnippet;
+        const hasAttachments = hasScreenshot || hasHtml;
+
+        let screenshotTab = '';
+        let htmlTab = '';
+
+        if (hasScreenshot && screenshot.path) {
             const base64 = screenshotCache.get(screenshot.path);
             if (base64) {
-                screenshotHtml = `
-                <div class="v-screenshot">
-                    <img src="data:image/png;base64,${base64}" 
-                         alt="Element highlighted on page" 
-                         width="${screenshot.width}" 
-                         height="${screenshot.height}"
-                         loading="lazy">
+                screenshotTab = `
+                <div class="v-tab-panel" id="screenshot-${escapeHtml(violation.id)}" role="tabpanel" aria-labelledby="screenshot-tab-${escapeHtml(violation.id)}">
+                    <div class="v-screenshot-container">
+                        <img src="data:image/png;base64,${base64}" 
+                             alt="Element highlighted on page showing the violation in context" 
+                             loading="lazy"
+                             class="v-screenshot-full">
+                        <div class="v-screenshot-meta">
+                            <span class="v-screenshot-size">${screenshot.width} × ${screenshot.height}px</span>
+                            <button type="button" class="v-screenshot-zoom" aria-label="View full size" title="Open in lightbox">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>`;
             }
         }
 
+        if (hasHtml) {
+            htmlTab = `
+            <div class="v-tab-panel" id="html-${escapeHtml(violation.id)}" role="tabpanel" aria-labelledby="html-tab-${escapeHtml(violation.id)}" hidden>
+                <div class="v-html-container">
+                    <pre><code>${escapeHtml(truncate(violation.element!.htmlSnippet!, 800))}</code></pre>
+                    ${violation.element?.selector ? `<span class="v-selector">${escapeHtml(violation.element.selector)}</span>` : ''}
+                </div>
+            </div>`;
+        }
+
+        const attachmentsSection = hasAttachments ? `
+        <details class="v-attachments">
+            <summary class="v-attachments-toggle">
+                <svg class="v-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+                <span>Attachments</span>
+                <span class="v-attachments-count">${(hasScreenshot ? 1 : 0) + (hasHtml ? 1 : 0)}</span>
+            </summary>
+            <div class="v-attachments-content">
+                ${hasScreenshot && hasHtml ? `
+                <div class="v-tabs" role="tablist" aria-label="Violation attachments">
+                    <button type="button" role="tab" id="screenshot-tab-${escapeHtml(violation.id)}" aria-selected="true" aria-controls="screenshot-${escapeHtml(violation.id)}" class="v-tab is-active">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        Screenshot
+                    </button>
+                    <button type="button" role="tab" id="html-tab-${escapeHtml(violation.id)}" aria-selected="false" aria-controls="html-${escapeHtml(violation.id)}" class="v-tab" tabindex="-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"/>
+                            <polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        HTML
+                    </button>
+                </div>
+                ` : hasScreenshot ? `
+                <div class="v-attachment-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <span>Screenshot</span>
+                </div>
+                ` : `
+                <div class="v-attachment-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 18 22 12 16 6"/>
+                        <polyline points="8 6 2 12 8 18"/>
+                    </svg>
+                    <span>HTML Snippet</span>
+                </div>
+                `}
+                ${screenshotTab}
+                ${htmlTab}
+            </div>
+        </details>` : '';
+
         return `
 <article class="violation-card" id="violation-${escapeHtml(violation.id)}">
-    <p class="v-message">${escapeHtml(violation.message)}</p>
-
-    <div class="v-context">
-        ${
-            source
-                ? `
-        <div class="v-source">
-            <span class="v-label">Source</span>
-            <a href="#step-${escapeHtml(source.stepId)}" class="v-step-link">
-                ${escapeHtml(source.strategy)} [${source.stepIndex}]
-            </a>
-            <span class="v-spoken">"${escapeHtml(source.spokenPhrase)}"</span>
-        </div>
-        `
-                : ''
-        }
-
-        ${
-            axNode
-                ? `
-        <div class="v-axnode">
-            <span class="v-label">Node</span>
-            ${axNode.role ? `<span class="v-role">${escapeHtml(axNode.role)}</span>` : ''}
-            ${axNode.name ? `<span class="v-name">"${escapeHtml(axNode.name)}"</span>` : '<span class="v-name v-empty">(no name)</span>'}
-        </div>
-        `
-                : ''
-        }
+    <div class="v-header">
+        <p class="v-message">${escapeHtml(violation.message)}</p>
+        ${hasAttachments ? '<span class="v-has-attachment" title="Has attachments">📎</span>' : ''}
     </div>
 
     ${
-        violation.element?.htmlSnippet || screenshotHtml
+        source || axNode
             ? `
-    <div class="v-element">
+    <div class="v-details">
         ${
-            violation.element?.htmlSnippet
+            source
                 ? `
-        <div class="v-html">
-            <pre><code>${escapeHtml(truncate(violation.element.htmlSnippet, 400))}</code></pre>
-            ${violation.element?.selector ? `<span class="v-selector">${escapeHtml(violation.element.selector)}</span>` : ''}
+        <div class="v-detail-row">
+            <span class="v-detail-label">Detected at</span>
+            <div class="v-detail-value">
+                <a href="#step-${escapeHtml(source.stepId)}" class="v-source-link">
+                    <span class="v-source-part"><span class="v-source-label">Strategy</span><span class="v-source-value">${escapeHtml(source.strategy)}</span></span>
+                    <span class="v-source-part"><span class="v-source-label">Step</span><span class="v-source-value">#${source.stepIndex}</span></span>
+                </a>
+            </div>
+        </div>
+        <div class="v-detail-row">
+            <span class="v-detail-label">Announced</span>
+            <div class="v-detail-value">
+                <span class="v-spoken-text">${escapeHtml(source.spokenPhrase) || '<em class="v-empty-speech">(empty)</em>'}</span>
+            </div>
         </div>
         `
                 : ''
         }
-        ${screenshotHtml}
+        ${
+            axNode
+                ? `
+        <div class="v-detail-row">
+            <span class="v-detail-label">Element</span>
+            <div class="v-detail-value">
+                ${axNode.role ? `<code class="v-ax-role">${escapeHtml(axNode.role)}</code>` : ''}
+                ${axNode.name ? `<span class="v-ax-name">"${escapeHtml(truncate(axNode.name, 80))}"</span>` : '<span class="v-ax-name v-empty">(no accessible name)</span>'}
+            </div>
+        </div>
+        `
+                : ''
+        }
     </div>
     `
             : ''
@@ -434,12 +509,14 @@ export class HtmlReporter implements Reporter {
         enhancement
             ? `
     <div class="v-enhancement">
-        ${enhancement.userImpactDescription ? `<p class="v-impact">${escapeHtml(enhancement.userImpactDescription)}</p>` : ''}
+        ${enhancement.userImpactDescription ? `<p class="v-impact"><strong>Impact:</strong> ${escapeHtml(enhancement.userImpactDescription)}</p>` : ''}
         ${enhancement.remediationSuggestion ? `<p class="v-remediation"><strong>Fix:</strong> ${escapeHtml(enhancement.remediationSuggestion)}</p>` : ''}
     </div>
     `
             : ''
     }
+
+    ${attachmentsSection}
 </article>`;
     }
 
@@ -1184,134 +1261,507 @@ footer {
 
 .v-message {
     font-size: 0.9rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
     line-height: 1.5;
 }
 
-.v-context {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
+/* Details grid layout - cleaner display of source/element info */
+.v-details {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 1rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
     font-size: 0.85rem;
 }
 
-.v-source, .v-axnode {
+.v-detail-row {
+    display: contents;
+}
+
+.v-detail-label {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding-top: 0.15rem;
+    white-space: nowrap;
+}
+
+.v-detail-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+/* Source link - strategy + step index with explicit labels */
+.v-source-link {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0;
+    text-decoration: none;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.v-source-link:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.v-source-part {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+}
+
+.v-source-part:first-child {
+    background: var(--accent-color);
+    color: white;
+}
+
+.v-source-part:last-child {
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
+}
+
+.v-source-label {
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+    line-height: 1;
+    margin-bottom: 0.15rem;
+}
+
+.v-source-part:first-child .v-source-label {
+    color: rgba(255,255,255,0.85);
+}
+
+.v-source-part:last-child .v-source-label {
+    color: var(--text-secondary);
+}
+
+.v-source-value {
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    line-height: 1;
+}
+
+.v-source-part:first-child .v-source-value {
+    color: white;
+}
+
+.v-source-part:last-child .v-source-value {
+    color: var(--text-primary);
+}
+
+/* Spoken text - the announcement */
+.v-spoken-text {
+    display: block;
+    padding: 0.35rem 0.6rem;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.v-empty-speech {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Accessibility tree node info */
+.v-ax-role {
+    display: inline-block;
+    padding: 0.15rem 0.45rem;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .v-ax-role {
+    background: #1a237e;
+    color: #90caf9;
+}
+
+.v-ax-name {
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.v-ax-name.v-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.v-enhancement {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(56, 142, 60, 0.08);
+    border-radius: 6px;
+    border-left: 3px solid var(--success-color);
+    font-size: 0.85rem;
+}
+
+[data-theme="dark"] .v-enhancement {
+    background: rgba(56, 142, 60, 0.12);
+}
+
+.v-impact {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.v-remediation {
+    color: var(--text-primary);
+}
+
+.v-remediation strong {
+    color: var(--success-color);
+}
+
+/* Attachments Section - Allure/Mochawesome inspired */
+.v-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.v-header .v-message {
+    flex: 1;
+}
+
+.v-has-attachment {
+    font-size: 0.85rem;
+    opacity: 0.6;
+}
+
+.v-attachments {
+    margin-top: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.v-attachments-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    background: var(--bg-primary);
+    border: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: background 0.15s;
+}
+
+.v-attachments-toggle:hover {
+    background: var(--bg-secondary);
+}
+
+.v-chevron {
+    transition: transform 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.v-attachments[open] .v-chevron {
+    transform: rotate(90deg);
+}
+
+.v-attachments-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.35rem;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.v-attachments-content {
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-primary);
+}
+
+.v-attachment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.v-attachment-header svg {
+    opacity: 0.7;
+}
+
+/* Tabs for multiple attachments */
+.v-tabs {
+    display: flex;
+    gap: 0;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.v-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.v-tab:hover {
+    color: var(--text-primary);
+    background: rgba(0,0,0,0.03);
+}
+
+[data-theme="dark"] .v-tab:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+.v-tab:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
+}
+
+.v-tab.is-active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+    background: var(--bg-primary);
+}
+
+.v-tab svg {
+    opacity: 0.7;
+}
+
+.v-tab.is-active svg {
+    opacity: 1;
+}
+
+.v-tab-panel {
+    padding: 0;
+}
+
+.v-tab-panel[hidden] {
+    display: none;
+}
+
+/* Screenshot container - full width display */
+.v-screenshot-container {
+    position: relative;
+    background: #1a1a1a;
+    background-image: 
+        linear-gradient(45deg, #222 25%, transparent 25%),
+        linear-gradient(-45deg, #222 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #222 75%),
+        linear-gradient(-45deg, transparent 75%, #222 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.v-screenshot-full {
+    max-width: 100%;
+    max-height: 600px;
+    height: auto;
+    border: 3px solid var(--error-color);
+    border-radius: 4px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    cursor: zoom-in;
+    transition: transform 0.2s;
+}
+
+.v-screenshot-full:hover {
+    transform: scale(1.01);
+}
+
+.v-screenshot-meta {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
-.v-label {
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-}
-
-.v-step-link {
-    display: inline-block;
-    padding: 0.1rem 0.4rem;
-    background: var(--accent-color);
-    color: white;
-    border-radius: 4px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.75rem;
-    text-decoration: none;
-}
-
-.v-step-link:hover {
-    background: var(--text-primary);
-}
-
-.v-spoken {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-.v-role {
-    display: inline-block;
-    padding: 0.1rem 0.4rem;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.75rem;
-}
-
-.v-name {
-    color: var(--text-primary);
-}
-
-.v-name.v-empty {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-.v-element {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
-}
-
-@media (max-width: 768px) {
-    .v-element {
-        grid-template-columns: 1fr;
-    }
-}
-
-.v-html {
-    min-width: 0;
-}
-
-.v-html pre {
-    margin: 0;
-    padding: 0.5rem;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 0.75rem;
-    overflow-x: auto;
-}
-
-.v-html code {
-    color: var(--text-secondary);
-}
-
-.v-selector {
-    display: block;
-    margin-top: 0.25rem;
+.v-screenshot-size {
+    padding: 0.25rem 0.5rem;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
     font-size: 0.7rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border-radius: 4px;
+}
+
+.v-screenshot-zoom {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.v-screenshot-zoom:hover {
+    background: var(--accent-color);
+}
+
+.v-screenshot-zoom:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+/* HTML container */
+.v-html-container {
+    padding: 1rem;
+    background: var(--bg-secondary);
+}
+
+.v-html-container pre {
+    margin: 0;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.v-html-container code {
     color: var(--text-secondary);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.v-screenshot {
-    flex-shrink: 0;
-}
-
-.v-screenshot img {
-    max-width: 200px;
-    height: auto;
-    border: 2px solid var(--error-color);
-    border-radius: 4px;
+.v-html-container .v-selector {
     display: block;
-}
-
-.v-enhancement {
     margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px dashed var(--border-color);
-    font-size: 0.85rem;
-}
-
-.v-impact {
-    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.72rem;
     color: var(--text-secondary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    word-break: break-all;
 }
 
-.v-remediation {
-    color: var(--success-color);
+/* Lightbox for full-screen screenshot viewing */
+.v-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.92);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.v-lightbox.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.v-lightbox-content {
+    position: relative;
+    max-width: 95vw;
+    max-height: 95vh;
+}
+
+.v-lightbox-img {
+    max-width: 95vw;
+    max-height: 90vh;
+    border: 3px solid var(--error-color);
+    border-radius: 6px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.v-lightbox-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: background 0.15s;
+}
+
+.v-lightbox-close:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.v-lightbox-close:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.v-lightbox-meta {
+    position: absolute;
+    bottom: -32px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.8rem;
 }
 
 .violation-meta {
@@ -1688,8 +2138,16 @@ ${opts.customCss}
 
     private getScripts(): string {
         return `
+<div class="v-lightbox" id="screenshot-lightbox" role="dialog" aria-modal="true" aria-label="Screenshot preview">
+    <div class="v-lightbox-content">
+        <button type="button" class="v-lightbox-close" aria-label="Close">&times;</button>
+        <img class="v-lightbox-img" src="" alt="">
+        <div class="v-lightbox-meta"></div>
+    </div>
+</div>
 <script>
 (function () {
+    // ========== Transcript Filter ==========
     var input = document.getElementById('transcript-filter');
     var status = document.querySelector('.t-status');
     var chips = Array.prototype.slice.call(document.querySelectorAll('.t-chip'));
@@ -1764,6 +2222,113 @@ ${opts.customCss}
 
     window.addEventListener('hashchange', revealTarget);
     revealTarget();
+
+    // ========== Attachment Tabs ==========
+    document.querySelectorAll('.v-tabs').forEach(function (tablist) {
+        var tabs = tablist.querySelectorAll('.v-tab');
+        
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                // Deactivate all tabs in this tablist
+                tabs.forEach(function (t) {
+                    t.classList.remove('is-active');
+                    t.setAttribute('aria-selected', 'false');
+                    t.setAttribute('tabindex', '-1');
+                    var panel = document.getElementById(t.getAttribute('aria-controls'));
+                    if (panel) panel.hidden = true;
+                });
+                
+                // Activate clicked tab
+                tab.classList.add('is-active');
+                tab.setAttribute('aria-selected', 'true');
+                tab.removeAttribute('tabindex');
+                var panel = document.getElementById(tab.getAttribute('aria-controls'));
+                if (panel) panel.hidden = false;
+            });
+            
+            // Keyboard navigation
+            tab.addEventListener('keydown', function (e) {
+                var index = Array.prototype.indexOf.call(tabs, tab);
+                var newIndex = index;
+                
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    newIndex = (index + 1) % tabs.length;
+                    e.preventDefault();
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    newIndex = (index - 1 + tabs.length) % tabs.length;
+                    e.preventDefault();
+                } else if (e.key === 'Home') {
+                    newIndex = 0;
+                    e.preventDefault();
+                } else if (e.key === 'End') {
+                    newIndex = tabs.length - 1;
+                    e.preventDefault();
+                }
+                
+                if (newIndex !== index) {
+                    tabs[newIndex].click();
+                    tabs[newIndex].focus();
+                }
+            });
+        });
+    });
+
+    // ========== Screenshot Lightbox ==========
+    var lightbox = document.getElementById('screenshot-lightbox');
+    var lightboxImg = lightbox ? lightbox.querySelector('.v-lightbox-img') : null;
+    var lightboxMeta = lightbox ? lightbox.querySelector('.v-lightbox-meta') : null;
+    var lightboxClose = lightbox ? lightbox.querySelector('.v-lightbox-close') : null;
+
+    function openLightbox(img) {
+        if (!lightbox || !lightboxImg) return;
+        lightboxImg.src = img.src;
+        lightboxImg.alt = img.alt;
+        if (lightboxMeta) {
+            lightboxMeta.textContent = img.naturalWidth + ' × ' + img.naturalHeight + ' pixels';
+        }
+        lightbox.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+        if (lightboxClose) lightboxClose.focus();
+    }
+
+    function closeLightbox() {
+        if (!lightbox) return;
+        lightbox.classList.remove('is-open');
+        document.body.style.overflow = '';
+    }
+
+    // Open lightbox on screenshot click
+    document.querySelectorAll('.v-screenshot-full').forEach(function (img) {
+        img.addEventListener('click', function () {
+            openLightbox(img);
+        });
+    });
+
+    // Open lightbox on zoom button click
+    document.querySelectorAll('.v-screenshot-zoom').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var container = btn.closest('.v-screenshot-container');
+            var img = container ? container.querySelector('.v-screenshot-full') : null;
+            if (img) openLightbox(img);
+        });
+    });
+
+    // Close lightbox
+    if (lightboxClose) {
+        lightboxClose.addEventListener('click', closeLightbox);
+    }
+
+    if (lightbox) {
+        lightbox.addEventListener('click', function (e) {
+            if (e.target === lightbox) closeLightbox();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && lightbox.classList.contains('is-open')) {
+                closeLightbox();
+            }
+        });
+    }
 })();
 </script>`;
     }

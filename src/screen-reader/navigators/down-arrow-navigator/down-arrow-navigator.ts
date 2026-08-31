@@ -1,13 +1,13 @@
 import type { ScreenReader } from '../../drivers/nvda';
 import type { IElementNavigator, NavigationItem } from '../types';
 
-export class ArrowNavigator implements IElementNavigator {
+export class DownArrowNavigator implements IElementNavigator {
     public readonly type = 'linear' as const;
 
     constructor(
         private readonly sr: ScreenReader,
         private readonly arrowKey: string = 'Down',
-        private readonly repeatThreshold: number = 3
+        private readonly repeatThreshold: number = 30
     ) {}
 
     async *[Symbol.asyncIterator](): AsyncIterableIterator<NavigationItem> {

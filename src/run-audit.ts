@@ -50,6 +50,7 @@ try {
     await chromeDevToolsProtocolConnection.connect();
 
     const strategies: INavigationStrategy[] = [
+        new ArrowNavigationStrategy({ maxSteps: 1000 }),
         new HeadingNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
         new LandmarkNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
         new ButtonNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
@@ -60,7 +61,6 @@ try {
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 4 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 5 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 6 }),
-        new ArrowNavigationStrategy({ maxSteps }),
         new TabNavigationStrategy({ maxSteps }),
     ];
 

@@ -21,12 +21,14 @@ import { rule as positiveTabindex } from './focus-and-keyboard/positive-tabindex
 
 // Link Text
 import { rule as duplicateLinkText } from './link-text/duplicate-link-text/duplicate-link-text';
+import { rule as fragmentedLinkText } from './link-text/fragmented-link-text/fragmented-link-text';
 import { rule as genericLinkText } from './link-text/generic-link-text/generic-link-text';
 
 // Content Structure
 import { rule as contentDensityPerRegion } from './content-structure/content-density-per-region/content-density-per-region';
 import { rule as excessiveNavigationLinks } from './content-structure/excessive-navigation-links/excessive-navigation-links';
 import { rule as excessiveRepetition } from './content-structure/excessive-repetition/excessive-repetition';
+import { rule as excessiveBlankAnnouncements } from './content-structure/excessive-blank-announcements/excessive-blank-announcements';
 import { rule as landmarkWithoutHeading } from './content-structure/landmark-without-heading/landmark-without-heading';
 import { rule as largeContentGap } from './content-structure/large-content-gap/large-content-gap';
 import { rule as readingOrderLandmarkSequence } from './content-structure/reading-order-landmark-sequence/reading-order-landmark-sequence';
@@ -38,6 +40,7 @@ import { rule as ariaHiddenFocusable } from './interactive-elements/aria-hidden-
 import { rule as emptyAccessibleName } from './interactive-elements/empty-accessible-name/empty-accessible-name';
 import { rule as formFieldNoLabel } from './interactive-elements/form-field-no-label/form-field-no-label';
 import { rule as missingSkipLink } from './interactive-elements/missing-skip-link/missing-skip-link';
+import { rule as nestedInteractiveElements } from './interactive-elements/nested-interactive-elements/nested-interactive-elements';
 
 // Semantic
 import { rule as filenameAsAlt } from './semantic/filename-as-alt/filename-as-alt';
@@ -66,10 +69,12 @@ export const RULES: readonly Rule<unknown, unknown>[] = [
 
     // Link Text
     duplicateLinkText,
+    fragmentedLinkText,
     genericLinkText,
 
     // Content Structure
     contentDensityPerRegion,
+    excessiveBlankAnnouncements,
     excessiveNavigationLinks,
     excessiveRepetition,
     landmarkWithoutHeading,
@@ -83,6 +88,7 @@ export const RULES: readonly Rule<unknown, unknown>[] = [
     emptyAccessibleName,
     formFieldNoLabel,
     missingSkipLink,
+    nestedInteractiveElements,
 
     // Semantic
     filenameAsAlt,

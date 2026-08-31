@@ -118,6 +118,14 @@ export const RULES = {
         supportsScreenshot: true,
     },
 
+    'fragmented-link-text': {
+        wcag: { primary: { criterion: '2.4.4', level: 'A' } },
+        impact: 'critical',
+        axeEquivalent: [],
+        summary: 'Link text is fragmented into individual characters',
+        supportsScreenshot: false, // pattern across multiple elements
+    },
+
     'focus-trap': {
         wcag: { primary: { criterion: '2.1.2', level: 'A' } },
         impact: 'critical',
@@ -207,6 +215,14 @@ export const RULES = {
         supportsScreenshot: true,
     },
 
+    'nested-interactive-elements': {
+        wcag: { primary: { criterion: '4.1.1', level: 'A' } },
+        impact: 'serious',
+        axeEquivalent: [],
+        summary: 'Interactive elements are improperly nested',
+        supportsScreenshot: true,
+    },
+
     'excessive-navigation-links': {
         wcag: { primary: { criterion: '2.4.1', level: 'A' } },
         impact: 'moderate',
@@ -270,6 +286,14 @@ export const RULES = {
         axeEquivalent: [],
         summary: 'Same phrase announced many times consecutively',
         supportsScreenshot: false, // pattern issue
+    },
+
+    'excessive-blank-announcements': {
+        wcag: { primary: { criterion: '1.3.1', level: 'A' } },
+        impact: 'moderate',
+        axeEquivalent: [],
+        summary: 'Long run of blank announcements in linear reading',
+        supportsScreenshot: false, // no element to capture
     },
 
     'content-density-per-region': {
