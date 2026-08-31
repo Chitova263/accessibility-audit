@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { Navigator } from './navigator';
 import { ElementNavigator } from './element-navigator/element-navigator';
 import { TabNavigator } from './tab-navigator/tab-navigator';
-import { ArrowNavigator } from './arrow-navigator/arrow-navigator';
+import { DownArrowNavigator } from './down-arrow-navigator/down-arrow-navigator';
 import type { ScreenReader } from '../drivers/nvda';
 import type { ScreenReaderKeyBindings, ScreenReaderEndPatterns } from './types';
 
@@ -119,7 +119,7 @@ describe('Navigator', () => {
 
             const navigator = nav.linearElements();
 
-            expect(navigator).toBeInstanceOf(ArrowNavigator);
+            expect(navigator).toBeInstanceOf(DownArrowNavigator);
             expect(navigator.type).toBe('linear');
         });
     });

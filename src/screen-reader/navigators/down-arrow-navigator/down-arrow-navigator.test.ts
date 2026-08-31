@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ArrowNavigator } from './arrow-navigator';
+import { DownArrowNavigator } from './down-arrow-navigator';
 import type { ScreenReader } from '../../drivers/nvda';
 
 function createMockIO(overrides: Partial<ScreenReader> = {}): ScreenReader {
@@ -38,7 +38,7 @@ describe('ArrowNavigator', () => {
                 .mockResolvedValueOnce('End'),
         });
 
-        const navigator = new ArrowNavigator(mockIO);
+        const navigator = new DownArrowNavigator(mockIO);
 
         const items = [];
         for await (const item of navigator) {
@@ -65,7 +65,7 @@ describe('ArrowNavigator', () => {
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new ArrowNavigator(mockIO);
+        const navigator = new DownArrowNavigator(mockIO);
 
         const items = [];
         for await (const item of navigator) {
@@ -86,7 +86,7 @@ describe('ArrowNavigator', () => {
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new ArrowNavigator(mockIO, 'Up');
+        const navigator = new DownArrowNavigator(mockIO, 'Up');
 
         const items = [];
         for await (const item of navigator) {
@@ -109,7 +109,7 @@ describe('ArrowNavigator', () => {
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new ArrowNavigator(mockIO, 'Down', 2);
+        const navigator = new DownArrowNavigator(mockIO, 'Down', 2);
 
         const items = [];
         for await (const item of navigator) {
@@ -135,7 +135,7 @@ describe('ArrowNavigator', () => {
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new ArrowNavigator(mockIO);
+        const navigator = new DownArrowNavigator(mockIO);
 
         const items = [];
         for await (const item of navigator) {
@@ -165,7 +165,7 @@ describe('ArrowNavigator', () => {
                 .mockResolvedValueOnce('End'),
         });
 
-        const navigator = new ArrowNavigator(mockIO);
+        const navigator = new DownArrowNavigator(mockIO);
 
         const items = [];
         for await (const item of navigator) {
@@ -178,7 +178,7 @@ describe('ArrowNavigator', () => {
 
     it('has correct type', () => {
         const mockIO = createMockIO();
-        const navigator = new ArrowNavigator(mockIO);
+        const navigator = new DownArrowNavigator(mockIO);
 
         expect(navigator.type).toBe('linear');
     });

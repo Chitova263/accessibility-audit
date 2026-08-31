@@ -33,7 +33,7 @@ export { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-co
 export { Nvda, type ScreenReader } from './screen-reader/drivers/nvda';
 export { ElementNavigator } from './screen-reader/navigators/element-navigator/element-navigator';
 export { TabNavigator } from './screen-reader/navigators/tab-navigator/tab-navigator';
-export { ArrowNavigator } from './screen-reader/navigators/arrow-navigator/arrow-navigator';
+export { DownArrowNavigator } from './screen-reader/navigators/down-arrow-navigator/down-arrow-navigator';
 export { Navigator } from './screen-reader/navigators/navigator';
 export { nvdaKeyBindings, nvdaEndPatterns } from './screen-reader/navigators/config/nvda';
 export type {

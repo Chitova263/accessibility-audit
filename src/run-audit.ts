@@ -60,7 +60,7 @@ try {
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 4 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 5 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 6 }),
-        new ArrowNavigationStrategy({ maxSteps }),
+        new ArrowNavigationStrategy({ maxSteps: 500 }),
         new TabNavigationStrategy({ maxSteps }),
     ];
 
