@@ -10,7 +10,7 @@ import { LinkNavigationStrategy } from './screen-reader/navigation-strategy/brow
 import { HeadingHierarchyNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/heading-hierarchy-navigation-strategy';
 import { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
 import { ArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/arrow-navigation-strategy';
-import { collectViolations, runChecks, summarizeViolations } from './analysis';
+import { runRules, summarizeViolations } from './analysis';
 import { createPromptBuilder } from './llm/prompt-builder';
 import { formatTranscriptAsText } from './reporting';
 
@@ -73,10 +73,13 @@ try {
     // Enable DOM for screenshot capture
     await cdp.send('DOM.enable');
 
-    // Run every registered check. Analyzers capture screenshots inline.
+    // Run all rules. Some rules capture screenshots inline.
     // axe-core drives the live page, so this has to happen before the connection is closed.
-    const checkResults = await runChecks({ transcript: result.results, page: result.page, cdp });
-    const allViolations = collectViolations(checkResults);
+    const { violations: allViolations, byRule } = await runRules({
+        transcript: result.results,
+        page: result.page,
+        cdp,
+    });
 
     // Write audit data to files
     const fs = await import('fs/promises');
@@ -145,13 +148,8 @@ try {
 
     console.log('\n=== Analysis Complete ===');
     console.log(`Total violations found: ${totals.total}`);
-    console.log(`Checks run: ${checkResults.length}`);
+    console.log(`Rules run: ${byRule.size}`);
     console.log(`  By tool:`, totals.byTool);
-
-    console.log('\nViolations by check:');
-    for (const { check, violations } of checkResults) {
-        console.log(`  ${check.name}: ${violations.length}`);
-    }
 
     console.log('\nViolations by impact:', totals.byImpact);
     console.log('Violations by rule:', totals.byRule);

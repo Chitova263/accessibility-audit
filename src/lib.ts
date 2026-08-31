@@ -12,24 +12,18 @@ export {
 } from './llm/prompt-builder';
 
 export {
-    analyzeAriaHiddenFocusable,
-    analyzeArrowNavigation,
-    analyzeContentGrouping,
-    analyzeEmptyAccessibleNames,
-    analyzeFocusOrder,
-    analyzeFocusTraps,
-    analyzeFormLabels,
-    analyzeHeadingStructure,
-    analyzeImageAltText,
-    analyzeKeyboardAccessibility,
-    analyzeLandmarkStructure,
-    analyzeLinkText,
-    analyzeNavigationSize,
-    analyzeRoleMismatch,
-    analyzeSkipLink,
-    analyzeWithAxeCore,
-    type ArrowNavigationAnalysisResult,
+    // Rules runner
+    runRules,
+    getRuleById,
+    ALL_RULES,
+    type RunResult,
+    // Utilities
+    summarizeViolations,
+    // Core types
     type Violation,
+    type Rule,
+    type RuleMeta,
+    type RuleResult,
 } from './analysis';
 
 export { PageSession } from './screen-reader/page-session';
