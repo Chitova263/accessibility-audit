@@ -46,9 +46,9 @@ function cleanHtmlSnippet(html: string, maxLength: number): string {
 function extractCorrelation(violation: NvdaViolation): TranscriptCorrelation {
     const context = violation.context;
     return {
-        strategyName: context.step.strategy,
-        stepIndex: context.step.index,
-        spoken: context.step.spokenPhrase,
+        strategyName: context.source.strategy,
+        stepIndex: context.source.stepIndex,
+        spoken: context.source.spokenPhrase,
         confidence: 'high', // Direct from same audit run
     };
 }

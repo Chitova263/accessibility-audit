@@ -88,7 +88,6 @@ export class ExcessiveRepetitionRule implements Rule<NvdaContext, ExcessiveRepet
 
         const steps = arrowResult.navigationSteps;
 
-        // Track consecutive repetitions
         let currentPhrase = '';
         let count = 0;
         let startStep = 0;
@@ -97,9 +96,7 @@ export class ExcessiveRepetitionRule implements Rule<NvdaContext, ExcessiveRepet
             const step = steps[i]!;
             const phrase = step.itemText.toLowerCase().trim();
 
-            // Skip empty or very short phrases
             if (phrase.length < minPhraseLength) {
-                // End current sequence if it qualifies
                 if (count >= threshold) {
                     repetitions.push({ phrase: currentPhrase, count, startStep, endStep: i - 1 });
                 }
@@ -111,18 +108,15 @@ export class ExcessiveRepetitionRule implements Rule<NvdaContext, ExcessiveRepet
             if (phrase === currentPhrase) {
                 count++;
             } else {
-                // Check if previous sequence was excessive
                 if (count >= threshold) {
                     repetitions.push({ phrase: currentPhrase, count, startStep, endStep: i - 1 });
                 }
-                // Start new sequence
                 currentPhrase = phrase;
                 count = 1;
                 startStep = i;
             }
         }
 
-        // Check final sequence
         if (count >= threshold) {
             repetitions.push({
                 phrase: currentPhrase,
@@ -132,7 +126,6 @@ export class ExcessiveRepetitionRule implements Rule<NvdaContext, ExcessiveRepet
             });
         }
 
-        // Create violations for each excessive repetition
         for (const rep of repetitions) {
             const step = steps[rep.startStep]!;
             violations.push(

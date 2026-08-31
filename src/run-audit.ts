@@ -11,6 +11,7 @@ import { HeadingHierarchyNavigationStrategy } from './screen-reader/navigation-s
 import { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
 import { ArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/arrow-navigation-strategy';
 import { runRules, summarizeViolations } from './analysis';
+import { ensureScreenshotsDir } from './analysis/utils/screenshot-capture';
 import { createPromptBuilder } from './llm/prompt-builder';
 import { formatTranscriptAsText } from './reporting';
 
@@ -73,12 +74,16 @@ try {
     // Enable DOM for screenshot capture
     await cdp.send('DOM.enable');
 
-    // Run all rules. Some rules capture screenshots inline.
+    // Create screenshots directory
+    const screenshotsDir = await ensureScreenshotsDir(outputDir);
+
+    // Run all rules. Some rules capture screenshots to files.
     // axe-core drives the live page, so this has to happen before the connection is closed.
     const { violations: allViolations, byRule } = await runRules({
         transcript: result.results,
         page: result.page,
         cdp,
+        screenshotsDir,
     });
 
     // Write audit data to files

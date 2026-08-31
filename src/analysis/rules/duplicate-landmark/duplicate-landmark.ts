@@ -2,7 +2,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
 import { createNvdaContext } from '../../utils/tool-details';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 import { collectLandmarks, type LandmarkInfo } from '../utils/landmark-utils';
 
 export interface DuplicateLandmarkStats {
@@ -23,7 +23,7 @@ export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmar
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, DuplicateLandmarkStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
         const byRole: Record<string, number> = {};
 
@@ -46,7 +46,14 @@ export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmar
 
                 const context = this.createContext(landmark);
                 if (typeof landmark.backendNodeId === 'number') {
-                    context.screenshot = (await captureScreenshot(page, cdp, landmark.backendNodeId)) ?? undefined;
+                    const filename = `${this.id}-${landmark.identifier}`;
+                    context.screenshot = await captureScreenshotToFile(
+                        page,
+                        cdp,
+                        landmark.backendNodeId,
+                        screenshotsDir,
+                        filename
+                    );
                 }
 
                 violations.push(this.createViolation(landmark, group.length, context));

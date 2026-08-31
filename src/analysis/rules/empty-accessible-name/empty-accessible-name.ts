@@ -2,7 +2,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
 import { createNvdaContext } from '../../utils/tool-details';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 import { capitalize } from '../../utils/string-utils';
 
 const ROLES_REQUIRING_NAME = [
@@ -45,7 +45,7 @@ export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibl
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, EmptyAccessibleNameStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
         let totalChecked = 0;
         const byRole: Record<string, number> = {};
@@ -72,7 +72,14 @@ export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibl
 
                 const backendNodeId = node.backendDOMNodeId;
                 if (typeof backendNodeId === 'number') {
-                    context.screenshot = (await captureScreenshot(page, cdp, backendNodeId)) ?? undefined;
+                    const filename = `${this.id}-${step.identifier}`;
+                    context.screenshot = await captureScreenshotToFile(
+                        page,
+                        cdp,
+                        backendNodeId,
+                        screenshotsDir,
+                        filename
+                    );
                 }
 
                 violations.push(this.createViolation(step, role, context));

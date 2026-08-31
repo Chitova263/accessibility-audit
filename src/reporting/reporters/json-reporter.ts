@@ -23,6 +23,7 @@ const DEFAULT_OPTIONS: Required<JsonReporterOptions> = {
     includeTranscript: false,
     includeHtmlSnippets: true,
     title: 'Accessibility Audit Report',
+    screenshotsBasePath: process.cwd(),
     pretty: true,
     indent: 2,
     summaryOnly: false,

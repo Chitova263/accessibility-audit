@@ -50,10 +50,10 @@ const createNvdaViolation = (overrides: Partial<NvdaViolation> = {}): NvdaViolat
     tool: 'nvda-audit',
     timestamp: 1234567890,
     context: {
-        step: {
+        source: {
             strategy: 'tab',
-            index: 5,
-            id: 'step-5',
+            stepIndex: 5,
+            stepId: 'step-5',
             spokenPhrase: 'button',
         },
     },

@@ -1,11 +1,13 @@
 import type { Page, CDPSession } from 'playwright';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import type { ScreenshotSuccess, ScreenshotFailure, Screenshot } from '../core/violation';
 
 export interface ScreenshotOptions {
     padding?: number;
     maxWidth?: number;
     maxHeight?: number;
     highlightColor?: string;
-    highlightWidth?: number;
 }
 
 const DEFAULT_OPTIONS: Required<ScreenshotOptions> = {
@@ -13,31 +15,41 @@ const DEFAULT_OPTIONS: Required<ScreenshotOptions> = {
     maxWidth: 800,
     maxHeight: 600,
     highlightColor: '#ff0000',
-    highlightWidth: 3,
 };
 
-export interface Screenshot {
-    data: string;
-    width: number;
-    height: number;
-}
-
-export async function captureScreenshot(
+/**
+ * Capture a screenshot of an element and write it to the screenshots directory.
+ * Returns either a success (path, dimensions) or failure (error, debug info).
+ */
+export async function captureScreenshotToFile(
     page: Page,
     cdp: CDPSession,
     backendNodeId: number,
+    screenshotsDir: string,
+    filename: string,
     options: ScreenshotOptions = {}
-): Promise<Screenshot | null> {
+): Promise<Screenshot> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
+    const viewport = page.viewportSize();
+    let boundingBox: BoundingBox | null = null;
+
+    const failure = (error: string): ScreenshotFailure => ({
+        error,
+        backendNodeId,
+        boundingBox,
+        viewport,
+    });
 
     try {
-        const { model } = await cdp.send('DOM.getBoxModel', { backendNodeId });
-        if (!model) return null;
+        await cdp.send('DOM.scrollIntoViewIfNeeded', { backendNodeId });
 
-        const quad = model.content;
-        const box = quadToBoundingBox(quad);
-        const paddedBox = addPadding(box, opts.padding);
-        const viewport = page.viewportSize();
+        const { model } = await cdp.send('DOM.getBoxModel', { backendNodeId });
+        if (!model) {
+            return failure('DOM.getBoxModel returned no model');
+        }
+
+        boundingBox = quadToBoundingBox(model.content);
+        const paddedBox = addPadding(boundingBox, opts.padding);
         const clampedBox = clampToViewport(paddedBox, viewport, opts.maxWidth, opts.maxHeight);
 
         await highlightElement(cdp, backendNodeId, opts.highlightColor);
@@ -52,15 +64,31 @@ export async function captureScreenshot(
         const screenshotBuffer = await page.screenshot({ clip, type: 'png' });
         await cdp.send('Overlay.hideHighlight');
 
+        await mkdir(screenshotsDir, { recursive: true });
+        const filePath = join(screenshotsDir, `${filename}.png`);
+        await writeFile(filePath, screenshotBuffer);
+
         return {
-            data: screenshotBuffer.toString('base64'),
+            path: `screenshots/${filename}.png`,
             width: Math.round(clampedBox.width),
             height: Math.round(clampedBox.height),
         };
-    } catch {
-        return null;
+    } catch (e) {
+        return failure(e instanceof Error ? e.message : String(e));
     }
 }
+
+/**
+ * Ensure the screenshots directory exists within the output directory.
+ */
+export async function ensureScreenshotsDir(outputDir: string): Promise<string> {
+    const screenshotsDir = join(outputDir, 'screenshots');
+    await mkdir(screenshotsDir, { recursive: true });
+    return screenshotsDir;
+}
+
+export type { Screenshot, ScreenshotSuccess, ScreenshotFailure } from '../core/violation';
+export { isScreenshotSuccess } from '../core/violation';
 
 interface BoundingBox {
     x: number;
@@ -120,14 +148,13 @@ async function highlightElement(cdp: CDPSession, backendNodeId: number, color: s
     });
 }
 
-function hexToRgba(hex: string): { r: number; g: number; b: number; a: number } {
+function hexToRgba(hex: string): { r: number; g: number; b: number } {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
         ? {
               r: parseInt(result[1]!, 16),
               g: parseInt(result[2]!, 16),
               b: parseInt(result[3]!, 16),
-              a: 1,
           }
-        : { r: 255, g: 0, b: 0, a: 1 };
+        : { r: 255, g: 0, b: 0 };
 }

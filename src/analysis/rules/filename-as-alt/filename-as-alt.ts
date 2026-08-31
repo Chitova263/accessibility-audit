@@ -11,7 +11,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
 import { createNvdaContext } from '../../utils/tool-details';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 
 /** Patterns that indicate filename used as alt text */
 const FILENAME_PATTERNS = [
@@ -66,11 +66,10 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, FilenameAsAltStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
         const byIssue: Record<'filename-as-alt', number> = { 'filename-as-alt': 0 };
 
-        // Collect all images from all strategies
         const images: ImageInfo[] = [];
 
         for (const result of transcript) {
@@ -101,10 +100,8 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
             }
         }
 
-        // Deduplicate images
         const uniqueImages = this.deduplicateImages(images);
 
-        // Check: Filename as alt text
         for (const image of uniqueImages) {
             const name = image.name.trim();
 
@@ -121,7 +118,14 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
                     image.stepIndex
                 );
                 if (typeof image.backendNodeId === 'number') {
-                    context.screenshot = (await captureScreenshot(page, cdp, image.backendNodeId)) ?? undefined;
+                    const filename = `${this.id}-${image.identifier}`;
+                    context.screenshot = await captureScreenshotToFile(
+                        page,
+                        cdp,
+                        image.backendNodeId,
+                        screenshotsDir,
+                        filename
+                    );
                 }
                 violations.push(this.createViolation(image, context));
             }

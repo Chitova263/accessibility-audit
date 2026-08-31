@@ -112,7 +112,6 @@ export class ContentDensityPerRegionRule implements Rule<NvdaContext, ContentDen
 
         const steps = arrowResult.navigationSteps;
 
-        // Find landmark boundaries
         const landmarkSteps: { landmark: string; stepIndex: number }[] = [];
 
         for (let i = 0; i < steps.length; i++) {
@@ -128,7 +127,6 @@ export class ContentDensityPerRegionRule implements Rule<NvdaContext, ContentDen
             }
         }
 
-        // Calculate items per region
         for (let i = 0; i < landmarkSteps.length; i++) {
             const current = landmarkSteps[i]!;
             const next = landmarkSteps[i + 1];

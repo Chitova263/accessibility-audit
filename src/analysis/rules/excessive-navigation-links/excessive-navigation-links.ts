@@ -40,7 +40,6 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
         const { transcript } = ctx;
         const violations: NvdaViolation[] = [];
 
-        // Count total links from link strategy
         let totalLinks = 0;
         for (const result of transcript) {
             if ((result.meta.type ?? result.meta.name) === 'link') {
@@ -49,7 +48,6 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
             }
         }
 
-        // Collect navigation landmarks
         const navigationLandmarkNames: string[] = [];
         for (const result of transcript) {
             if ((result.meta.type ?? result.meta.name) !== 'landmark') continue;
@@ -62,8 +60,6 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
             }
         }
 
-        // Heuristic: estimate links per navigation via even distribution
-        // (precise per-nav counts would require DOM structure analysis)
         const linksPerNavigation: Record<string, number> = {};
         if (navigationLandmarkNames.length > 0) {
             const avgLinks = Math.round(totalLinks / navigationLandmarkNames.length);
@@ -72,7 +68,6 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
             }
         }
 
-        // Find first link step for violation context
         const firstLinkStep = this.findFirstLinkStep(transcript);
 
         if (firstLinkStep !== null) {

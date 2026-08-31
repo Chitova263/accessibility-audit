@@ -11,7 +11,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
 import { createNvdaContext } from '../../utils/tool-details';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 import { capitalize } from '../../utils/string-utils';
 
 /** Form field roles that require labels */
@@ -63,11 +63,10 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, FormFieldNoLabelStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
         const byRole: Record<string, { total: number; unlabeled: number }> = {};
 
-        // Collect form fields from all strategies (mainly Tab)
         const formFields: FormFieldInfo[] = [];
 
         for (const result of transcript) {
@@ -100,10 +99,8 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
             }
         }
 
-        // Deduplicate
         const uniqueFields = this.deduplicateFields(formFields);
 
-        // Analyze each field
         for (const field of uniqueFields) {
             if (!byRole[field.role]) {
                 byRole[field.role] = { total: 0, unlabeled: 0 };
@@ -126,7 +123,14 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
                     field.stepIndex
                 );
                 if (typeof field.backendNodeId === 'number') {
-                    context.screenshot = (await captureScreenshot(page, cdp, field.backendNodeId)) ?? undefined;
+                    const filename = `${this.id}-${field.identifier}`;
+                    context.screenshot = await captureScreenshotToFile(
+                        page,
+                        cdp,
+                        field.backendNodeId,
+                        screenshotsDir,
+                        filename
+                    );
                 }
                 violations.push(this.createViolation(field, context));
             }

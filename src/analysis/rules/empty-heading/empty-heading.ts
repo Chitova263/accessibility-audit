@@ -1,7 +1,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 import { collectHeadings, createHeadingContext, type HeadingInfo } from '../utils/heading-utils';
 
 export interface EmptyHeadingStats {
@@ -21,7 +21,7 @@ export class EmptyHeadingRule implements Rule<NvdaContext, EmptyHeadingStats> {
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, EmptyHeadingStats>> {
-        const { page, cdp } = ctx;
+        const { page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
         const headings = collectHeadings(ctx);
 
@@ -31,7 +31,14 @@ export class EmptyHeadingRule implements Rule<NvdaContext, EmptyHeadingStats> {
             const context = createHeadingContext(heading);
 
             if (typeof heading.backendNodeId === 'number') {
-                context.screenshot = (await captureScreenshot(page, cdp, heading.backendNodeId)) ?? undefined;
+                const filename = `${this.id}-${heading.identifier}`;
+                context.screenshot = await captureScreenshotToFile(
+                    page,
+                    cdp,
+                    heading.backendNodeId,
+                    screenshotsDir,
+                    filename
+                );
             }
 
             violations.push(this.createViolation(heading, context));

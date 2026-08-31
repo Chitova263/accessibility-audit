@@ -101,7 +101,6 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
             return gaps;
         }
 
-        // Gap before the first heading
         if (headingIndices[0]! >= this.threshold) {
             gaps.push({
                 startStep: steps[0]!,
@@ -112,7 +111,6 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
             });
         }
 
-        // Gaps between consecutive headings
         for (let i = 0; i < headingIndices.length - 1; i++) {
             const gapSize = headingIndices[i + 1]! - headingIndices[i]! - 1;
             if (gapSize >= this.threshold) {

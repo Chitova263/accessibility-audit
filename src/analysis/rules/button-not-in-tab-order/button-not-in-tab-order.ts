@@ -2,7 +2,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
 import { createNvdaContext } from '../../utils/tool-details';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 import { capitalize } from '../../utils/string-utils';
 import {
     collectElementsByStrategy,
@@ -30,7 +30,7 @@ export class ButtonNotInTabOrderRule implements Rule<NvdaContext, ButtonNotInTab
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, ButtonNotInTabOrderStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
 
         const { elements: buttons, tabOrderSignatures } = collectElementsByStrategy(transcript, 'button', 'button');
@@ -42,7 +42,14 @@ export class ButtonNotInTabOrderRule implements Rule<NvdaContext, ButtonNotInTab
                 const context = createNvdaContext(button.step, button.strategyType, 0);
 
                 if (typeof button.backendNodeId === 'number') {
-                    context.screenshot = (await captureScreenshot(page, cdp, button.backendNodeId)) ?? undefined;
+                    const filename = `${this.id}-${button.step.identifier}`;
+                    context.screenshot = await captureScreenshotToFile(
+                        page,
+                        cdp,
+                        button.backendNodeId,
+                        screenshotsDir,
+                        filename
+                    );
                 }
 
                 violations.push(this.createViolation(button, context));

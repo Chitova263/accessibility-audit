@@ -45,7 +45,12 @@ const givenAxeReports = (violations: StubAxeResults['violations']): void => {
     axeResult.current = { violations, testEngine: { name: 'axe-core', version: '4.13.0' } } satisfies StubAxeResults;
 };
 
-const context: AuditContext = { page: {} as Page, transcript: [], cdp: {} as CDPSession };
+const context: AuditContext = {
+    page: {} as Page,
+    transcript: [],
+    cdp: {} as CDPSession,
+    screenshotsDir: '/tmp/screenshots',
+};
 
 beforeEach(() => {
     givenAxeReports([]);
@@ -154,7 +159,12 @@ describe('axe-core rule', () => {
     });
 
     it('returns empty result when page is null', async () => {
-        const contextWithoutPage: AuditContext = { page: null as never, transcript: [], cdp: {} as CDPSession };
+        const contextWithoutPage: AuditContext = {
+            page: null as never,
+            transcript: [],
+            cdp: {} as CDPSession,
+            screenshotsDir: '/tmp/screenshots',
+        };
 
         const result = await rule.run(contextWithoutPage);
 

@@ -11,7 +11,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 import { getRule } from '../rule-catalog';
 import { collectLinks, createNvdaContextFromLink } from '../utils/link-utils';
 import type { LinkInfo } from '../utils/link-utils';
@@ -34,7 +34,7 @@ export class DuplicateLinkTextRule implements Rule<NvdaContext, DuplicateLinkTex
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, DuplicateLinkTextStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
 
         const links = collectLinks(transcript);
@@ -48,13 +48,19 @@ export class DuplicateLinkTextRule implements Rule<NvdaContext, DuplicateLinkTex
             const uniqueHrefs = new Set(group.map((l) => l.href).filter(Boolean));
             if (uniqueHrefs.size <= 1) continue;
 
-            // Multiple links with same text but different destinations
             duplicateGroups++;
 
             for (const link of group) {
                 const context = createNvdaContextFromLink(link);
                 if (typeof link.backendNodeId === 'number') {
-                    context.screenshot = (await captureScreenshot(page, cdp, link.backendNodeId)) ?? undefined;
+                    const filename = `${this.id}-${link.identifier}`;
+                    context.screenshot = await captureScreenshotToFile(
+                        page,
+                        cdp,
+                        link.backendNodeId,
+                        screenshotsDir,
+                        filename
+                    );
                 }
                 violations.push(this.createViolation(link, group.length, uniqueHrefs.size, context));
             }

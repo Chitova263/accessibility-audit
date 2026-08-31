@@ -71,7 +71,6 @@ export class MissingSkipLinkRule implements Rule<NvdaContext, MissingSkipLinkSta
 
             if (strategyType !== 'tab') continue;
 
-            // Check first N tab stops for skip link
             const stepsToCheck = Math.min(result.navigationSteps.length, MAX_TAB_STOPS_TO_CHECK);
 
             for (let i = 0; i < stepsToCheck; i++) {
@@ -84,18 +83,17 @@ export class MissingSkipLinkRule implements Rule<NvdaContext, MissingSkipLinkSta
 
                 if (this.isSkipLink(name, htmlSnippet)) {
                     skipLinkFound = true;
-                    skipLinkPosition = i + 1; // 1-based position
+                    skipLinkPosition = i + 1;
                     break;
                 }
             }
 
-            // Only process first tab strategy found
             if (result.navigationSteps.length > 0 && !skipLinkFound) {
                 const firstStep = result.navigationSteps[0]!;
                 violations.push(this.createViolation(firstStep, firstFewTabStops));
             }
 
-            break; // Only check first tab strategy
+            break;
         }
 
         return {

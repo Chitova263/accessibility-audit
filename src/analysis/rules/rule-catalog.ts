@@ -293,8 +293,6 @@ export function ruleSupportsScreenshot(ruleId: string): boolean {
     if (ruleId in RULES) {
         return RULES[ruleId as RuleId].supportsScreenshot;
     }
-    // axe-core rules: most have specific elements, so default to true
-    // unless we want to maintain a separate list
     return true;
 }
 

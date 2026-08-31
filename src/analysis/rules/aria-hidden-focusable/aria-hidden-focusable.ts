@@ -12,7 +12,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
 import { createNvdaContext } from '../../utils/tool-details';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 
 export interface AriaHiddenFocusableStats {
     totalFocusableElements: number;
@@ -32,7 +32,7 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, AriaHiddenFocusableStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
         let totalFocusable = 0;
         const seen = new Set<string>();
@@ -40,7 +40,6 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
         for (const result of transcript) {
             const strategyType = result.meta.type ?? result.meta.name;
 
-            // Only check focus mode (Tab) - these are elements that actually received focus
             if (strategyType !== 'tab') continue;
 
             for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {
@@ -51,7 +50,6 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
 
                 totalFocusable++;
 
-                // Deduplicate by snippet
                 if (seen.has(htmlSnippet)) continue;
                 seen.add(htmlSnippet);
 
@@ -59,7 +57,14 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
                     const context = createNvdaContext(step, 'tab', stepIndex);
                     const backendNodeId = step.axNode?.backendDOMNodeId;
                     if (typeof backendNodeId === 'number') {
-                        context.screenshot = (await captureScreenshot(page, cdp, backendNodeId)) ?? undefined;
+                        const filename = `${this.id}-${step.identifier}`;
+                        context.screenshot = await captureScreenshotToFile(
+                            page,
+                            cdp,
+                            backendNodeId,
+                            screenshotsDir,
+                            filename
+                        );
                     }
                     violations.push(this.createViolation(step, context));
                 }

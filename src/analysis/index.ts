@@ -1,4 +1,3 @@
-// Core types
 export type {
     Violation,
     NvdaViolation,
@@ -13,29 +12,23 @@ export { isNvdaViolation } from './core/violation';
 
 export type { AuditContext } from './core/context';
 
-// Rule core types
 export type { Rule, RuleMeta, RuleResult } from './core/rule';
 
-// Rule catalog
 export { RULES, RULE_IDS, getRule, ruleSupportsScreenshot } from './rules/rule-catalog';
 export type { RuleId, RuleDefinition } from './rules/rule-catalog';
 
-// Violation utilities
 export { summarizeViolations } from './utils/summarize-violations';
 export type { ViolationTotals } from './utils/summarize-violations';
 
-// Rules runner
 export { RULES as ALL_RULES, runRules, getRuleById } from './rules/runner';
 export type { RunResult } from './rules/runner';
 
-// Utils
 export { createNvdaContext } from './utils/tool-details';
 export type { ContextSource } from './utils/tool-details';
 
-export { captureScreenshot } from './utils/screenshot-capture';
-export type { ScreenshotOptions, Screenshot } from './utils/screenshot-capture';
+export { captureScreenshotToFile, ensureScreenshotsDir, isScreenshotSuccess } from './utils/screenshot-capture';
+export type { ScreenshotOptions, Screenshot, ScreenshotSuccess, ScreenshotFailure } from './utils/screenshot-capture';
 
-// Individual rules
 export { rule as ariaHiddenFocusableRule } from './rules/aria-hidden-focusable/aria-hidden-focusable';
 export { rule as axeCoreRule } from './rules/axe-core/axe-core';
 export { rule as buttonNotInTabOrderRule } from './rules/button-not-in-tab-order/button-not-in-tab-order';

@@ -103,7 +103,6 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, Readi
 
         const steps = arrowResult.navigationSteps;
 
-        // Extract landmark sequence
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i]!;
             const spoken = getSpokenText(step);
@@ -116,12 +115,11 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, Readi
                         stepIndex: i,
                         spokenPhrase: step.spokenPhrases.join(' '),
                     });
-                    break; // Only record first match per step
+                    break;
                 }
             }
         }
 
-        // Find positions
         const mainIndex = landmarkSequence.findIndex((l) => l.landmark === 'main');
         const footerIndex = landmarkSequence.findIndex((l) => l.landmark === 'contentinfo');
         const asideIndex = landmarkSequence.findIndex((l) => l.landmark === 'complementary');
@@ -131,7 +129,6 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, Readi
 
         const violationMessages: string[] = [];
 
-        // Check for footer before main
         if (!hasMainBeforeFooter && footerIndex !== -1 && mainIndex !== -1) {
             const footerStep = steps[landmarkSequence[footerIndex]!.stepIndex]!;
             violations.push(
@@ -145,7 +142,6 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, Readi
             violationMessages.push('Footer before main');
         }
 
-        // Check for aside/complementary before main
         if (!hasMainBeforeAside && asideIndex !== -1 && mainIndex !== -1) {
             const asideStep = steps[landmarkSequence[asideIndex]!.stepIndex]!;
             violations.push(

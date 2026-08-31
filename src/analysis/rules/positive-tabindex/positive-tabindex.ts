@@ -15,7 +15,7 @@ import type {
     NavigationStep,
 } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { createNvdaContext } from '../../utils/tool-details';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 
 export interface PositiveTabindexStats {
     totalFocusableElements: number;
@@ -48,7 +48,7 @@ export class PositiveTabindexRule implements Rule<NvdaContext, PositiveTabindexS
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, PositiveTabindexStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
 
         const focusableElements = this.collectTabOrderElements(transcript);
@@ -57,7 +57,14 @@ export class PositiveTabindexRule implements Rule<NvdaContext, PositiveTabindexS
         for (const anomaly of anomalies) {
             const context = createNvdaContext(anomaly.element.step, 'tab', anomaly.element.tabIndex);
             if (typeof anomaly.element.backendNodeId === 'number') {
-                context.screenshot = (await captureScreenshot(page, cdp, anomaly.element.backendNodeId)) ?? undefined;
+                const filename = `${this.id}-${anomaly.element.step.identifier}`;
+                context.screenshot = await captureScreenshotToFile(
+                    page,
+                    cdp,
+                    anomaly.element.backendNodeId,
+                    screenshotsDir,
+                    filename
+                );
             }
             violations.push(this.createViolation(anomaly, context));
         }

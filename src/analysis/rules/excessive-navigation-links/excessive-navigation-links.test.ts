@@ -40,7 +40,7 @@ describe('excessive-navigation-links rule', () => {
         const result = await rule.run(mockContext([strategyResult('link', links(50))]));
 
         expect(result.violations[0]!.id).toBe('excessive-navigation-step-0');
-        expect(result.violations[0]!.context).toMatchObject({ step: { strategy: 'link', index: 0 } });
+        expect(result.violations[0]!.context).toMatchObject({ source: { strategy: 'link', stepIndex: 0 } });
     });
 
     it('spreads the link count evenly across navigation landmarks', async () => {

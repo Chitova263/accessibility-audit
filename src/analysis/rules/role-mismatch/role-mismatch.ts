@@ -11,7 +11,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
 import { createNvdaContext } from '../../utils/tool-details';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 
 type RoleMismatchIssue =
     'link-as-button' | 'button-as-link' | 'div-as-interactive' | 'span-as-interactive' | 'element-role-override';
@@ -89,12 +89,11 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, RoleMismatchStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
         const byIssue: Record<string, number> = {};
         let totalChecked = 0;
 
-        // Collect elements from all strategies
         const elements: ElementInfo[] = [];
 
         for (const result of transcript) {
@@ -126,7 +125,6 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
             }
         }
 
-        // Deduplicate
         const uniqueElements = this.deduplicateElements(elements);
 
         for (const element of uniqueElements) {
@@ -148,7 +146,14 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
                     element.stepIndex
                 );
                 if (typeof element.backendNodeId === 'number') {
-                    context.screenshot = (await captureScreenshot(page, cdp, element.backendNodeId)) ?? undefined;
+                    const filename = `${this.id}-${element.identifier}`;
+                    context.screenshot = await captureScreenshotToFile(
+                        page,
+                        cdp,
+                        element.backendNodeId,
+                        screenshotsDir,
+                        filename
+                    );
                 }
                 violations.push(this.createViolation(element, mismatch, context));
             }

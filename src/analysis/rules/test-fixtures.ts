@@ -128,6 +128,9 @@ export const broadTranscript = (): StrategyResult[] => [
  */
 export const mockContext = (transcript: StrategyResult[]): import('../core/context').AuditContext => ({
     transcript,
-    page: null as never,
+    page: {
+        viewportSize: () => ({ width: 1280, height: 720 }),
+    } as never,
     cdp: null as never,
+    screenshotsDir: '/tmp/screenshots',
 });

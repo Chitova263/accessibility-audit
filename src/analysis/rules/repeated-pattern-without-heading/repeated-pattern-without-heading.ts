@@ -96,7 +96,6 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
     private findStructuralPatterns(steps: NavigationStep[]): RepeatedPattern[] {
         const patterns: RepeatedPattern[] = [];
 
-        // Build a sequence of structural roles for each step
         const roleSequences: { role: string; step: NavigationStep; index: number }[] = [];
         for (let i = 0; i < steps.length; i++) {
             const spoken = steps[i]!.spokenPhrases.join(' ').toLowerCase();
@@ -106,7 +105,6 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
             }
         }
 
-        // Currently detects runs of 'clickable' items; extend targetRoles to add more
         const targetRoles = ['clickable'] as const;
         for (const targetRole of targetRoles) {
             const groups = this.findConsecutiveGroups(roleSequences, targetRole, this.repetitionThreshold);

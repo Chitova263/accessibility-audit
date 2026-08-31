@@ -91,7 +91,6 @@ export class StepsToMainContentRule implements Rule<NvdaContext, StepsToMainCont
         const steps = arrowResult.navigationSteps;
         let mainFoundAtStep: number | null = null;
 
-        // Find the first step that reaches the main landmark
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i]!;
             const spoken = getSpokenText(step);

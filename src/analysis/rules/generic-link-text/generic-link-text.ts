@@ -10,7 +10,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { NvdaContext, NvdaViolation } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
-import { captureScreenshot } from '../../utils/screenshot-capture';
+import { captureScreenshotToFile } from '../../utils/screenshot-capture';
 import { getRule } from '../rule-catalog';
 import {
     collectLinks,
@@ -62,7 +62,7 @@ export class GenericLinkTextRule implements Rule<NvdaContext, GenericLinkTextSta
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, GenericLinkTextStats>> {
-        const { transcript, page, cdp } = ctx;
+        const { transcript, page, cdp, screenshotsDir } = ctx;
         const violations: NvdaViolation[] = [];
         let genericLinksWithSurroundingContext = 0;
 
@@ -77,7 +77,14 @@ export class GenericLinkTextRule implements Rule<NvdaContext, GenericLinkTextSta
 
             const context = createNvdaContextFromLink(link);
             if (typeof link.backendNodeId === 'number') {
-                context.screenshot = (await captureScreenshot(page, cdp, link.backendNodeId)) ?? undefined;
+                const filename = `${this.id}-${link.identifier}`;
+                context.screenshot = await captureScreenshotToFile(
+                    page,
+                    cdp,
+                    link.backendNodeId,
+                    screenshotsDir,
+                    filename
+                );
             }
 
             violations.push(this.createViolation(link, surroundingContext, context));
