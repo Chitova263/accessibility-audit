@@ -78,7 +78,8 @@ export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibl
                         cdp,
                         backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
 

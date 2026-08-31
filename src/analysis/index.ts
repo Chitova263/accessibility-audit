@@ -26,8 +26,8 @@ export type { RunResult } from './rules/runner';
 export { createNvdaContext } from './utils/tool-details';
 export type { ContextSource } from './utils/tool-details';
 
-export { captureScreenshotToFile, ensureScreenshotsDir, isScreenshotSuccess } from './utils/screenshot-capture';
-export type { ScreenshotOptions, Screenshot, ScreenshotSuccess, ScreenshotFailure } from './utils/screenshot-capture';
+export { captureScreenshotToFile, captureViewportWithHighlight, ensureScreenshotsDir, isScreenshotSuccess } from './utils/screenshot-capture';
+export type { ScreenshotOptions, Screenshot, ScreenshotSuccess, ScreenshotFailure, BoundingBox } from './utils/screenshot-capture';
 
 // Heading Structure
 export { rule as emptyHeadingRule } from './rules/heading-structure/empty-heading/empty-heading';

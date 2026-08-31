@@ -28,16 +28,25 @@ export interface Violation<TContext = unknown> {
     timestamp: number;
 }
 
+export interface BoundingBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
 export interface ScreenshotSuccess {
     path: string;
     width: number;
     height: number;
+    /** Bounding box of the highlighted element within the screenshot (viewport coordinates) */
+    elementBounds?: BoundingBox;
 }
 
 export interface ScreenshotFailure {
     error: string;
     backendNodeId: number;
-    boundingBox: { x: number; y: number; width: number; height: number } | null;
+    boundingBox: BoundingBox | null;
     viewport: { width: number; height: number } | null;
 }
 

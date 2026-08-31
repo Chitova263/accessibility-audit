@@ -48,7 +48,8 @@ export class ButtonNotInTabOrderRule implements Rule<NvdaContext, ButtonNotInTab
                         cdp,
                         button.backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
 

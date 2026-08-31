@@ -52,7 +52,8 @@ export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmar
                         cdp,
                         landmark.backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
 

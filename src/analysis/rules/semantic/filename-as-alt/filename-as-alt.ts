@@ -124,7 +124,8 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
                         cdp,
                         image.backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
                 violations.push(this.createViolation(image, context));

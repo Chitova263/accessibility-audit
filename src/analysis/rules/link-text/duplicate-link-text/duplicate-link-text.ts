@@ -59,7 +59,8 @@ export class DuplicateLinkTextRule implements Rule<NvdaContext, DuplicateLinkTex
                         cdp,
                         link.backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
                 violations.push(this.createViolation(link, group.length, uniqueHrefs.size, context));

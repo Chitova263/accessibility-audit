@@ -37,7 +37,8 @@ export class EmptyHeadingRule implements Rule<NvdaContext, EmptyHeadingStats> {
                     cdp,
                     heading.backendNodeId,
                     screenshotsDir,
-                    filename
+                    filename,
+                    { label: `${this.id}: ${this.meta.summary}` }
                 );
             }
 

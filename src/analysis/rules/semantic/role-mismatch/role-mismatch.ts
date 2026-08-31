@@ -152,7 +152,8 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
                         cdp,
                         element.backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
                 violations.push(this.createViolation(element, mismatch, context));

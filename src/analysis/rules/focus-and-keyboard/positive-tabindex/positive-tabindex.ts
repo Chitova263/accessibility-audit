@@ -63,7 +63,8 @@ export class PositiveTabindexRule implements Rule<NvdaContext, PositiveTabindexS
                     cdp,
                     anomaly.element.backendNodeId,
                     screenshotsDir,
-                    filename
+                    filename,
+                    { label: `${this.id}: ${this.meta.summary}` }
                 );
             }
             violations.push(this.createViolation(anomaly, context));

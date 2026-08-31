@@ -83,7 +83,8 @@ export class GenericLinkTextRule implements Rule<NvdaContext, GenericLinkTextSta
                     cdp,
                     link.backendNodeId,
                     screenshotsDir,
-                    filename
+                    filename,
+                    { label: `${this.id}: ${this.meta.summary}` }
                 );
             }
 

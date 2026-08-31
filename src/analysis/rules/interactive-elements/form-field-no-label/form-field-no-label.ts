@@ -129,7 +129,8 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
                         cdp,
                         field.backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
                 violations.push(this.createViolation(field, context));

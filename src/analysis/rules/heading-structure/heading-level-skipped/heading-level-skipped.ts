@@ -39,7 +39,8 @@ export class HeadingLevelSkippedRule implements Rule<NvdaContext, HeadingLevelSk
                         cdp,
                         heading.backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
 

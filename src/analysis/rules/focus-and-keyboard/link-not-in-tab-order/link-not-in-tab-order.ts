@@ -48,7 +48,8 @@ export class LinkNotInTabOrderRule implements Rule<NvdaContext, LinkNotInTabOrde
                         cdp,
                         link.backendNodeId,
                         screenshotsDir,
-                        filename
+                        filename,
+                        { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
 
