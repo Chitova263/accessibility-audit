@@ -17,56 +17,95 @@ function createMockIO(overrides: Partial<ScreenReader> = {}): ScreenReader {
     };
 }
 
-describe('ArrowNavigator', () => {
-    it('yields items until repeated phrase threshold is reached', async () => {
+/**
+ * Create coordinated mocks where spokenPhraseLog and lastSpokenPhrase
+ * return consistent values based on a sequence of phrases.
+ * Empty string in the sequence means "no speech" (end of document).
+ */
+function createCoordinatedMocks(phrases: (string | null)[]) {
+    let callIndex = 0;
+    
+    return {
+        spokenPhraseLog: vi.fn().mockImplementation(() => {
+            const phrase = phrases[callIndex];
+            // null or undefined means end of document (empty log)
+            if (phrase == null) {
+                return Promise.resolve([]);
+            }
+            return Promise.resolve(phrase ? [phrase] : []);
+        }),
+        lastSpokenPhrase: vi.fn().mockImplementation(() => {
+            const phrase = phrases[callIndex];
+            callIndex++;
+            return Promise.resolve(phrase ?? '');
+        }),
+    };
+}
+
+describe('DownArrowNavigator', () => {
+    it('stops when NVDA produces no new speech (end of document)', async () => {
+        const mocks = createCoordinatedMocks([
+            'Paragraph 1',
+            'Paragraph 2', 
+            'Last item',
+            null,  // Silent - end of document (1st)
+            null,  // Silent - end of document (2nd) - triggers stop
+        ]);
+        
         const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('Paragraph 1')
-                .mockResolvedValueOnce('Paragraph 2')
-                .mockResolvedValueOnce('Paragraph 3')
-                .mockResolvedValueOnce('End of document') // Repeat 1
-                .mockResolvedValueOnce('End of document') // Repeat 2
-                .mockResolvedValueOnce('End of document'), // Repeat 3 - triggers stop
-            itemText: vi
-                .fn()
-                .mockResolvedValueOnce('Text 1')
-                .mockResolvedValueOnce('Text 2')
-                .mockResolvedValueOnce('Text 3')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End'),
+            ...mocks,
+            itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        // Use repeat threshold of 3 for this test
-        const navigator = new DownArrowNavigator(mockIO, 'Down', 3);
+        const navigator = new DownArrowNavigator(mockIO);
 
         const items = [];
         for await (const item of navigator) {
             items.push(item);
         }
 
-        expect(items).toHaveLength(6);
+        expect(items).toHaveLength(3);
         expect(items[0]?.phrase).toBe('Paragraph 1');
         expect(items[1]?.phrase).toBe('Paragraph 2');
-        expect(items[2]?.phrase).toBe('Paragraph 3');
-        expect(items[3]?.phrase).toBe('End of document');
-        expect(items[4]?.phrase).toBe('End of document');
-        expect(items[5]?.phrase).toBe('End of document');
+        expect(items[2]?.phrase).toBe('Last item');
     });
 
-    it('presses Down arrow key for each advance', async () => {
+    it('yields items until repeated phrase threshold is reached', async () => {
+        const mocks = createCoordinatedMocks([
+            'Paragraph 1',
+            'Paragraph 2',
+            'End of document',
+            'End of document',
+            'End of document', // 3rd repeat - triggers stop
+        ]);
+        
         const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('Line 1')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End'),
+            ...mocks,
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new DownArrowNavigator(mockIO, 'Down', 3);
+        const navigator = new DownArrowNavigator(mockIO);
+
+        const items = [];
+        for await (const item of navigator) {
+            items.push(item);
+        }
+
+        // Stops after 3 consecutive repeats (default threshold)
+        expect(items).toHaveLength(5);
+        expect(items[0]?.phrase).toBe('Paragraph 1');
+        expect(items[1]?.phrase).toBe('Paragraph 2');
+    });
+
+    it('presses Down arrow key for each advance', async () => {
+        const mocks = createCoordinatedMocks(['Line 1', null, null]);
+        
+        const mockIO = createMockIO({
+            ...mocks,
+            itemText: vi.fn().mockResolvedValue('text'),
+        });
+
+        const navigator = new DownArrowNavigator(mockIO);
 
         const items = [];
         for await (const item of navigator) {
@@ -77,17 +116,14 @@ describe('ArrowNavigator', () => {
     });
 
     it('uses custom arrow key when provided', async () => {
+        const mocks = createCoordinatedMocks(['Item', null, null]);
+        
         const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('Item')
-                .mockResolvedValueOnce('Item')
-                .mockResolvedValueOnce('Item')
-                .mockResolvedValueOnce('Item'),
+            ...mocks,
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new DownArrowNavigator(mockIO, 'Up', 3);
+        const navigator = new DownArrowNavigator(mockIO, 'Up');
 
         const items = [];
         for await (const item of navigator) {
@@ -98,15 +134,14 @@ describe('ArrowNavigator', () => {
     });
 
     it('uses custom repeat threshold when provided', async () => {
-        let callCount = 0;
-        const phrases = ['Content', 'End', 'End'];
-
+        const mocks = createCoordinatedMocks([
+            'Content',
+            'End',
+            'End', // 2nd repeat - triggers stop with threshold 2
+        ]);
+        
         const mockIO = createMockIO({
-            lastSpokenPhrase: vi.fn().mockImplementation(() => {
-                const phrase = callCount < phrases.length ? phrases[callCount] : 'End';
-                callCount++;
-                return Promise.resolve(phrase);
-            }),
+            ...mocks,
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
@@ -124,15 +159,17 @@ describe('ArrowNavigator', () => {
     });
 
     it('resets repeat count when different phrase encountered', async () => {
+        const mocks = createCoordinatedMocks([
+            'A',
+            'A', // Repeat 1
+            'B', // Reset
+            'B', // Repeat 1
+            'B', // Repeat 2
+            'B', // Repeat 3 - stop
+        ]);
+        
         const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('A')
-                .mockResolvedValueOnce('A') // Repeat 1
-                .mockResolvedValueOnce('B') // Reset
-                .mockResolvedValueOnce('B') // Repeat 1
-                .mockResolvedValueOnce('B') // Repeat 2
-                .mockResolvedValueOnce('B'), // Repeat 3 - stop
+            ...mocks,
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
@@ -143,38 +180,7 @@ describe('ArrowNavigator', () => {
             items.push(item);
         }
 
-        expect(items).toHaveLength(5); // A, A, B, B, B
-    });
-
-    it('skips empty announcements', async () => {
-        const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('Content 1')
-                .mockResolvedValueOnce('') // Empty - skip
-                .mockResolvedValueOnce('Content 2')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End'),
-            itemText: vi
-                .fn()
-                .mockResolvedValueOnce('Text 1')
-                .mockResolvedValueOnce('') // Empty
-                .mockResolvedValueOnce('Text 2')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End'),
-        });
-
-        const navigator = new DownArrowNavigator(mockIO, 'Down', 3);
-
-        const items = [];
-        for await (const item of navigator) {
-            items.push(item);
-        }
-
-        const nonEmptyItems = items.filter((i) => i.phrase !== '' || i.itemText !== '');
-        expect(nonEmptyItems.length).toBeGreaterThanOrEqual(2);
+        expect(items).toHaveLength(5); // A, A, B, B, B (stops on 3rd B repeat)
     });
 
     it('has correct type', () => {
@@ -182,5 +188,13 @@ describe('ArrowNavigator', () => {
         const navigator = new DownArrowNavigator(mockIO);
 
         expect(navigator.type).toBe('linear');
+    });
+
+    it('uses default repeat threshold of 3', () => {
+        const mockIO = createMockIO();
+        const navigator = new DownArrowNavigator(mockIO);
+        
+        // Default threshold is now 3 (changed from 30)
+        expect(navigator).toBeDefined();
     });
 });

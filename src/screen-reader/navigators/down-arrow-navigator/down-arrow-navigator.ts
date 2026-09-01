@@ -14,6 +14,7 @@ export class DownArrowNavigator implements IElementNavigator {
     async *[Symbol.asyncIterator](): AsyncIterableIterator<NavigationItem> {
         let previousPhrase = '';
         let repeatCount = 0;
+        let silentPressCount = 0;
 
         // Reset end detector state at start of iteration
         this.endDetector?.reset();
@@ -21,6 +22,22 @@ export class DownArrowNavigator implements IElementNavigator {
         while (true) {
             await this.sr.press(this.arrowKey);
 
+            // Check if NVDA actually spoke something new
+            // press() clears the log first, so empty log = no new speech = end of document
+            const log = await this.sr.spokenPhraseLog();
+            
+            if (log.length === 0) {
+                // NVDA didn't speak anything - we're at the end of the document
+                // NVDA plays an error beep but doesn't re-announce
+                silentPressCount++;
+                if (silentPressCount >= 2) {
+                    // Confirm end of document after 2 silent presses
+                    return;
+                }
+                continue;
+            }
+            
+            silentPressCount = 0;
             const phrase = await this.sr.lastSpokenPhrase();
             const itemText = await this.sr.itemText();
 
@@ -29,7 +46,7 @@ export class DownArrowNavigator implements IElementNavigator {
                 return;
             }
 
-            // Fallback: consecutive repeat detection (for NVDA)
+            // Fallback: consecutive repeat detection (same element announced multiple times)
             if (phrase === previousPhrase && phrase !== '') {
                 repeatCount++;
                 if (repeatCount >= this.repeatThreshold) {
