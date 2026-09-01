@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ElementNavigator } from './element-navigator';
 import type { ScreenReader } from '../../drivers/nvda';
+import type { EndDetector } from '../types';
+import { createEndDetector } from '../end-detector';
 
 function createMockIO(overrides: Partial<ScreenReader> = {}): ScreenReader {
     return {
@@ -15,6 +17,11 @@ function createMockIO(overrides: Partial<ScreenReader> = {}): ScreenReader {
         clearItemTextLog: vi.fn().mockResolvedValue(undefined),
         ...overrides,
     };
+}
+
+/** Helper to create a simple phrase-match end detector for tests */
+function createPhraseContainsDetector(text: string): EndDetector {
+    return createEndDetector({ type: 'phrase-contains', text });
 }
 
 describe('ElementNavigator', () => {
@@ -37,7 +44,7 @@ describe('ElementNavigator', () => {
             mockIO,
             {
                 advanceKey: 'h',
-                isComplete: (ctx) => ctx.phrase.toLowerCase().includes('no next heading'),
+                endDetector: createPhraseContainsDetector('no next heading'),
             },
             'heading'
         );
@@ -63,7 +70,7 @@ describe('ElementNavigator', () => {
             mockIO,
             {
                 advanceKey: 'k',
-                isComplete: (ctx) => ctx.phrase.includes('no next link'),
+                endDetector: createPhraseContainsDetector('no next link'),
             },
             'link'
         );
@@ -88,7 +95,7 @@ describe('ElementNavigator', () => {
             mockIO,
             {
                 advanceKey: 'd',
-                isComplete: (ctx) => ctx.phrase.includes('no next landmark'),
+                endDetector: createPhraseContainsDetector('no next landmark'),
             },
             'landmark'
         );
@@ -104,8 +111,9 @@ describe('ElementNavigator', () => {
 
     it('exposes the correct type', () => {
         const mockIO = createMockIO();
+        const alwaysEndDetector: EndDetector = { check: () => true, reset: () => {} };
 
-        const navigator = new ElementNavigator(mockIO, { advanceKey: 'b', isComplete: () => true }, 'button');
+        const navigator = new ElementNavigator(mockIO, { advanceKey: 'b', endDetector: alwaysEndDetector }, 'button');
 
         expect(navigator.type).toBe('button');
     });
@@ -124,7 +132,7 @@ describe('ElementNavigator', () => {
             mockIO,
             {
                 advanceKey: '2',
-                isComplete: (ctx) => ctx.phrase.toLowerCase().includes('no next'),
+                endDetector: createPhraseContainsDetector('no next'),
             },
             'heading2'
         );
@@ -136,5 +144,35 @@ describe('ElementNavigator', () => {
 
         expect(items).toHaveLength(2);
         expect(mockIO.press).toHaveBeenCalledWith('2');
+    });
+
+    it('resets detector state at start of iteration', async () => {
+        const mockIO = createMockIO({
+            lastSpokenPhrase: vi
+                .fn()
+                .mockResolvedValueOnce('Item A')
+                .mockResolvedValueOnce('Item B')
+                .mockResolvedValueOnce('Item A'), // Loop back - should trigger loop detection
+            itemText: vi.fn().mockResolvedValue(''),
+        });
+
+        const navigator = new ElementNavigator(
+            mockIO,
+            {
+                advanceKey: 'x',
+                endDetector: createEndDetector({ type: 'loop-detection' }),
+            },
+            'heading'
+        );
+
+        const items = [];
+        for await (const item of navigator) {
+            items.push(item);
+        }
+
+        // Should stop when we see 'Item A' again
+        expect(items).toHaveLength(2);
+        expect(items[0]?.phrase).toBe('Item A');
+        expect(items[1]?.phrase).toBe('Item B');
     });
 });

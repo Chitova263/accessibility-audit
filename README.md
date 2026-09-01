@@ -1,12 +1,14 @@
 # Accessibility Audit Tool
 
-An automated accessibility auditing tool that uses real NVDA screen reader navigation to detect WCAG violations. The tool drives NVDA through multiple navigation strategies (headings, landmarks, links, tab order, arrow keys) and analyzes the screen reader output to identify accessibility issues.
+An automated accessibility auditing tool that uses screen reader navigation to detect WCAG violations. The tool drives screen readers through multiple navigation strategies (headings, landmarks, links, tab order, arrow keys) and analyzes the output to identify accessibility issues.
 
-Static analyzers like axe-core and Lighthouse can only inspect the DOM - they cannot detect issues that require actual user interaction. This tool bridges that gap by using a real screen reader to find focus traps, tab order problems, missing skip links in practice, and content structure issues that only become apparent when navigating a page.
+Static analyzers like axe-core and Lighthouse can only inspect the DOM - they cannot detect issues that require actual user interaction. This tool bridges that gap by using a screen reader to find focus traps, tab order problems, missing skip links in practice, and content structure issues that only become apparent when navigating a page.
 
 ## Features
 
-- **Real screen reader testing** using NVDA via [@guidepup/guidepup](https://github.com/guidepup/guidepup)
+- **Real screen reader testing** with two driver options:
+    - **NVDA** (default) - Uses the real NVDA screen reader via [@guidepup/guidepup](https://github.com/guidepup/guidepup). Requires Windows with NVDA installed.
+    - **Virtual** - Uses [@guidepup/virtual-screen-reader](https://github.com/guidepup/virtual-screen-reader) which runs headless in the browser. Works on any platform, no screen reader installation required.
 - **Multiple navigation strategies** (headings, landmarks, links, buttons, tab order, arrow keys) that mimic how visually impaired people navigate websites
 - **Automated violation detection** with WCAG criterion mapping
 - **LLM prompt generation** for AI-assisted accessibility analysis
@@ -16,6 +18,26 @@ Static analyzers like axe-core and Lighthouse can only inspect the DOM - they ca
 
 ```bash
 npm install
+```
+
+### Global CLI Installation
+
+To install the CLI tools globally:
+
+```bash
+npm run build
+npm link
+```
+
+This makes two commands available:
+
+- `accessibility-audit` - Run accessibility audits
+- `accessibility-report` - Generate HTML reports
+
+To uninstall:
+
+```bash
+npm unlink -g accessibility-audit
 ```
 
 ## Usage
@@ -32,20 +54,29 @@ npx tsx src/run-audit.ts <url> [options]
 
 **Options:**
 
-| Option                   | Description                           | Default |
-| ------------------------ | ------------------------------------- | ------- |
-| `-o, --output-dir <dir>` | Output directory for audit files      | `.`     |
-| `--max-steps <number>`   | Maximum steps per navigation strategy | `500`   |
-| `-v, --verbose`          | Enable verbose output                 | `false` |
-| `-h, --help`             | Display help                          |         |
+| Option                   | Description                           | Default                                |
+| ------------------------ | ------------------------------------- | -------------------------------------- |
+| `-o, --output-dir <dir>` | Output directory for audit files      | `audit-results/<url-slug>-<timestamp>` |
+| `--max-steps <number>`   | Maximum steps per navigation strategy | `500`                                  |
+| `-r, --reader <type>`    | Screen reader: `nvda` or `virtual`    | `nvda`                                 |
+| `-v, --verbose`          | Enable verbose output                 | `false`                                |
+| `-h, --help`             | Display help                          |                                        |
 
 **Example:**
 
 ```bash
-npx tsx src/run-audit.ts https://example.com -o ./audit-results --verbose
+# Using NVDA (default, requires Windows + NVDA installed)
+# Output goes to audit-results/example.com-shop-products-step-1-2026-09-01T13-09/
+npx tsx src/run-audit.ts https://example.com --verbose
+
+# Specify a custom output directory
+npx tsx src/run-audit.ts https://example.com -o ./my-audit --verbose
+
+# Using virtual screen reader (works on any platform)
+npx tsx src/run-audit.ts https://example.com --reader virtual
 ```
 
-**Output files:**
+**Output files (inside the run directory):**
 
 - `violations.json` - All detected violations (with embedded screenshot references)
 - `transcript.json` - Screen reader navigation transcript
@@ -54,6 +85,8 @@ npx tsx src/run-audit.ts https://example.com -o ./audit-results --verbose
 - `llm-prompt-user.txt` - User prompt for LLM API
 - `llm-prompt-combined.txt` - Combined prompt for chat interfaces
 - `screenshots/` - Element screenshots for violations (when available)
+- `llm-response.json` - Drop your LLM response here before generating the report
+- `report.html` - Generated by `generate-report`
 
 ### 2. Generate Report
 
@@ -63,21 +96,34 @@ npx tsx src/generate-report.ts [options]
 
 **Options:**
 
-| Option                  | Description                     | Default               |
-| ----------------------- | ------------------------------- | --------------------- |
-| `--url <url>`           | Page URL for the report         | _required_            |
-| `--title <title>`       | Page title for the report       | _required_            |
-| `--llm-response <path>` | Path to LLM response JSON       | `./llm-response.json` |
-| `--violations <path>`   | Path to violations JSON         | `./violations.json`   |
-| `--transcript <path>`   | Path to transcript JSON         | `./transcript.json`   |
-| `-f, --format <format>` | Output format: `html` or `json` | `html`                |
-| `-o, --output <path>`   | Output file path                | `./report.html`       |
-| `-h, --help`            | Display help                    |                       |
+| Option                  | Description                                                  | Default                   |
+| ----------------------- | ------------------------------------------------------------ | ------------------------- |
+| `--url <url>`           | Page URL for the report                                      | _required_                |
+| `--title <title>`       | Page title for the report                                    | _required_                |
+| `--dir <dir>`           | Audit run directory — sets default paths for all files below | _none_                    |
+| `--llm-response <path>` | Path to LLM response JSON                                    | `<dir>/llm-response.json` |
+| `--violations <path>`   | Path to violations JSON                                      | `<dir>/violations.json`   |
+| `--transcript <path>`   | Path to transcript JSON                                      | `<dir>/transcript.json`   |
+| `-f, --format <format>` | Output format: `html` or `json`                              | `html`                    |
+| `-o, --output <path>`   | Output file path                                             | `<dir>/report.html`       |
+| `-h, --help`            | Display help                                                 |                           |
 
 **Example:**
 
 ```bash
-npx tsx src/generate-report.ts --url https://example.com --title "Example Site" -o report.html
+# Point at a run directory — all paths resolved automatically
+npx tsx src/generate-report.ts \
+  --url https://example.com \
+  --title "Example Site" \
+  --dir ./audit-results/example.com-2026-09-01T13-09
+
+# Or specify individual file paths
+npx tsx src/generate-report.ts \
+  --url https://example.com \
+  --title "Example Site" \
+  --violations ./my-audit/violations.json \
+  --transcript ./my-audit/transcript.json \
+  -o report.html
 ```
 
 ## Typical Workflow
@@ -85,14 +131,18 @@ npx tsx src/generate-report.ts --url https://example.com --title "Example Site" 
 1. Run the audit to collect violations and generate LLM prompts:
 
     ```bash
-    npx tsx src/run-audit.ts https://example.com -o ./audit-results
+    npx tsx src/run-audit.ts https://example.com
+    # Output goes to audit-results/example.com-2026-09-01T13-09/
     ```
 
-2. (Optional) Send `llm-prompt-combined.txt` to an LLM and save the response to `llm-response.json`
+2. (Optional) Send `llm-prompt-combined.txt` to an LLM and save the response as `llm-response.json` in the run directory
 
 3. Generate the HTML report:
     ```bash
-    npx tsx src/generate-report.ts --url https://example.com --title "My Page" --violations ./audit-results/violations.json --transcript ./audit-results/transcript.json
+    npx tsx src/generate-report.ts \
+      --url https://example.com \
+      --title "My Page" \
+      --dir ./audit-results/example.com-2026-09-01T13-09
     ```
 
 ## Rules
@@ -160,6 +210,15 @@ In addition to the above rules, the tool also runs **axe-core** (90+ rules) for 
 ## Development
 
 ```bash
+# Build the project
+npm run build
+
+# Clean build artifacts
+npm run clean
+
+# Clean and rebuild
+npm run rebuild
+
 # Type checking
 npm run typecheck
 
@@ -177,6 +236,35 @@ npm run formart
 ```
 
 > **Note**: The format script is named `formart` (typo in package.json).
+
+### Logging
+
+The tool uses a built-in logger with configurable verbosity:
+
+- **Normal mode** (`-v` not set): Shows info-level messages with progress indicators
+- **Verbose mode** (`-v` or `--verbose`): Shows debug-level messages with detailed timing
+
+Example normal output:
+
+```
+=== Starting Accessibility Audit ===
+Target URL: https://example.com
+Screen reader: virtual
+[DriverFactory] Creating virtual screen reader driver
+[PageSession] Running 12 navigation strategies
+[1/12] Running DownArrowNavigationStrategy
+[2/12] Running HeadingNavigationStrategy
+...
+```
+
+For library consumers, the logger can be configured programmatically:
+
+```typescript
+import { Logger } from 'accessibility-audit';
+
+Logger.setLevel('debug'); // 'debug' | 'info' | 'warn' | 'error' | 'silent'
+Logger.configure({ timestamps: true });
+```
 
 ## License
 

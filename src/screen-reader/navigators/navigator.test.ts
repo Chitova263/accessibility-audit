@@ -4,7 +4,7 @@ import { ElementNavigator } from './element-navigator/element-navigator';
 import { TabNavigator } from './tab-navigator/tab-navigator';
 import { DownArrowNavigator } from './down-arrow-navigator/down-arrow-navigator';
 import type { ScreenReader } from '../drivers/nvda';
-import type { ScreenReaderKeyBindings, ScreenReaderEndPatterns } from './types';
+import type { ScreenReaderKeyBindings, ScreenReaderEndDetection } from './types';
 
 function createMockIO(): ScreenReader {
     return {
@@ -31,19 +31,19 @@ const testKeyBindings: ScreenReaderKeyBindings = {
     documentStart: 'Control+Home',
 };
 
-const testEndPatterns: ScreenReaderEndPatterns = {
-    heading: (ctx) => ctx.phrase.includes('no next heading'),
-    headingLevel: (ctx) => ctx.phrase.includes('no next'),
-    link: (ctx) => ctx.phrase.includes('no next link'),
-    landmark: (ctx) => ctx.phrase.includes('no next landmark'),
-    button: (ctx) => ctx.phrase.includes('no next button'),
+const testEndDetection: ScreenReaderEndDetection = {
+    heading: { type: 'phrase-contains', text: 'no next heading' },
+    headingLevel: { type: 'phrase-contains', text: 'no next' },
+    link: { type: 'phrase-contains', text: 'no next link' },
+    landmark: { type: 'phrase-contains', text: 'no next landmark' },
+    button: { type: 'phrase-contains', text: 'no next button' },
 };
 
 describe('Navigator', () => {
     describe('factory methods', () => {
         it('creates heading navigator with correct config', () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.headings();
 
@@ -53,7 +53,7 @@ describe('Navigator', () => {
 
         it('creates heading level Navigator with correct types', () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             expect(nav.headingsLevel1().type).toBe('heading1');
             expect(nav.headingsLevel2().type).toBe('heading2');
@@ -65,7 +65,7 @@ describe('Navigator', () => {
 
         it('creates headingsLevel navigator with specified level', () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.headingsLevel(3);
 
@@ -75,7 +75,7 @@ describe('Navigator', () => {
 
         it('creates link navigator', () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.links();
 
@@ -85,7 +85,7 @@ describe('Navigator', () => {
 
         it('creates landmark navigator', () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.landmarks();
 
@@ -95,7 +95,7 @@ describe('Navigator', () => {
 
         it('creates button navigator', () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.buttons();
 
@@ -105,7 +105,7 @@ describe('Navigator', () => {
 
         it('creates focusable elements navigator (TabNavigator)', () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.focusableElements();
 
@@ -115,7 +115,7 @@ describe('Navigator', () => {
 
         it('creates linear elements navigator (ArrowNavigator)', () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.linearElements();
 
@@ -127,7 +127,7 @@ describe('Navigator', () => {
     describe('navigateToDocumentStart', () => {
         it('presses the document start key', async () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             await nav.navigateToDocumentStart();
 
@@ -141,7 +141,7 @@ describe('Navigator', () => {
             const config = {
                 reader: mockIO,
                 keyBindings: testKeyBindings,
-                endDetection: testEndPatterns,
+                endDetection: testEndDetection,
             };
 
             const navigator = Navigator.fromConfig(config);
@@ -154,7 +154,7 @@ describe('Navigator', () => {
     describe('integration with key bindings', () => {
         it('heading navigator uses correct key from bindings', async () => {
             const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.headings();
             for await (const _ of navigator) {
@@ -166,7 +166,7 @@ describe('Navigator', () => {
         it('heading level navigator uses level-specific key', async () => {
             const mockIO = createMockIO();
             mockIO.lastSpokenPhrase = vi.fn().mockResolvedValue('no next');
-            const nav = new Navigator(mockIO, testKeyBindings, testEndPatterns);
+            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
 
             const navigator = nav.headingsLevel(4);
             for await (const _ of navigator) {

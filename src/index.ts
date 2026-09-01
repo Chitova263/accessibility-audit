@@ -17,7 +17,7 @@ export type {
     ScreenReaderEndPatterns,
     ScreenReaderConfig,
 } from './screen-reader/navigators/types';
-export { nvdaKeyBindings, nvdaEndPatterns } from './screen-reader/navigators/config/nvda';
+export { nvdaKeyBindings, nvdaEndDetection } from './screen-reader/navigators/config/nvda';
 export * from './screen-reader/page-session';
 
 export { HeadingNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/heading-navigation-strategy';

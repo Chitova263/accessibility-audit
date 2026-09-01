@@ -2,15 +2,25 @@
     "name": "accessibility-audit",
     "type": "module",
     "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
+    "description": "Automated accessibility auditing tool using screen reader navigation",
+    "main": "dist/lib.js",
+    "types": "dist/lib.d.ts",
+    "bin": {
+        "accessibility-audit": "dist/run-audit.js",
+        "accessibility-report": "dist/generate-report.js"
+    },
     "scripts": {
+        "build": "tsc",
+        "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+        "rebuild": "npm run clean && npm run build",
         "typecheck": "tsc --noEmit",
         "start": "tsx src/index.ts",
         "formart": "prettier --write .",
         "test": "vitest run",
         "test:watch": "vitest",
-        "test:update": "vitest run -u"
+        "test:update": "vitest run -u",
+        "prepublishOnly": "npm run build",
+        "sample": "npx tsx src/run-audit.ts https://www.example.com --reader virtual"
     },
     "private": true,
     "devDependencies": {

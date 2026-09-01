@@ -1,20 +1,21 @@
 import type { ScreenReader } from '../drivers/nvda';
-import type { IElementNavigator, ScreenReaderKeyBindings, ScreenReaderEndPatterns } from './types';
+import type { IElementNavigator, ScreenReaderKeyBindings, ScreenReaderEndDetection } from './types';
 import { ElementNavigator } from './element-navigator/element-navigator';
 import { TabNavigator } from './tab-navigator/tab-navigator';
 import { DownArrowNavigator } from './down-arrow-navigator/down-arrow-navigator';
+import { createEndDetector } from './end-detector';
 
 export class Navigator {
     constructor(
         private readonly sr: ScreenReader,
         private readonly keyBindings: ScreenReaderKeyBindings,
-        private readonly endDetection: ScreenReaderEndPatterns
+        private readonly endDetection: ScreenReaderEndDetection
     ) {}
 
     static fromConfig(config: {
         reader: ScreenReader;
         keyBindings: ScreenReaderKeyBindings;
-        endDetection: ScreenReaderEndPatterns;
+        endDetection: ScreenReaderEndDetection;
     }): Navigator {
         return new Navigator(config.reader, config.keyBindings, config.endDetection);
     }
@@ -24,7 +25,7 @@ export class Navigator {
             this.sr,
             {
                 advanceKey: this.keyBindings.nextHeading,
-                isComplete: this.endDetection.heading,
+                endDetector: createEndDetector(this.endDetection.heading),
             },
             'heading'
         );
@@ -68,7 +69,7 @@ export class Navigator {
             this.sr,
             {
                 advanceKey: this.keyBindings.nextHeadingLevel(level),
-                isComplete: this.endDetection.headingLevel,
+                endDetector: createEndDetector(this.endDetection.headingLevel),
             },
             typeMap[level]
         );
@@ -79,7 +80,7 @@ export class Navigator {
             this.sr,
             {
                 advanceKey: this.keyBindings.nextLink,
-                isComplete: this.endDetection.link,
+                endDetector: createEndDetector(this.endDetection.link),
             },
             'link'
         );
@@ -90,7 +91,7 @@ export class Navigator {
             this.sr,
             {
                 advanceKey: this.keyBindings.nextLandmark,
-                isComplete: this.endDetection.landmark,
+                endDetector: createEndDetector(this.endDetection.landmark),
             },
             'landmark'
         );
@@ -101,7 +102,7 @@ export class Navigator {
             this.sr,
             {
                 advanceKey: this.keyBindings.nextButton,
-                isComplete: this.endDetection.button,
+                endDetector: createEndDetector(this.endDetection.button),
             },
             'button'
         );
