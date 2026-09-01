@@ -6,8 +6,8 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
-import { Result } from './result';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
+import { NavigationStrategyResult } from './navigation-strategy-result';
 
 export interface HeadingHierarchyConfig extends NavigationStrategyConfig {
     level: 1 | 2 | 3 | 4 | 5 | 6;
@@ -61,7 +61,7 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {
-                return Result.limitReached(
+                return NavigationStrategyResult.limitReached(
                     `stopped after ${this.config.maxSteps} h${this.level} headings (safety limit)`,
                     this.meta,
                     navigationSteps
@@ -69,7 +69,7 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
             }
         }
 
-        return Result.exhausted(
+        return NavigationStrategyResult.exhausted(
             `no more level ${this.level} headings (h${this.level}) found on page`,
             this.meta,
             navigationSteps

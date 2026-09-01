@@ -6,8 +6,8 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from '../browse-mode-strategies/navigation-strategy';
-import { Result } from '../browse-mode-strategies/result';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
+import { NavigationStrategyResult } from '../browse-mode-strategies/navigation-strategy-result';
 
 function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -38,13 +38,17 @@ export class TabNavigationStrategy implements INavigationStrategy {
             const backendNodeId = await ctx.ax.getFocusedHtmlElementBackendNodeId();
 
             if (backendNodeId == null && lastBackendNodeId != null) {
-                return Result.cycleComplete('tab focus returned to start of page', this.meta, navigationSteps);
+                return NavigationStrategyResult.cycleComplete(
+                    'tab focus returned to start of page',
+                    this.meta,
+                    navigationSteps
+                );
             }
 
             if (backendNodeId != null && backendNodeId === lastBackendNodeId) {
                 consecutiveSameCount++;
                 if (consecutiveSameCount >= 2) {
-                    return Result.trapped(
+                    return NavigationStrategyResult.trapped(
                         'keyboard focus could not escape element - potential focus trap',
                         this.meta,
                         navigationSteps
@@ -70,7 +74,7 @@ export class TabNavigationStrategy implements INavigationStrategy {
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {
-                return Result.limitReached(
+                return NavigationStrategyResult.limitReached(
                     `stopped after ${this.config.maxSteps} focusable elements (safety limit)`,
                     this.meta,
                     navigationSteps
@@ -78,6 +82,10 @@ export class TabNavigationStrategy implements INavigationStrategy {
             }
         }
 
-        return Result.cycleComplete('tab focus cycled through all focusable elements', this.meta, navigationSteps);
+        return NavigationStrategyResult.cycleComplete(
+            'tab focus cycled through all focusable elements',
+            this.meta,
+            navigationSteps
+        );
     }
 }
