@@ -9,7 +9,7 @@ import type {
 import { Result } from './result';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 
-export class ArrowNavigationStrategy implements INavigationStrategy {
+export class DownArrowNavigationStrategy implements INavigationStrategy {
     public readonly meta: StrategyMetadata = {
         name: 'arrow',
         description: 'Linear reading through page content using Down Arrow (browse mode)',

@@ -11,7 +11,7 @@ import { ButtonNavigationStrategy } from './screen-reader/navigation-strategy/br
 import { LinkNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/link-navigation-strategy';
 import { HeadingHierarchyNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/heading-hierarchy-navigation-strategy';
 import { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
-import { ArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/arrow-navigation-strategy';
+import { DownArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/down-arrow-navigation-strategy';
 import { runRules, summarizeViolations } from './analysis';
 import { ensureScreenshotsDir } from './analysis/utils/screenshot-capture';
 import { createPromptBuilder } from './llm/prompt-builder';
@@ -50,6 +50,7 @@ try {
     await chromeDevToolsProtocolConnection.connect();
 
     const strategies: INavigationStrategy[] = [
+        new DownArrowNavigationStrategy({ maxSteps: 1000 }),
         new HeadingNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
         new LandmarkNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
         new ButtonNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
@@ -60,7 +61,7 @@ try {
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 4 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 5 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 6 }),
-        new ArrowNavigationStrategy({ maxSteps: 500 }),
+        new ArrowNavigationStrategy({ maxSteps }),
         new TabNavigationStrategy({ maxSteps }),
     ];
 
