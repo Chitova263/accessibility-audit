@@ -6,8 +6,6 @@ import { generateReportFromFiles } from '../reporting';
 program
     .name('a11y report')
     .description('Generate an accessibility report from existing audit data files')
-    .requiredOption('--url <url>', 'Page URL for the report')
-    .requiredOption('--title <title>', 'Page title for the report')
     .option('--dir <dir>', 'Audit run directory (sets default paths for all files below)')
     .option(
         '--llm-response <path>',
@@ -20,8 +18,6 @@ program
     .parse();
 
 const options = program.opts<{
-    url: string;
-    title: string;
     dir?: string;
     llmResponse?: string;
     violations?: string;
@@ -46,8 +42,6 @@ if (options.dir) console.log(`Run directory: ${options.dir}`);
 console.log(`LLM Response: ${llmResponsePath}`);
 console.log(`Violations: ${violationsPath}`);
 console.log(`Transcript: ${transcriptPath}`);
-console.log(`Page URL: ${options.url}`);
-console.log(`Page Title: ${options.title}`);
 console.log(`Format: ${options.format}`);
 console.log(`Output: ${outputPath}`);
 
@@ -55,8 +49,6 @@ await generateReportFromFiles({
     llmResponsePath,
     violationsPath,
     transcriptPath,
-    pageUrl: options.url,
-    pageTitle: options.title,
     format: options.format,
     outputPath,
 });

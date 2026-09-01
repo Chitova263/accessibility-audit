@@ -98,8 +98,6 @@ a11y report [options]
 
 | Option                  | Description                                                  | Default                   |
 | ----------------------- | ------------------------------------------------------------ | ------------------------- |
-| `--url <url>`           | Page URL for the report                                      | _required_                |
-| `--title <title>`       | Page title for the report                                    | _required_                |
 | `--dir <dir>`           | Audit run directory — sets default paths for all files below | _none_                    |
 | `--llm-response <path>` | Path to LLM response JSON                                    | `<dir>/llm-response.json` |
 | `--violations <path>`   | Path to violations JSON                                      | `<dir>/violations.json`   |
@@ -112,15 +110,10 @@ a11y report [options]
 
 ```bash
 # Point at a run directory — all paths resolved automatically
-a11y report \
-  --url https://example.com \
-  --title "Example Site" \
-  --dir ./audit-results/example.com-2026-09-01T13-09
+a11y report --dir ./audit-results/example.com-2026-09-01T13-09
 
 # Or specify individual file paths
 a11y report \
-  --url https://example.com \
-  --title "Example Site" \
   --violations ./my-audit/violations.json \
   --transcript ./my-audit/transcript.json \
   -o report.html
@@ -139,10 +132,7 @@ a11y report \
 
 3. Generate the HTML report:
     ```bash
-    a11y audit \
-      --url https://example.com \
-      --title "My Page" \
-      --dir ./audit-results/example.com-2026-09-01T13-09
+    a11y report --dir ./audit-results/example.com-2026-09-01T13-09
     ```
 
 ## Rules
@@ -187,7 +177,7 @@ rules/
 | `aria-hidden-focusable`            | Focusable element has aria-hidden="true", creating silent focus | 4.1.2 | A     | critical | -                                                             |
 | `nested-interactive-elements`      | Interactive elements are improperly nested (link in link, etc.) | 4.1.1 | A     | serious  | Requires detecting nested link/button patterns                |
 | `excessive-navigation-links`       | Page has an excessive number of navigation links                | 2.4.1 | A     | moderate | Requires understanding what count is "excessive" for users    |
-| `large-content-gap`                | Long run of content with no heading between items               | 1.3.1 | A     | moderate | Requires analyzing content structure from user perspective    |
+| `large-content-gap`                | Long run of main content with no heading between items          | 1.3.1 | A     | moderate | Requires analyzing content structure within main landmark     |
 | `landmark-without-heading`         | Landmark contains many items but no heading                     | 1.3.1 | A     | moderate | Requires analyzing content density and structure              |
 | `repeated-pattern-without-heading` | Repeated content pattern with no heading introducing the group  | 1.3.1 | A     | minor    | Requires pattern recognition across content                   |
 | `steps-to-main-content`            | Main content reached only after excessive linear reading steps  | 2.4.1 | A     | moderate | Requires simulating linear screen reader navigation           |

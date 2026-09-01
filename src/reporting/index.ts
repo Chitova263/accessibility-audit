@@ -14,7 +14,7 @@
  * ```
  */
 
-export type { Reporter, ReportData, ReportOutput, ReportPage, ReportMeta, ReporterOptions } from './reporter';
+export type { Reporter, ReportData, ReportOutput, ReportMeta, ReporterOptions } from './reporter';
 
 export {
     generateFilename,

@@ -39,7 +39,6 @@ export class JsonReporter implements Reporter {
 
         if (opts.summaryOnly) {
             output = {
-                page: data.page,
                 meta: data.meta,
                 summary: data.analysis.analysis.summary,
                 counts: {
@@ -50,7 +49,6 @@ export class JsonReporter implements Reporter {
             };
         } else {
             output = {
-                page: data.page,
                 meta: data.meta,
                 analysis: data.analysis,
                 violations: data.violations,

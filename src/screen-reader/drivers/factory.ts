@@ -36,7 +36,6 @@ export async function createDriver(options: CreateDriverOptions): Promise<Driver
 
         log.info('Creating virtual screen reader driver');
         const reader = new VirtualScreenReader(page);
-        await reader.start();
 
         return {
             reader,
@@ -50,7 +49,6 @@ export async function createDriver(options: CreateDriverOptions): Promise<Driver
 
     log.info('Creating NVDA screen reader driver');
     const nvda = new Nvda();
-    await nvda.start();
 
     return {
         reader: nvda,

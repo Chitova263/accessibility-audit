@@ -1,5 +1,6 @@
 import { nvda } from '@guidepup/guidepup';
 import { execSync } from 'node:child_process';
+import { delay } from '@guidepup/guidepup/lib/delay';
 
 export interface ScreenReader {
     start(): Promise<void>;
