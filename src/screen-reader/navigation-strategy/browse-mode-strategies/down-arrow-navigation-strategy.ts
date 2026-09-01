@@ -6,8 +6,8 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
-import { Result } from './result';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
+import { NavigationStrategyResult } from './navigation-strategy-result';
 
 export class DownArrowNavigationStrategy implements INavigationStrategy {
     public readonly meta: StrategyMetadata = {
@@ -45,7 +45,7 @@ export class DownArrowNavigationStrategy implements INavigationStrategy {
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {
-                return Result.limitReached(
+                return NavigationStrategyResult.limitReached(
                     `stopped after ${this.config.maxSteps} elements (safety limit)`,
                     this.meta,
                     navigationSteps
@@ -53,6 +53,10 @@ export class DownArrowNavigationStrategy implements INavigationStrategy {
             }
         }
 
-        return Result.exhausted('reached end of document in linear reading order', this.meta, navigationSteps);
+        return NavigationStrategyResult.exhausted(
+            'reached end of document in linear reading order',
+            this.meta,
+            navigationSteps
+        );
     }
 }

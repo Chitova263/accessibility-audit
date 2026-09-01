@@ -6,8 +6,8 @@ import type {
     StrategyMetadata,
     StrategyResult,
 } from './navigation-strategy';
-import { Result } from './result';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
+import { NavigationStrategyResult } from './navigation-strategy-result';
 
 export class HeadingNavigationStrategy implements INavigationStrategy {
     public readonly meta: StrategyMetadata = {
@@ -44,7 +44,7 @@ export class HeadingNavigationStrategy implements INavigationStrategy {
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {
-                return Result.limitReached(
+                return NavigationStrategyResult.limitReached(
                     `stopped after ${this.config.maxSteps} headings (safety limit)`,
                     this.meta,
                     navigationSteps
@@ -52,6 +52,6 @@ export class HeadingNavigationStrategy implements INavigationStrategy {
             }
         }
 
-        return Result.exhausted('no more headings found on page', this.meta, navigationSteps);
+        return NavigationStrategyResult.exhausted('no more headings found on page', this.meta, navigationSteps);
     }
 }

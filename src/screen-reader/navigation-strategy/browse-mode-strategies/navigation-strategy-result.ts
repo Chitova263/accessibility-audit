@@ -1,6 +1,6 @@
 import type { NavigationStep, StrategyMetadata, StrategyResult } from './navigation-strategy';
 
-export class Result {
+export class NavigationStrategyResult {
     static exhausted(detail: string, meta: StrategyMetadata, steps: NavigationStep[]): StrategyResult {
         return { completionReason: { kind: 'exhausted', detail }, meta, navigationSteps: steps };
     }

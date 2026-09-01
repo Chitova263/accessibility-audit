@@ -1,26 +1,26 @@
 #!/usr/bin/env node
 import { program } from 'commander';
-import { createDriver, type ScreenReaderType } from './screen-reader/drivers/factory';
-import { Navigator } from './screen-reader/navigators/navigator';
-import { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-connection';
-import type { INavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import { PageSession } from './screen-reader/page-session';
-import { HeadingNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/heading-navigation-strategy';
-import { LandmarkNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/landmark-navigation-strategy';
-import { ButtonNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/button-navigation-strategy';
-import { LinkNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/link-navigation-strategy';
-import { HeadingHierarchyNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/heading-hierarchy-navigation-strategy';
-import { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
-import { DownArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/down-arrow-navigation-strategy';
-import { runRules, summarizeViolations } from './analysis';
-import { ensureScreenshotsDir } from './analysis/utils/screenshot-capture';
-import { createPromptBuilder } from './llm/prompt-builder';
-import { formatTranscriptAsText } from './reporting';
-import { Logger } from './utils/logger';
-import { resolveOutputDir } from './utils/output-dir';
+import { createDriver, type ScreenReaderType } from '../screen-reader/drivers/factory';
+import { Navigator } from '../screen-reader/navigators/navigator';
+import { ChromeDevToolsProtocolConnection } from '../chrome-dev-tools-protocol-connection';
+import type { INavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import { PageSession } from '../screen-reader/page-session';
+import { HeadingNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/heading-navigation-strategy';
+import { LandmarkNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/landmark-navigation-strategy';
+import { ButtonNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/button-navigation-strategy';
+import { LinkNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/link-navigation-strategy';
+import { HeadingHierarchyNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/heading-hierarchy-navigation-strategy';
+import { TabNavigationStrategy } from '../screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
+import { DownArrowNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/down-arrow-navigation-strategy';
+import { runRules, summarizeViolations } from '../analysis';
+import { ensureScreenshotsDir } from '../analysis/utils/screenshot-capture';
+import { createPromptBuilder } from '../llm/prompt-builder';
+import { formatTranscriptAsText } from '../reporting';
+import { Logger } from '../utils/logger';
+import { resolveOutputDir } from '../utils/output-dir';
 
 program
-    .name('run-audit')
+    .name('a11y audit')
     .description('Run accessibility audit on a given URL')
     .argument('<url>', 'URL to audit')
     .option(

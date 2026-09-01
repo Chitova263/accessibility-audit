@@ -6,8 +6,7 @@
     "main": "dist/lib.js",
     "types": "dist/lib.d.ts",
     "bin": {
-        "accessibility-audit": "dist/run-audit.js",
-        "accessibility-report": "dist/generate-report.js"
+        "a11y": "bin/a11y.mjs"
     },
     "scripts": {
         "build": "tsc",
