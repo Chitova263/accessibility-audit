@@ -9,8 +9,25 @@
 import type {
     NavigationStep,
     StrategyMetadata,
+    StrategyName,
     StrategyResult,
+    StrategyType,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+
+const typeToNameMap: Record<StrategyType, StrategyName> = {
+    tab: 'tab',
+    arrow: 'arrow',
+    heading: 'heading',
+    landmark: 'landmark',
+    button: 'button',
+    link: 'link',
+    heading1: 'heading-level-1',
+    heading2: 'heading-level-2',
+    heading3: 'heading-level-3',
+    heading4: 'heading-level-4',
+    heading5: 'heading-level-5',
+    heading6: 'heading-level-6',
+};
 
 export interface StepOverrides {
     identifier?: string;
@@ -63,7 +80,12 @@ export const strategyResult = (
     navigationSteps: NavigationStep[],
     completionReason: StrategyResult['completionReason'] = { kind: 'exhausted', detail: `no more ${type}s found` }
 ): StrategyResult => ({
-    meta: { name: type, description: `${type} navigation`, type, mode: type === 'tab' ? 'focus' : 'browse' },
+    meta: {
+        name: typeToNameMap[type],
+        description: `${type} navigation`,
+        type,
+        mode: type === 'tab' ? 'focus' : 'browse',
+    },
     navigationSteps,
     completionReason,
 });

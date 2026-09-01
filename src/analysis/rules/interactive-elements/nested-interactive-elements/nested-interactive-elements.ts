@@ -21,18 +21,18 @@ export interface NestedInteractiveElementsStats {
 
 // Patterns that indicate nested interactive elements
 const NESTED_PATTERNS = [
-    /link,\s*link/i,           // "link, link" - nested links
-    /button,\s*link/i,         // "button, link" - button containing link
-    /link,\s*button/i,         // "link, button" - link containing button
-    /button,\s*button/i,       // "button, button" - nested buttons
+    /link,\s*link/i, // "link, link" - nested links
+    /button,\s*link/i, // "button, link" - button containing link
+    /link,\s*button/i, // "link, button" - link containing button
+    /button,\s*button/i, // "button, button" - nested buttons
 ];
 
 function getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
-    return transcript.find((r) => r.meta.type === 'arrow' || r.meta.name === 'ArrowNavigation');
+    return transcript.find((r) => r.meta.name === 'arrow');
 }
 
 function getLinkStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
-    return transcript.find((r) => r.meta.type === 'link' || r.meta.name === 'LinkNavigation');
+    return transcript.find((r) => r.meta.name === 'link');
 }
 
 function detectNestedPattern(itemText: string): string | null {
@@ -45,11 +45,7 @@ function detectNestedPattern(itemText: string): string | null {
     return null;
 }
 
-function createViolation(
-    message: string,
-    step: NavigationStep,
-    strategyName: string
-): NvdaViolation {
+function createViolation(message: string, step: NavigationStep, strategyName: string): NvdaViolation {
     return {
         id: `nested-interactive-elements-${step.identifier}`,
         rule: getRule('nested-interactive-elements'),

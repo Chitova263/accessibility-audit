@@ -1,12 +1,7 @@
 import type { Page, CDPSession } from 'playwright';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import type {
-    ScreenshotSuccess,
-    ScreenshotFailure,
-    Screenshot,
-    BoundingBox,
-} from '../core/violation';
+import type { ScreenshotSuccess, ScreenshotFailure, Screenshot, BoundingBox } from '../core/violation';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Browser globals used in page.evaluate() contexts - declared as any since DOM lib not included
@@ -40,7 +35,7 @@ const LABEL_ID = 'a11y-audit-violation-label';
 
 /**
  * Capture a viewport screenshot with the target element highlighted and scrolled into view.
- * 
+ *
  * This approach:
  * 1. Scrolls the element to the center of the viewport
  * 2. Applies a visible CSS-based highlight (outline + overlay)
@@ -251,12 +246,7 @@ async function applyHighlight(
 /**
  * Add a floating label near the highlighted element showing the violation name.
  */
-async function addLabel(
-    page: Page,
-    elementBounds: BoundingBox,
-    labelText: string,
-    color: string
-): Promise<void> {
+async function addLabel(page: Page, elementBounds: BoundingBox, labelText: string, color: string): Promise<void> {
     await page.evaluate(
         ({ id, bounds, text, bgColor }) => {
             // Remove any existing label first
@@ -272,10 +262,10 @@ async function addLabel(
             const labelHeight = 28;
             const padding = 8;
             const arrowSize = 6;
-            
+
             let top: number;
             let arrowPosition: 'bottom' | 'top';
-            
+
             if (bounds.y > labelHeight + padding + arrowSize) {
                 // Position above element
                 top = bounds.y - labelHeight - padding - arrowSize;
@@ -287,8 +277,8 @@ async function addLabel(
             }
 
             // Center horizontally on the element, but keep within viewport
-            let left = bounds.x + (bounds.width / 2);
-            
+            let left = bounds.x + bounds.width / 2;
+
             // Style the label
             Object.assign(label.style, {
                 position: 'fixed',
@@ -342,7 +332,7 @@ async function addLabel(
             // Adjust if label goes off-screen horizontally
             const labelRect = label.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
-            
+
             if (labelRect.left < 8) {
                 label.style.left = `${8 + labelRect.width / 2}px`;
             } else if (labelRect.right > viewportWidth - 8) {
@@ -366,11 +356,7 @@ async function removeLabel(page: Page): Promise<void> {
 /**
  * Remove the CSS highlight from the element, restoring original styles.
  */
-async function removeHighlight(
-    page: Page,
-    cdp: CDPSession,
-    backendNodeId: number
-): Promise<void> {
+async function removeHighlight(page: Page, cdp: CDPSession, backendNodeId: number): Promise<void> {
     // Resolve backendNodeId to a remote object
     const { object } = await cdp.send('DOM.resolveNode', { backendNodeId });
     if (!object.objectId) return;

@@ -22,7 +22,7 @@ const createStep = (
 const arrowResult = (navigationSteps: NavigationStep[]) =>
     mockContext([
         {
-            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow', mode: 'browse' },
+            meta: { name: 'arrow', description: 'Linear reading', type: 'arrow', mode: 'browse' },
             navigationSteps,
             completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         },

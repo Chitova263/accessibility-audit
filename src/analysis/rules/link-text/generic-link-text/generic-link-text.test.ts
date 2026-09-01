@@ -43,7 +43,7 @@ const strategies = (linkSteps: NavigationStep[], arrowSteps?: NavigationStep[]) 
 
     if (arrowSteps) {
         results.push({
-            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow', mode: 'browse' },
+            meta: { name: 'arrow', description: 'Linear reading', type: 'arrow', mode: 'browse' },
             navigationSteps: arrowSteps,
             completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         });

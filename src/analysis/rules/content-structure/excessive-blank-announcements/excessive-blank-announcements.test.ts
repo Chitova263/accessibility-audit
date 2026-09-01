@@ -19,7 +19,7 @@ const createStep = (index: number, itemText: string): NavigationStep => ({
 const arrowResult = (navigationSteps: NavigationStep[]) =>
     mockContext([
         {
-            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow', mode: 'browse' },
+            meta: { name: 'arrow', description: 'Linear reading', type: 'arrow', mode: 'browse' },
             navigationSteps,
             completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         },
@@ -92,10 +92,7 @@ describe('excessive-blank-announcements rule', () => {
     });
 
     it('handles blanks at end of navigation', async () => {
-        const steps = [
-            createStep(0, 'Content'),
-            ...Array.from({ length: 5 }, (_, i) => createStep(i + 1, 'blank')),
-        ];
+        const steps = [createStep(0, 'Content'), ...Array.from({ length: 5 }, (_, i) => createStep(i + 1, 'blank'))];
 
         const result = await rule.run(arrowResult(steps));
 

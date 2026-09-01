@@ -22,7 +22,7 @@ export interface FragmentedLinkTextStats {
 }
 
 function getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
-    return transcript.find((r) => r.meta.type === 'arrow' || r.meta.name === 'ArrowNavigation');
+    return transcript.find((r) => r.meta.name === 'arrow');
 }
 
 function extractLinkText(itemText: string): string | null {
@@ -54,11 +54,7 @@ function isSingleCharLink(itemText: string): { isLink: boolean; char: string | n
     return { isLink: true, char: null };
 }
 
-function createViolation(
-    message: string,
-    step: NavigationStep,
-    strategyName: string
-): NvdaViolation {
+function createViolation(message: string, step: NavigationStep, strategyName: string): NvdaViolation {
     return {
         id: `fragmented-link-text-${step.identifier}`,
         rule: getRule('fragmented-link-text'),

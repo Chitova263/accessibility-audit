@@ -1,23 +1,39 @@
 import type { Navigator } from '../../navigators/navigator';
 import type { ScreenReader } from '../../drivers/nvda';
 
+export type StrategyType =
+    | 'tab'
+    | 'arrow'
+    | 'heading'
+    | 'landmark'
+    | 'button'
+    | 'link'
+    | 'heading1'
+    | 'heading2'
+    | 'heading3'
+    | 'heading4'
+    | 'heading5'
+    | 'heading6';
+
+export type StrategyName =
+    | 'tab'
+    | 'arrow'
+    | 'heading'
+    | 'landmark'
+    | 'button'
+    | 'link'
+    | 'heading-level-1'
+    | 'heading-level-2'
+    | 'heading-level-3'
+    | 'heading-level-4'
+    | 'heading-level-5'
+    | 'heading-level-6';
+
 export interface StrategyMetadata {
-    name: string;
+    name: StrategyName;
     description: string;
     mode: 'browse' | 'focus';
-    type?:
-        | 'tab'
-        | 'arrow'
-        | 'heading'
-        | 'landmark'
-        | 'button'
-        | 'link'
-        | 'heading1'
-        | 'heading2'
-        | 'heading3'
-        | 'heading4'
-        | 'heading5'
-        | 'heading6';
+    type?: StrategyType;
 }
 
 export interface NavigationStrategyConfig {

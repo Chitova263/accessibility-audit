@@ -90,7 +90,7 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
     }
 
     private getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
-        return transcript.find((r) => r.meta.type === 'arrow' || r.meta.name === 'ArrowNavigation');
+        return transcript.find((r) => r.meta.name === 'arrow');
     }
 
     private findStructuralPatterns(steps: NavigationStep[]): RepeatedPattern[] {
@@ -173,7 +173,7 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
             ...(first.htmlSnippet != null ? { element: { htmlSnippet: first.htmlSnippet } } : {}),
             tool: 'nvda-audit',
             timestamp: first.timestamp,
-            context: createNvdaContext(first, 'ArrowNavigation', pattern.startIndex),
+            context: createNvdaContext(first, 'arrow', pattern.startIndex),
         };
     }
 }

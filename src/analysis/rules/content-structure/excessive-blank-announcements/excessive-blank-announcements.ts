@@ -23,7 +23,7 @@ export interface ExcessiveBlankAnnouncementsStats {
 }
 
 function getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
-    return transcript.find((r) => r.meta.type === 'arrow' || r.meta.name === 'ArrowNavigation');
+    return transcript.find((r) => r.meta.name === 'arrow');
 }
 
 function isBlank(itemText: string): boolean {
@@ -31,11 +31,7 @@ function isBlank(itemText: string): boolean {
     return normalized === 'blank' || normalized.endsWith(', blank') || normalized.endsWith(' blank');
 }
 
-function createViolation(
-    message: string,
-    step: NavigationStep,
-    strategyName: string
-): NvdaViolation {
+function createViolation(message: string, step: NavigationStep, strategyName: string): NvdaViolation {
     return {
         id: `excessive-blank-announcements-${step.identifier}`,
         rule: getRule('excessive-blank-announcements'),

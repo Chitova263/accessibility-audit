@@ -19,7 +19,7 @@ const createStep = (index: number, itemText: string): NavigationStep => ({
 const arrowResult = (navigationSteps: NavigationStep[]) =>
     mockContext([
         {
-            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow', mode: 'browse' },
+            meta: { name: 'arrow', description: 'Linear reading', type: 'arrow', mode: 'browse' },
             navigationSteps,
             completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         },
@@ -46,9 +46,7 @@ describe('nested-interactive-elements rule', () => {
     });
 
     it('detects "button, link" pattern', async () => {
-        const steps = [
-            createStep(0, 'Submit, button, link'),
-        ];
+        const steps = [createStep(0, 'Submit, button, link')];
 
         const result = await rule.run(arrowResult(steps));
 
@@ -57,9 +55,7 @@ describe('nested-interactive-elements rule', () => {
     });
 
     it('detects "link, button" pattern', async () => {
-        const steps = [
-            createStep(0, 'Click here, link, button'),
-        ];
+        const steps = [createStep(0, 'Click here, link, button')];
 
         const result = await rule.run(arrowResult(steps));
 
@@ -92,10 +88,7 @@ describe('nested-interactive-elements rule', () => {
     });
 
     it('reports different nested patterns separately', async () => {
-        const steps = [
-            createStep(0, 'Offer A, link, link'),
-            createStep(1, 'Offer B, link, link'),
-        ];
+        const steps = [createStep(0, 'Offer A, link, link'), createStep(1, 'Offer B, link, link')];
 
         const result = await rule.run(arrowResult(steps));
 

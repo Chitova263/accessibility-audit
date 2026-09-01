@@ -80,7 +80,7 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
     }
 
     private getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
-        return transcript.find((r) => r.meta.type === 'arrow' || r.meta.name === 'ArrowNavigation');
+        return transcript.find((r) => r.meta.name === 'arrow');
     }
 
     private findLargeContentGaps(arrowResult: StrategyResult): ContentGap[] {
@@ -151,7 +151,7 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
             ...(gap.startStep.htmlSnippet != null ? { element: { htmlSnippet: gap.startStep.htmlSnippet } } : {}),
             tool: 'nvda-audit',
             timestamp: gap.startStep.timestamp,
-            context: createNvdaContext(gap.startStep, 'ArrowNavigation', gap.startStepIndex),
+            context: createNvdaContext(gap.startStep, 'arrow', gap.startStepIndex),
         };
     }
 }

@@ -19,7 +19,7 @@ const createStep = (index: number, itemText: string): NavigationStep => ({
 const arrowResult = (navigationSteps: NavigationStep[]) =>
     mockContext([
         {
-            meta: { name: 'ArrowNavigation', description: 'Linear reading', type: 'arrow', mode: 'browse' },
+            meta: { name: 'arrow', description: 'Linear reading', type: 'arrow', mode: 'browse' },
             navigationSteps,
             completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         },
@@ -67,11 +67,7 @@ describe('fragmented-link-text rule', () => {
     });
 
     it('tolerates short sequences below threshold', async () => {
-        const steps = [
-            createStep(0, 'link, a'),
-            createStep(1, 'link, b'),
-            createStep(2, 'Normal link text, link'),
-        ];
+        const steps = [createStep(0, 'link, a'), createStep(1, 'link, b'), createStep(2, 'Normal link text, link')];
 
         const result = await rule.run(arrowResult(steps));
 
@@ -79,10 +75,7 @@ describe('fragmented-link-text rule', () => {
     });
 
     it('honours custom threshold', async () => {
-        const steps = [
-            createStep(0, 'link, a'),
-            createStep(1, 'link, b'),
-        ];
+        const steps = [createStep(0, 'link, a'), createStep(1, 'link, b')];
         const customRule = new FragmentedLinkTextRule({ threshold: 2 });
 
         const result = await customRule.run(arrowResult(steps));

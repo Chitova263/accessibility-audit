@@ -373,7 +373,7 @@ exports[`buildTranscriptSection > should handle real-world navigation transcript
             </step>
         </steps>
     </strategy>
-    <strategy name="ArrowNavigation" type="arrow" mode="browse">
+    <strategy name="arrow" type="arrow" mode="browse">
         <description>Linear reading through page content using Down Arrow (browse mode)</description>
         <completion_reason kind="exhausted">reached end of document</completion_reason>
         <steps total="3">

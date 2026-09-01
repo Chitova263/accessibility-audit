@@ -89,7 +89,7 @@ export class LandmarkWithoutHeadingRule implements Rule<NvdaContext, LandmarkWit
     }
 
     private getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
-        return transcript.find((r) => r.meta.type === 'arrow' || r.meta.name === 'ArrowNavigation');
+        return transcript.find((r) => r.meta.name === 'arrow');
     }
 
     private findLandmarkBoundaries(steps: NavigationStep[]): LandmarkContent[] {
@@ -141,7 +141,7 @@ export class LandmarkWithoutHeadingRule implements Rule<NvdaContext, LandmarkWit
                 : {}),
             tool: 'nvda-audit',
             timestamp: landmark.landmark.timestamp,
-            context: createNvdaContext(landmark.landmark, 'ArrowNavigation', landmark.stepIndex),
+            context: createNvdaContext(landmark.landmark, 'arrow', landmark.stepIndex),
         };
     }
 }

@@ -41,7 +41,7 @@ const LANDMARK_PATTERNS: Record<string, RegExp> = {
 };
 
 function getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
-    return transcript.find((r) => r.meta.type === 'arrow' || r.meta.name === 'ArrowNavigation');
+    return transcript.find((r) => r.meta.name === 'arrow');
 }
 
 function getSpokenText(step: NavigationStep): string {

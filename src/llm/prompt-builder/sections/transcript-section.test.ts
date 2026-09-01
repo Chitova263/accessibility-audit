@@ -914,7 +914,7 @@ describe('buildTranscriptSection', () => {
             }),
             createStrategyResult({
                 meta: {
-                    name: 'ArrowNavigation',
+                    name: 'arrow',
                     type: 'arrow',
                     description: 'Linear reading through page content using Down Arrow (browse mode)',
                 },
