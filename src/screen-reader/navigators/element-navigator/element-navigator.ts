@@ -19,6 +19,7 @@ export class ElementNavigator implements IElementNavigator {
 
         while (true) {
             await this.sr.press(this.config.advanceKey);
+
             const phrase = await this.sr.lastSpokenPhrase();
             const itemText = await this.sr.itemText();
 

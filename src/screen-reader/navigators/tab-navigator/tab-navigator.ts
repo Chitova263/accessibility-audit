@@ -11,6 +11,7 @@ export class TabNavigator implements IElementNavigator {
 
     async *[Symbol.asyncIterator](): AsyncIterableIterator<NavigationItem> {
         await this.sr.press(this.tabKey);
+
         const firstPhrase = await this.sr.lastSpokenPhrase();
         const firstItemText = await this.sr.itemText();
 
@@ -18,13 +19,14 @@ export class TabNavigator implements IElementNavigator {
 
         while (true) {
             await this.sr.press(this.tabKey);
+
             const phrase = await this.sr.lastSpokenPhrase();
+            const itemText = await this.sr.itemText();
 
             if (phrase === firstPhrase) {
                 return;
             }
 
-            const itemText = await this.sr.itemText();
             yield { phrase, itemText };
         }
     }

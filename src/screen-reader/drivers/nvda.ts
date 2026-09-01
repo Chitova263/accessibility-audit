@@ -15,6 +15,10 @@ export interface ScreenReader {
 }
 
 export class Nvda implements ScreenReader {
+    private readonly pollIntervalMs = 100;
+    private readonly stableThreshold = 3;
+    private readonly timeoutMs = 3000;
+
     async start(): Promise<void> {
         // Bring Chrome to foreground - NVDA needs window focus
         execSync(
@@ -36,8 +40,14 @@ export class Nvda implements ScreenReader {
         return nvda.stop();
     }
 
-    press(key: string): Promise<void> {
-        return nvda.press(key);
+    /**
+     * Press a key and wait for NVDA speech to stabilize before returning.
+     * This ensures lastSpokenPhrase() returns the complete announcement.
+     */
+    async press(key: string): Promise<void> {
+        await nvda.clearSpokenPhraseLog();
+        await nvda.press(key);
+        await this.waitForSpeechStable();
     }
 
     lastSpokenPhrase(): Promise<string> {
@@ -62,5 +72,31 @@ export class Nvda implements ScreenReader {
 
     clearItemTextLog(): Promise<void> {
         return nvda.clearItemTextLog();
+    }
+
+    /**
+     * Wait for speech to stabilize by polling the phrase log until it stops changing.
+     */
+    private async waitForSpeechStable(): Promise<void> {
+        const startTime = Date.now();
+        let lastLogLength = -1;
+        let stableCount = 0;
+
+        while (Date.now() - startTime < this.timeoutMs) {
+            const log = await nvda.spokenPhraseLog();
+
+            if (log.length === lastLogLength) {
+                stableCount++;
+                if (stableCount >= this.stableThreshold) {
+                    return; // Speech has stabilized
+                }
+            } else {
+                stableCount = 0;
+                lastLogLength = log.length;
+            }
+
+            await delay(this.pollIntervalMs);
+        }
+        // Timeout reached, continue anyway
     }
 }

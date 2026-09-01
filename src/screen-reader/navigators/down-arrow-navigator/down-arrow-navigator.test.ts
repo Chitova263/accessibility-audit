@@ -38,7 +38,8 @@ describe('ArrowNavigator', () => {
                 .mockResolvedValueOnce('End'),
         });
 
-        const navigator = new DownArrowNavigator(mockIO);
+        // Use repeat threshold of 3 for this test
+        const navigator = new DownArrowNavigator(mockIO, 'Down', 3);
 
         const items = [];
         for await (const item of navigator) {
@@ -65,7 +66,7 @@ describe('ArrowNavigator', () => {
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new DownArrowNavigator(mockIO);
+        const navigator = new DownArrowNavigator(mockIO, 'Down', 3);
 
         const items = [];
         for await (const item of navigator) {
@@ -86,7 +87,7 @@ describe('ArrowNavigator', () => {
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new DownArrowNavigator(mockIO, 'Up');
+        const navigator = new DownArrowNavigator(mockIO, 'Up', 3);
 
         const items = [];
         for await (const item of navigator) {
@@ -165,7 +166,7 @@ describe('ArrowNavigator', () => {
                 .mockResolvedValueOnce('End'),
         });
 
-        const navigator = new DownArrowNavigator(mockIO);
+        const navigator = new DownArrowNavigator(mockIO, 'Down', 3);
 
         const items = [];
         for await (const item of navigator) {

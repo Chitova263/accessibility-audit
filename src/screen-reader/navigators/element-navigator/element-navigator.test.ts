@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ElementNavigator } from './element-navigator';
 import type { ScreenReader } from '../../drivers/nvda';
 import type { EndDetector } from '../types';

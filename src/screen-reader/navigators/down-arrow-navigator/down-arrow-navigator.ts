@@ -20,6 +20,7 @@ export class DownArrowNavigator implements IElementNavigator {
 
         while (true) {
             await this.sr.press(this.arrowKey);
+
             const phrase = await this.sr.lastSpokenPhrase();
             const itemText = await this.sr.itemText();
 

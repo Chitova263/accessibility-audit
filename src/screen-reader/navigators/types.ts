@@ -1,7 +1,9 @@
 import type { ScreenReader } from '../drivers/nvda';
 
 export interface NavigationItem {
+    /** The spoken phrase */
     phrase: string;
+    /** The item text (focused element text) */
     itemText: string;
 }
 
