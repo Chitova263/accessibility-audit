@@ -113,7 +113,10 @@ export class Navigator {
     }
 
     linearElements(): IElementNavigator {
-        return new DownArrowNavigator(this.sr, this.keyBindings.arrowDown);
+        const endDetector = this.endDetection.linear
+            ? createEndDetector(this.endDetection.linear)
+            : undefined;
+        return new DownArrowNavigator(this.sr, this.keyBindings.arrowDown, 30, endDetector);
     }
 
     async navigateToDocumentStart(): Promise<void> {

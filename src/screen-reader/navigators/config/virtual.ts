@@ -25,4 +25,5 @@ export const virtualEndDetection: ScreenReaderEndDetection = {
     link: { type: 'loop-detection' },
     landmark: { type: 'loop-detection' },
     button: { type: 'loop-detection' },
+    linear: { type: 'loop-detection' },
 };
