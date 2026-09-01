@@ -1,5 +1,17 @@
 import type { EndDetectionStrategy, EndDetector, EndDetectionContext } from './types';
 
+const DEFAULT_DOCUMENT_BOUNDARY_PATTERNS = [
+    'tool bar',
+    'toolbar',
+    'address bar',
+    'address and search bar',
+    'chrome',
+    'firefox',
+    'edge',
+    'safari',
+    'brave',
+];
+
 /**
  * Creates an EndDetector from a declarative EndDetectionStrategy.
  */
@@ -13,6 +25,9 @@ export function createEndDetector(strategy: EndDetectionStrategy): EndDetector {
 
         case 'loop-detection':
             return createLoopDetector(strategy.key ?? 'phrase');
+
+        case 'document-boundary':
+            return createDocumentBoundaryDetector(strategy.additionalPatterns);
 
         case 'any':
             return createAnyDetector(strategy.of);
@@ -64,6 +79,27 @@ function createLoopDetector(key: 'phrase' | 'itemText'): EndDetector {
         reset(): void {
             seen.clear();
         },
+    };
+}
+
+function createDocumentBoundaryDetector(additionalPatterns?: string[]): EndDetector {
+    const patterns = additionalPatterns
+        ? [...DEFAULT_DOCUMENT_BOUNDARY_PATTERNS, ...additionalPatterns]
+        : DEFAULT_DOCUMENT_BOUNDARY_PATTERNS;
+
+    return {
+        check(ctx: EndDetectionContext): boolean {
+            // Only trigger when focus is outside the document
+            // backendNodeId is a number when focus is on a DOM element
+            // backendNodeId is null/undefined when focus is outside the document
+            if (typeof ctx.backendNodeId === 'number') {
+                return false;
+            }
+
+            const phraseLower = ctx.phrase.toLowerCase();
+            return patterns.some((pattern) => phraseLower.includes(pattern));
+        },
+        reset(): void {},
     };
 }
 
