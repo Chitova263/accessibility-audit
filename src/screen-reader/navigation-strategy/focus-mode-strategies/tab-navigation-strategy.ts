@@ -39,7 +39,6 @@ export class TabNavigationStrategy implements INavigationStrategy {
         await ctx.navigator.navigateToDocumentStart();
         await ctx.navigator.navigateToDocumentStart();
         await delay(2000);
-        await ctx.reader.clearSpokenPhraseLog();
 
         const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
         const navigationSteps: NavigationStep[] = [];

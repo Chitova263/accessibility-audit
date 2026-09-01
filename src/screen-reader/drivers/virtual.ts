@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 import { createRequire } from 'node:module';
-import type { ScreenReader } from './nvda';
+import type { ScreenReader, PressResult } from './nvda';
 import { Logger } from '../../utils/logger';
 
 const _require = createRequire(import.meta.url);
@@ -19,10 +19,6 @@ interface BrowserWindow {
         perform(command: string): Promise<void>;
         lastSpokenPhrase(): Promise<string>;
         itemText(): Promise<string>;
-        spokenPhraseLog(): Promise<string[]>;
-        clearSpokenPhraseLog(): Promise<void>;
-        itemTextLog(): Promise<string[]>;
-        clearItemTextLog(): Promise<void>;
     };
 }
 
@@ -85,7 +81,7 @@ export class VirtualScreenReader implements ScreenReader {
         });
     }
 
-    async press(key: string): Promise<void> {
+    async press(key: string): Promise<PressResult> {
         if (key.startsWith(VSR_COMMAND_PREFIX)) {
             const commandKey = key.slice(VSR_COMMAND_PREFIX.length);
             const command = VSR_COMMAND_MAP[commandKey];
@@ -98,7 +94,7 @@ export class VirtualScreenReader implements ScreenReader {
                 await this.page.evaluate(async () => {
                     await (globalThis as unknown as BrowserWindow).__vsr.next();
                 });
-                return;
+                return this.captureCurrentState();
             }
 
             if (command === '__special:documentStart') {
@@ -108,7 +104,7 @@ export class VirtualScreenReader implements ScreenReader {
                     await vsr.stop();
                     await vsr.start({ container: w.document.body });
                 });
-                return;
+                return this.captureCurrentState();
             }
 
             if (command === '__special:button') {
@@ -134,53 +130,36 @@ export class VirtualScreenReader implements ScreenReader {
                     }
                     return false;
                 });
-                return;
+                return this.captureCurrentState();
             }
 
             await this.page.evaluate(async (cmd: string) => {
                 await (globalThis as unknown as BrowserWindow).__vsr.perform(cmd);
             }, command);
-            return;
+            return this.captureCurrentState();
         }
 
         await this.page.evaluate(async (k: string) => {
             await (globalThis as unknown as BrowserWindow).__vsr.press(k);
         }, key);
+        return this.captureCurrentState();
     }
 
-    async lastSpokenPhrase(): Promise<string> {
-        return this.page.evaluate(async () => {
-            return (globalThis as unknown as BrowserWindow).__vsr.lastSpokenPhrase();
+    /**
+     * Capture current state after an action.
+     * Virtual screen reader is synchronous, so speech is immediately available.
+     */
+    private async captureCurrentState(): Promise<PressResult> {
+        const result = await this.page.evaluate(async () => {
+            const vsr = (globalThis as unknown as BrowserWindow).__vsr;
+            return {
+                lastPhrase: await vsr.lastSpokenPhrase(),
+                itemText: await vsr.itemText(),
+            };
         });
-    }
-
-    async itemText(): Promise<string> {
-        return this.page.evaluate(async () => {
-            return (globalThis as unknown as BrowserWindow).__vsr.itemText();
-        });
-    }
-
-    async spokenPhraseLog(): Promise<string[]> {
-        return this.page.evaluate(async () => {
-            return (globalThis as unknown as BrowserWindow).__vsr.spokenPhraseLog();
-        });
-    }
-
-    async clearSpokenPhraseLog(): Promise<void> {
-        await this.page.evaluate(async () => {
-            await (globalThis as unknown as BrowserWindow).__vsr.clearSpokenPhraseLog();
-        });
-    }
-
-    async itemTextLog(): Promise<string[]> {
-        return this.page.evaluate(async () => {
-            return (globalThis as unknown as BrowserWindow).__vsr.itemTextLog();
-        });
-    }
-
-    async clearItemTextLog(): Promise<void> {
-        await this.page.evaluate(async () => {
-            await (globalThis as unknown as BrowserWindow).__vsr.clearItemTextLog();
-        });
+        return {
+            spokenPhrases: result.lastPhrase ? [result.lastPhrase] : [],
+            itemText: result.itemText,
+        };
     }
 }
