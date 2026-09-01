@@ -1,4 +1,6 @@
+#!/usr/bin/env node
 import { program } from 'commander';
+import * as path from 'path';
 import { generateReportFromFiles } from './reporting';
 
 program
@@ -6,44 +8,57 @@ program
     .description('Generate an accessibility report from existing audit data files')
     .requiredOption('--url <url>', 'Page URL for the report')
     .requiredOption('--title <title>', 'Page title for the report')
-    .option('--llm-response <path>', 'Path to LLM response JSON', './llm-response.json')
+    .option('--dir <dir>', 'Audit run directory (sets default paths for all files below)')
     .option(
-        '--violations <path>',
-        'Path to violations JSON (screenshots embedded in NVDA violations)',
-        './violations.json'
+        '--llm-response <path>',
+        'Path to LLM response JSON (default: <dir>/llm-response.json or ./llm-response.json)'
     )
-    .option('--transcript <path>', 'Path to transcript JSON', './transcript.json')
+    .option('--violations <path>', 'Path to violations JSON (default: <dir>/violations.json or ./violations.json)')
+    .option('--transcript <path>', 'Path to transcript JSON (default: <dir>/transcript.json or ./transcript.json)')
     .option('-f, --format <format>', 'Output format: html or json', 'html')
-    .option('-o, --output <path>', 'Output file path', './report.html')
+    .option('-o, --output <path>', 'Output file path (default: <dir>/report.html or ./report.html)')
     .parse();
 
 const options = program.opts<{
     url: string;
     title: string;
-    llmResponse: string;
-    violations: string;
-    transcript: string;
+    dir?: string;
+    llmResponse?: string;
+    violations?: string;
+    transcript?: string;
     format: 'html' | 'json';
-    output: string;
+    output?: string;
 }>();
 
+function resolvePath(explicit: string | undefined, filename: string): string {
+    if (explicit) return explicit;
+    if (options.dir) return path.join(options.dir, filename);
+    return `./${filename}`;
+}
+
+const llmResponsePath = resolvePath(options.llmResponse, 'llm-response.json');
+const violationsPath = resolvePath(options.violations, 'violations.json');
+const transcriptPath = resolvePath(options.transcript, 'transcript.json');
+const outputPath = resolvePath(options.output, options.format === 'json' ? 'report.json' : 'report.html');
+
 console.log('\n=== Generating Accessibility Report ===');
-console.log(`LLM Response: ${options.llmResponse}`);
-console.log(`Violations: ${options.violations}`);
-console.log(`Transcript: ${options.transcript}`);
+if (options.dir) console.log(`Run directory: ${options.dir}`);
+console.log(`LLM Response: ${llmResponsePath}`);
+console.log(`Violations: ${violationsPath}`);
+console.log(`Transcript: ${transcriptPath}`);
 console.log(`Page URL: ${options.url}`);
 console.log(`Page Title: ${options.title}`);
 console.log(`Format: ${options.format}`);
-console.log(`Output: ${options.output}`);
+console.log(`Output: ${outputPath}`);
 
 await generateReportFromFiles({
-    llmResponsePath: options.llmResponse,
-    violationsPath: options.violations,
-    transcriptPath: options.transcript,
+    llmResponsePath,
+    violationsPath,
+    transcriptPath,
     pageUrl: options.url,
     pageTitle: options.title,
     format: options.format,
-    outputPath: options.output,
+    outputPath,
 });
 
-console.log(`\n✓ Report generated: ${options.output}`);
+console.log(`\n✓ Report generated: ${outputPath}`);

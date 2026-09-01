@@ -31,11 +31,19 @@ export { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-co
 
 // New screen reader architecture
 export { Nvda, type ScreenReader } from './screen-reader/drivers/nvda';
+export { VirtualScreenReader } from './screen-reader/drivers/virtual';
+export {
+    createDriver,
+    type ScreenReaderType,
+    type DriverConfig,
+    type CreateDriverOptions,
+} from './screen-reader/drivers/factory';
 export { ElementNavigator } from './screen-reader/navigators/element-navigator/element-navigator';
 export { TabNavigator } from './screen-reader/navigators/tab-navigator/tab-navigator';
 export { DownArrowNavigator } from './screen-reader/navigators/down-arrow-navigator/down-arrow-navigator';
 export { Navigator } from './screen-reader/navigators/navigator';
-export { nvdaKeyBindings, nvdaEndPatterns } from './screen-reader/navigators/config/nvda';
+export { nvdaKeyBindings, nvdaEndDetection } from './screen-reader/navigators/config/nvda';
+export { virtualKeyBindings, virtualEndDetection } from './screen-reader/navigators/config/virtual';
 export type {
     NavigationItem,
     NavigatorConfig,
@@ -59,3 +67,6 @@ export { DownArrowNavigationStrategy } from './screen-reader/navigation-strategy
 export { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
 
 export { formatTranscriptAsText } from './reporting';
+
+// Utilities
+export { Logger, type LogLevel, type LoggerOptions, type ContextLogger } from './utils/logger';

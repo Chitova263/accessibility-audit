@@ -1,7 +1,7 @@
+#!/usr/bin/env node
 import { program } from 'commander';
-import { Nvda } from './screen-reader/drivers/nvda';
+import { createDriver, type ScreenReaderType } from './screen-reader/drivers/factory';
 import { Navigator } from './screen-reader/navigators/navigator';
-import { nvdaKeyBindings, nvdaEndPatterns } from './screen-reader/navigators/config/nvda';
 import { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-connection';
 import type { INavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { PageSession } from './screen-reader/page-session';
@@ -16,38 +16,59 @@ import { runRules, summarizeViolations } from './analysis';
 import { ensureScreenshotsDir } from './analysis/utils/screenshot-capture';
 import { createPromptBuilder } from './llm/prompt-builder';
 import { formatTranscriptAsText } from './reporting';
+import { Logger } from './utils/logger';
+import { resolveOutputDir } from './utils/output-dir';
 
 program
     .name('run-audit')
     .description('Run accessibility audit on a given URL')
     .argument('<url>', 'URL to audit')
-    .option('-o, --output-dir <dir>', 'Output directory for audit files', '.')
+    .option(
+        '-o, --output-dir <dir>',
+        'Output directory for audit files (default: audit-results/<url-slug>-<timestamp>)'
+    )
     .option('--max-steps <number>', 'Maximum steps per strategy', '500')
+    .option('-r, --reader <type>', 'Screen reader to use: nvda or virtual', 'nvda')
     .option('-v, --verbose', 'Enable verbose output')
     .action(() => {})
     .parse();
 
 const url = program.processedArgs[0] as string;
 const options = program.opts<{
-    outputDir: string;
+    outputDir: string | undefined;
     maxSteps: string;
+    reader: string;
     verbose: boolean;
 }>();
 
 const maxSteps = parseInt(options.maxSteps, 10);
-const outputDir = options.outputDir;
+const readerType = options.reader as ScreenReaderType;
+
+Logger.setLevel(options.verbose ? 'debug' : 'info');
+
+if (readerType !== 'nvda' && readerType !== 'virtual') {
+    Logger.error(`Invalid reader type: ${readerType}. Must be 'nvda' or 'virtual'.`);
+    process.exit(1);
+}
+
+const outputDir = await resolveOutputDir({
+    ...(options.outputDir ? { explicitDir: options.outputDir } : {}),
+    url,
+});
 
 let chromeDevToolsProtocolConnection: ChromeDevToolsProtocolConnection | undefined = undefined;
+let driverCleanup: (() => Promise<void>) | undefined = undefined;
+
 try {
-    console.log(`\n=== Starting Accessibility Audit ===`);
-    console.log(`Target URL: ${url}`);
-    if (options.verbose) {
-        console.log(`Output directory: ${outputDir}`);
-        console.log(`Max steps per strategy: ${maxSteps}`);
-    }
+    Logger.section('Starting Accessibility Audit');
+    Logger.info(`Target URL: ${url}`);
+    Logger.info(`Screen reader: ${readerType}`);
+    Logger.debug(`Output directory: ${outputDir}`);
+    Logger.debug(`Max steps per strategy: ${maxSteps}`);
 
     chromeDevToolsProtocolConnection = ChromeDevToolsProtocolConnection.createConnection();
     await chromeDevToolsProtocolConnection.connect();
+    Logger.debug('Chrome DevTools Protocol connection established');
 
     const strategies: INavigationStrategy[] = [
         new DownArrowNavigationStrategy({ maxSteps: 1000 }),
@@ -66,25 +87,29 @@ try {
 
     const pageUrl = new URL(url);
     const page = await chromeDevToolsProtocolConnection.goToPage(pageUrl);
+    Logger.info('Page loaded');
 
-    const nvda = new Nvda();
-    const navigator = new Navigator(nvda, nvdaKeyBindings, nvdaEndPatterns);
+    const driver = await createDriver({ type: readerType, page });
+    driverCleanup = driver.cleanup;
 
-    const pageSession = new PageSession(pageUrl, nvda, navigator, strategies, page);
+    const navigator = Navigator.fromConfig({
+        reader: driver.reader,
+        keyBindings: driver.keyBindings,
+        endDetection: driver.endDetection,
+    });
+
+    const pageSession = new PageSession(pageUrl, driver.reader, navigator, strategies, page);
     await pageSession.startSession();
     const result = await pageSession.run();
 
-    // Create CDP session for screenshot capture
     const cdp = await result.page.context().newCDPSession(result.page);
 
-    // Enable DOM for screenshot capture
     await cdp.send('DOM.enable');
 
-    // Create screenshots directory
     const screenshotsDir = await ensureScreenshotsDir(outputDir);
 
-    // Run all rules. Some rules capture screenshots to files.
-    // axe-core drives the live page, so this has to happen before the connection is closed.
+    // axe-core drives the live page, so rules must run before the connection is closed.
+    Logger.section('Running Analysis Rules');
     const { violations: allViolations, byRule } = await runRules({
         transcript: result.results,
         page: result.page,
@@ -92,7 +117,6 @@ try {
         screenshotsDir,
     });
 
-    // Write audit data to files
     const fs = await import('fs/promises');
     const path = await import('path');
 
@@ -102,9 +126,9 @@ try {
     await fs.writeFile(violationsPath, JSON.stringify(allViolations, null, 2), 'utf-8');
     await fs.writeFile(transcriptPath, JSON.stringify(result.results, null, 2), 'utf-8');
 
-    console.log('\nAudit data written to:');
-    console.log(`  - ${violationsPath}`);
-    console.log(`  - ${transcriptPath}`);
+    Logger.info('Audit data written:');
+    Logger.info(`  - ${violationsPath}`);
+    Logger.info(`  - ${transcriptPath}`);
 
     const promptBuilder = createPromptBuilder({
         transcript: {
@@ -124,17 +148,18 @@ try {
     const prompt = promptBuilder.withStrategyResults(result.results).withViolations(allViolations).build();
 
     await pageSession.endEndSession();
+    await driverCleanup();
+    driverCleanup = undefined;
     await chromeDevToolsProtocolConnection.disconnect();
 
-    console.log('\n=== LLM Prompt Generated ===');
-    console.log(`Transcript: ${prompt.metadata.totalStrategies} strategies, ${prompt.metadata.totalSteps} steps`);
-    console.log(`Violations: ${prompt.metadata.totalViolations} total`);
-    console.log(`System prompt: ${prompt.metadata.systemPromptLength} chars`);
-    console.log(`User prompt: ${prompt.metadata.userPromptLength} chars`);
-    console.log(`Combined prompt: ${prompt.metadata.combinedPromptLength} chars`);
-    console.log(`Estimated tokens: ~${prompt.metadata.estimatedTokens}`);
+    Logger.section('LLM Prompt Generated');
+    Logger.info(`Transcript: ${prompt.metadata.totalStrategies} strategies, ${prompt.metadata.totalSteps} steps`);
+    Logger.info(`Violations: ${prompt.metadata.totalViolations} total`);
+    Logger.debug(`System prompt: ${prompt.metadata.systemPromptLength} chars`);
+    Logger.debug(`User prompt: ${prompt.metadata.userPromptLength} chars`);
+    Logger.debug(`Combined prompt: ${prompt.metadata.combinedPromptLength} chars`);
+    Logger.debug(`Estimated tokens: ~${prompt.metadata.estimatedTokens}`);
 
-    // Write prompts to files
     const systemPromptPath = path.join(outputDir, 'llm-prompt-system.txt');
     const userPromptPath = path.join(outputDir, 'llm-prompt-user.txt');
     const combinedPromptPath = path.join(outputDir, 'llm-prompt-combined.txt');
@@ -144,32 +169,35 @@ try {
     await fs.writeFile(userPromptPath, prompt.user, 'utf-8');
     await fs.writeFile(combinedPromptPath, prompt.combined, 'utf-8');
 
-    // Write transcript in human-readable text format
     const transcriptData = promptBuilder.getTranscriptData();
     const transcriptText = formatTranscriptAsText(transcriptData);
     await fs.writeFile(transcriptReadablePath, transcriptText, 'utf-8');
 
-    console.log('\nPrompts written to:');
-    console.log(`  - ${systemPromptPath} (system prompt for API use)`);
-    console.log(`  - ${userPromptPath} (user prompt for API use)`);
-    console.log(`  - ${combinedPromptPath} (copy-paste this into AI chat)`);
-    console.log(`  - ${transcriptReadablePath} (human-readable transcript)`);
+    Logger.info('Prompts written:');
+    Logger.info(`  - ${systemPromptPath}`);
+    Logger.info(`  - ${userPromptPath}`);
+    Logger.info(`  - ${combinedPromptPath}`);
+    Logger.info(`  - ${transcriptReadablePath}`);
 
     const totals = summarizeViolations(allViolations);
 
-    console.log('\n=== Analysis Complete ===');
-    console.log(`Total violations found: ${totals.total}`);
-    console.log(`Rules run: ${byRule.size}`);
-    console.log(`  By tool:`, totals.byTool);
-
-    console.log('\nViolations by impact:', totals.byImpact);
-    console.log('Violations by rule:', totals.byRule);
+    Logger.section('Analysis Complete');
+    Logger.info(`Total violations found: ${totals.total}`);
+    Logger.info(`Rules run: ${byRule.size}`);
+    Logger.debug('By tool:', totals.byTool);
+    Logger.info('Violations by impact:', totals.byImpact);
+    Logger.debug('Violations by rule:', totals.byRule);
 
     if (options.verbose) {
-        // Output detailed violations
-        console.log('\n=== Detailed Violations ===');
+        Logger.section('Detailed Violations');
         console.log(JSON.stringify(allViolations, null, 2));
     }
+} catch (error) {
+    Logger.error('Audit failed', error);
+    process.exit(1);
 } finally {
+    if (driverCleanup) {
+        await driverCleanup();
+    }
     chromeDevToolsProtocolConnection?.disconnect();
 }

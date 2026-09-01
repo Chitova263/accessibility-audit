@@ -135,7 +135,7 @@ describe('ArrowNavigator', () => {
             itemText: vi.fn().mockResolvedValue('text'),
         });
 
-        const navigator = new DownArrowNavigator(mockIO);
+        const navigator = new DownArrowNavigator(mockIO, 'Down', 3);
 
         const items = [];
         for await (const item of navigator) {

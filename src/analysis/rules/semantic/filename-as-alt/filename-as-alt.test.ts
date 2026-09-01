@@ -34,7 +34,7 @@ describe('filename-as-alt rule', () => {
         expect(result.violations[0]!.message).toContain(alt);
     });
 
-    it.each(['Fibre router on a desk', 'Swisscom logo', 'Two people looking at a phone. Photo taken outdoors.'])(
+    it.each(['Fibre router on a desk', 'Company logo', 'Two people looking at a phone. Photo taken outdoors.'])(
         'leaves descriptive alt text alone: "%s"',
         async (alt) => {
             const result = await rule.run(mockContext([strategyResult('arrow', createSteps([image(alt)]))]));

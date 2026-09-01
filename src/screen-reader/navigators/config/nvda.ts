@@ -1,4 +1,4 @@
-import type { ScreenReaderKeyBindings, ScreenReaderEndPatterns } from '../types';
+import type { ScreenReaderKeyBindings, ScreenReaderEndDetection } from '../types';
 
 /**
  * NVDA key bindings for navigation.
@@ -17,10 +17,14 @@ export const nvdaKeyBindings: ScreenReaderKeyBindings = {
     documentStart: 'Control+Home',
 };
 
-export const nvdaEndPatterns: ScreenReaderEndPatterns = {
-    heading: (ctx) => ctx.phrase.toLowerCase().includes('no next heading'),
-    headingLevel: (ctx) => ctx.phrase.toLowerCase().includes('no next'),
-    link: (ctx) => ctx.phrase.toLowerCase().includes('no next link'),
-    landmark: (ctx) => ctx.phrase.toLowerCase().includes('no next landmark'),
-    button: (ctx) => ctx.phrase.toLowerCase().includes('no next button'),
+/**
+ * NVDA end detection strategies.
+ * NVDA announces "no next X" when there are no more elements of that type.
+ */
+export const nvdaEndDetection: ScreenReaderEndDetection = {
+    heading: { type: 'phrase-contains', text: 'no next heading' },
+    headingLevel: { type: 'phrase-contains', text: 'no next' },
+    link: { type: 'phrase-contains', text: 'no next link' },
+    landmark: { type: 'phrase-contains', text: 'no next landmark' },
+    button: { type: 'phrase-contains', text: 'no next button' },
 };

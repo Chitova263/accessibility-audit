@@ -44,6 +44,66 @@ export interface EndDetectionContext {
     itemText: string;
 }
 
+// ============== Declarative End Detection Strategy ==============
+
+/**
+ * Declarative end detection strategies.
+ * These describe *what* signals the end of navigation, not *how* to compute it.
+ * The interpreter (createEndDetector) handles execution.
+ */
+export type EndDetectionStrategy =
+    EndDetectionPhraseContains | EndDetectionPhraseRegex | EndDetectionLoopDetection | EndDetectionAny;
+
+/** Stop when phrase contains the specified text */
+export interface EndDetectionPhraseContains {
+    readonly type: 'phrase-contains';
+    readonly text: string;
+    readonly caseSensitive?: boolean;
+}
+
+/** Stop when phrase matches the specified regex pattern */
+export interface EndDetectionPhraseRegex {
+    readonly type: 'phrase-regex';
+    readonly pattern: string;
+    readonly flags?: string;
+}
+
+/** Stop when we've seen the same element before (loop detection for wrapping readers) */
+export interface EndDetectionLoopDetection {
+    readonly type: 'loop-detection';
+    /** Which field to use for detecting duplicates. Defaults to 'phrase'. */
+    readonly key?: 'phrase' | 'itemText';
+}
+
+/** Stop when any of the sub-strategies triggers (OR logic) */
+export interface EndDetectionAny {
+    readonly type: 'any';
+    readonly of: EndDetectionStrategy[];
+}
+
+/**
+ * Stateful end detector created from a strategy.
+ * Call check() for each navigation step, reset() at the start of each navigation.
+ */
+export interface EndDetector {
+    /** Returns true if navigation should stop */
+    check(ctx: EndDetectionContext): boolean;
+    /** Reset internal state (called at start of navigation) */
+    reset(): void;
+}
+
+/** End detection strategies for each navigation type */
+export interface ScreenReaderEndDetection {
+    readonly heading: EndDetectionStrategy;
+    readonly headingLevel: EndDetectionStrategy;
+    readonly link: EndDetectionStrategy;
+    readonly landmark: EndDetectionStrategy;
+    readonly button: EndDetectionStrategy;
+}
+
+// ============== Legacy (deprecated, for backward compatibility) ==============
+
+/** @deprecated Use ScreenReaderEndDetection with EndDetectionStrategy instead */
 export interface ScreenReaderEndPatterns {
     readonly heading: (ctx: EndDetectionContext) => boolean;
     readonly headingLevel: (ctx: EndDetectionContext) => boolean;
@@ -56,5 +116,5 @@ export interface ScreenReaderConfig {
     readonly name: string;
     readonly reader: ScreenReader;
     readonly keyBindings: ScreenReaderKeyBindings;
-    readonly endDetection: ScreenReaderEndPatterns;
+    readonly endDetection: ScreenReaderEndDetection;
 }
