@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import * as path from 'path';
-import { generateReportFromFiles } from './reporting';
+import { generateReportFromFiles } from '../reporting';
 
 program
-    .name('generate-report')
+    .name('a11y report')
     .description('Generate an accessibility report from existing audit data files')
     .requiredOption('--url <url>', 'Page URL for the report')
     .requiredOption('--title <title>', 'Page title for the report')
@@ -32,8 +32,8 @@ const options = program.opts<{
 
 function resolvePath(explicit: string | undefined, filename: string): string {
     if (explicit) return explicit;
-    if (options.dir) return path.join(options.dir, filename);
-    return `./${filename}`;
+    if (options.dir) return path.join(path.resolve(options.dir), filename);
+    return path.join('.', filename);
 }
 
 const llmResponsePath = resolvePath(options.llmResponse, 'llm-response.json');

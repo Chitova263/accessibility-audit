@@ -99,6 +99,7 @@ export interface ScreenReaderEndDetection {
     readonly link: EndDetectionStrategy;
     readonly landmark: EndDetectionStrategy;
     readonly button: EndDetectionStrategy;
+    readonly linear?: EndDetectionStrategy;
 }
 
 // ============== Legacy (deprecated, for backward compatibility) ==============
