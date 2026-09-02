@@ -2,7 +2,7 @@ import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import type { Reporter, ReportData, ReportOutput, ReporterOptions } from '../reporter';
 import { generateFilename, formatTimestamp, escapeHtml, truncate } from '../reporter';
-import type { LlmFinding, LlmViolationEnhancement } from '../../llm/prompt-builder';
+import type { LlmFinding, LlmViolationEnhancement, LlmEvidence } from '../../llm/prompt-builder';
 
 export interface HtmlReporterOptions extends ReporterOptions {
     /** Base path for resolving screenshot paths (defaults to cwd) */
@@ -593,8 +593,40 @@ ${impactSections}
 
         const enhancementBlock = enhancement
             ? `<div class="enhancement">
-              ${enhancement.userImpactDescription ? `<p><strong>Impact:</strong> ${renderStepRefs(enhancement.userImpactDescription)}</p>` : ''}
-              ${enhancement.remediationSuggestion ? `<p><strong>Fix:</strong> ${renderStepRefs(enhancement.remediationSuggestion)}</p>` : ''}
+              ${
+                  enhancement.userImpactDescription
+                      ? `<div class="finding-section">
+                <h4>Impact</h4>
+                <p>${renderStepRefs(enhancement.userImpactDescription)}</p>
+              </div>`
+                      : ''
+              }
+              ${
+                  enhancement.evidence
+                      ? `<div class="finding-section">
+                <h4>Evidence</h4>
+                ${this.buildEvidenceBlock(enhancement.evidence)}
+              </div>`
+                      : ''
+              }
+              ${
+                  enhancement.stepsToReproduce && enhancement.stepsToReproduce.length > 0
+                      ? `<div class="finding-section">
+                <h4>Steps to Reproduce</h4>
+                <ol class="steps-to-reproduce">
+                  ${enhancement.stepsToReproduce.map((step) => `<li>${renderStepRefs(step)}</li>`).join('\n                  ')}
+                </ol>
+              </div>`
+                      : ''
+              }
+              ${
+                  enhancement.remediationSuggestion
+                      ? `<div class="finding-section">
+                <h4>Fix</h4>
+                <p>${renderStepRefs(enhancement.remediationSuggestion)}</p>
+              </div>`
+                      : ''
+              }
             </div>`
             : '';
 
@@ -673,7 +705,7 @@ ${impactSections}
             }
         }
 
-        const evidenceBlock = this.buildEvidenceBlock(finding);
+        const evidenceBlock = this.buildEvidenceBlock(finding.evidence);
 
         return `
     <article class="finding-card">
@@ -721,8 +753,8 @@ ${impactSections}
     </article>`;
     }
 
-    private buildEvidenceBlock(finding: LlmFinding): string {
-        const { steps, pattern } = finding.evidence;
+    private buildEvidenceBlock(evidence: LlmEvidence): string {
+        const { steps, pattern } = evidence;
 
         const patternCaption = pattern ? `<p class="evidence-excerpt__pattern">${renderStepRefs(pattern)}</p>` : '';
 
@@ -1256,18 +1288,21 @@ code,pre{font-family:ui-monospace,'Cascadia Code','Fira Code',monospace}
 
 /* Enhancement */
 .enhancement{
-  margin:.5rem 0;
-  padding:.6rem .75rem;
-  background:#f0fdf4;
-  border-left:3px solid #16a34a;
-  border-radius:0 4px 4px 0;
-  font-size:.82rem;
-  color:#1a2e1a;
+  margin-top:.5rem;
+  padding:.9rem 1rem;
   display:flex;
   flex-direction:column;
-  gap:.3rem;
+  gap:.75rem;
 }
-.enhancement strong{color:#15803d}
+.enhancement .finding-section h4{
+  font-size:.72rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#9ca3af;
+  margin-bottom:.35rem;
+}
+.enhancement .finding-section p{font-size:.875rem;color:#374151;line-height:1.5}
 
 /* Attachments */
 .v-attachments{margin-top:.5rem;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden}
