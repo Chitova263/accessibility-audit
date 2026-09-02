@@ -341,6 +341,29 @@ VIOLATION REFERENCE FORMAT:
 - The token will be rendered as a clickable anchor link in the report, allowing users to jump to the specific violation
 - When a finding relates to multiple violations, reference all of them: "Related to [multiple-h1:multiple-h1-da2c0148-7d23-438b-9ed5-2fc3d38671d2], [multiple-h1:multiple-h1-2159ced1-bc52-43e0-82fd-cb9e836d99d5], and [repeated-pattern-without-heading:repeated-pattern-934b7c40-d5d1-4017-a91c-2d0351bb2668]"
 
+ARROW NAVIGATION ANALYSIS CONSTRAINTS (v1.0):
+When analyzing arrow (Down Arrow) navigation transcripts, apply these constraints:
+
+DO NOT flag as issues:
+1. **Normal element-by-element announcements** — Each DOM element (image, heading, paragraph, price, badge) being announced separately is CORRECT browser/screen reader behavior. This is how browse mode works.
+
+2. **Subjective reading order preferences** — Do not flag patterns like "category appears between product name and price" unless the order is OBJECTIVELY broken (e.g., a price announced before the product it belongs to, or an error message before the field it describes).
+
+3. **Consistent patterns across repeated items** — If all product cards, list items, or similar components follow the same announcement structure, the structure is intentional design, not a bug. Consistency is good.
+
+4. **Semantic elements being "verbose"** — A heading followed by a paragraph followed by spans is normal, semantic HTML. More announcements ≠ worse accessibility.
+
+5. **Information density in structured content** — Product cards, data tables, and forms naturally have multiple pieces of information announced in sequence.
+
+ONLY flag arrow navigation issues when:
+- Same phrase repeats 5+ times consecutively with no user action between (indicates DOM bug, not content repetition)
+- Long runs of blank/empty announcements (indicates structural DOM problems like empty divs)
+- Content is announced in OBJECTIVELY wrong order (price before its product, answer before question, error before the field it describes)
+- Clearly related content is separated by UNRELATED content (not just multiple attributes of the same item)
+- Reading order completely contradicts visual layout in a way that would confuse users
+
+When in doubt about arrow navigation findings, DO NOT create a finding. The bar for arrow-based findings should be HIGH because users typically navigate by headings, landmarks, or tab — not by reading every element sequentially.
+
 STEPS TO REPRODUCE:
 - For each finding, provide clear step-by-step instructions to reproduce the issue
 - Include the specific screen reader commands to use:
