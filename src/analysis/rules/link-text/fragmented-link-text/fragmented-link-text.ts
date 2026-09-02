@@ -76,6 +76,11 @@ function createViolation(
  * This typically indicates improper markup where text is fragmented into
  * individual linked characters, making content unusable for screen reader users.
  *
+ * Common causes:
+ * 1. Separate <a> tags wrapping individual characters (CSS letter-spacing effects)
+ * 2. Web components with shadow DOM containing sr-only text slotted inside a link
+ * 3. Nested shadow DOM boundaries causing character-by-character traversal
+ *
  * Example: "22.15 francs" becoming "link 2, link 2, link dot, link 1, link 5..."
  *
  * WCAG 2.4.4: Link Purpose (In Context) (Level A)
@@ -154,7 +159,9 @@ export class FragmentedLinkTextRule implements Rule<ScreenReaderContext, Fragmen
             return createViolation(
                 `Link text fragmented into ${seq.characters.length} single-character links at steps ${seq.startStep}-${seq.endStep}. ` +
                     `Reconstructed text: "${seq.reconstructedText}". ` +
-                    'Screen reader users hear each character announced as a separate link, making the content unusable.',
+                    `Screen reader users hear each character announced as a separate link, making the content unusable. ` +
+                    `This can be caused by: (1) separate <a> tags per character, (2) web components with shadow DOM ` +
+                    `containing screen-reader-only text inside a link, or (3) nested shadow DOM boundaries.`,
                 step,
                 arrowResult.meta.name,
                 screenReader

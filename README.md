@@ -332,9 +332,22 @@ Fix: Differentiate links that go to different destinations. Use `aria-label` or 
 
 **`fragmented-link-text`** - WCAG 2.4.4 A - critical
 
-Navigates all links and detects sequences where consecutive links each contain a single character that spells out a word when read together (e.g. separate `<a>` tags for "B", "o", "o", "k"). This pattern is sometimes produced by CSS letter-spacing effects or certain frameworks. NVDA announces each character as a separate link - users hear "B link", "o link", "o link", "k link" instead of "Book link".
+Navigates all links and detects sequences where consecutive link announcements each contain a single character that spells out a word when read together. NVDA announces each character as a separate link - users hear "2 link", "2 link", "f link", "r link"... instead of "22 francs link".
 
-Fix: Wrap the entire word or phrase in a single `<a>` element. If the visual effect requires individual `<span>` elements, keep them inside one link.
+**Common causes:**
+
+1. **Separate `<a>` tags per character** - CSS letter-spacing effects or certain frameworks that wrap each character in its own link (e.g., `<a>B</a><a>o</a><a>o</a><a>k</a>`)
+
+2. **Web components with shadow DOM** - When a link wraps content that includes web components with their own shadow DOM containing screen-reader-only text. As NVDA traverses the nested shadow DOM boundaries inside the link, it announces each character separately.
+
+3. **Slotted content inside links** - Web component patterns where a parent component's shadow DOM contains a link with a `<slot>`, and the slotted light DOM content includes nested components with sr-only text.
+
+**Fix options:**
+
+- For separate `<a>` tags: Wrap the entire word or phrase in a single `<a>` element
+- For web components inside links: Add `aria-label` to the component element itself (e.g., `<sdx-price aria-label="22 francs 15 per month">`)
+- For sr-only spans inside shadow DOM: Add `role="text"` to prevent character-by-character traversal
+- Consider moving accessible text to the light DOM level or using `aria-labelledby` to reference it
 
 #### Interactive Elements
 
