@@ -60,6 +60,8 @@ export interface AxContext {
     getNodeOuterHtml(backendDOMNodeId: number): Promise<string>;
     getFocusedHtmlElementBackendNodeId(): Promise<number | null>;
     getFocusedNodeHtml(): Promise<string | null>;
+    /** Returns true if the document has focus, false if focus is on browser chrome */
+    getDocumentHasFocus(): Promise<boolean>;
 }
 
 /**

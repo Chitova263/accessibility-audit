@@ -46,6 +46,8 @@ export interface EndDetectionContext {
     itemText: string;
     /** Backend DOM node ID of focused element. Null if focus is outside the document. */
     backendNodeId?: number | null;
+    /** Whether the document currently has focus. False when focus is on browser chrome. */
+    documentHasFocus?: boolean;
 }
 
 /**

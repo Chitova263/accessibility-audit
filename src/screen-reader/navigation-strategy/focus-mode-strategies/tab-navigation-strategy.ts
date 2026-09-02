@@ -45,11 +45,12 @@ export class TabNavigationStrategy implements INavigationStrategy {
 
         for await (const { phrase, itemText } of ctx.navigator.focusableElements()) {
             const backendNodeId = await ctx.ax.getFocusedHtmlElementBackendNodeId();
+            const documentHasFocus = await ctx.ax.getDocumentHasFocus();
 
             // Check if focus has left the document (e.g., moved to browser UI)
-            if (this.endDetector.check({ phrase, itemText, backendNodeId })) {
-                return NavigationStrategyResult.exhausted(
-                    'tab focus exited document - end of page content',
+            if (this.endDetector.check({ phrase, itemText, backendNodeId, documentHasFocus })) {
+                return NavigationStrategyResult.cycleComplete(
+                    'tab focus exited document to browser chrome - cycle complete',
                     this.meta,
                     navigationSteps
                 );

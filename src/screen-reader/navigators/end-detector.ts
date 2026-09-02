@@ -97,6 +97,14 @@ class LoopDetector implements EndDetector {
 
 /**
  * Detects end when focus leaves the document (e.g., browser toolbar).
+ *
+ * Detection strategy (in order of reliability):
+ * 1. document.hasFocus() === false (most reliable, language-agnostic)
+ * 2. NVDA phrase matches browser chrome patterns (fallback)
+ *
+ * Note: We cannot rely on backendNodeId being null because document.activeElement
+ * always returns a DOM element (typically <body>) even when system focus is on
+ * browser chrome.
  */
 class DocumentBoundaryDetector implements EndDetector {
     private readonly patterns: string[];
@@ -108,9 +116,14 @@ class DocumentBoundaryDetector implements EndDetector {
     }
 
     check(ctx: EndDetectionContext): boolean {
-        if (typeof ctx.backendNodeId === 'number') {
-            return false;
+        // Primary signal: document.hasFocus() is the authoritative API
+        // Returns false when focus is on browser chrome (toolbar, address bar, etc.)
+        if (ctx.documentHasFocus === false) {
+            return true;
         }
+
+        // Fallback: check NVDA announcement patterns
+        // Useful when documentHasFocus is not available or as defense in depth
         const phraseLower = ctx.phrase.toLowerCase();
         return this.patterns.some((pattern) => phraseLower.includes(pattern));
     }

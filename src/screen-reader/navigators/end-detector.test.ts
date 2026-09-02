@@ -69,106 +69,141 @@ describe('createEndDetector', () => {
     });
 
     describe('document-boundary', () => {
-        it('returns false when backendNodeId is present', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+        // DocumentBoundaryDetector uses two signals:
+        // 1. document.hasFocus() === false (primary, language-agnostic)
+        // 2. NVDA phrase patterns (fallback)
 
-            expect(detector.check({ phrase: 'tool bar', itemText: '', backendNodeId: 12345 })).toBe(false);
+        describe('primary signal: documentHasFocus', () => {
+            it('detects boundary when documentHasFocus is false', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
+
+                // documentHasFocus: false is the definitive signal that focus left the document
+                expect(detector.check({ phrase: 'anything', itemText: '', documentHasFocus: false })).toBe(true);
+            });
+
+            it('does not trigger when documentHasFocus is true and no pattern match', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
+
+                expect(
+                    detector.check({
+                        phrase: 'Submit button',
+                        itemText: '',
+                        documentHasFocus: true,
+                        backendNodeId: 123,
+                    })
+                ).toBe(false);
+            });
+
+            it('detects boundary via pattern even when documentHasFocus is true (defense in depth)', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
+
+                // Pattern match should still trigger even if documentHasFocus reports true
+                // (handles edge cases where hasFocus might be unreliable)
+                expect(detector.check({ phrase: 'tool bar', itemText: '', documentHasFocus: true })).toBe(true);
+            });
         });
 
-        it('detects "tool bar" when backendNodeId is null', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+        describe('fallback signal: phrase patterns', () => {
+            it('detects "tool bar" even when backendNodeId is present', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'tool bar', itemText: '', backendNodeId: null })).toBe(true);
-        });
+                // backendNodeId may still be present (e.g., body element) when focus is on browser chrome
+                expect(detector.check({ phrase: 'tool bar', itemText: '', backendNodeId: 12345 })).toBe(true);
+            });
 
-        it('detects "toolbar" when backendNodeId is null', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects "tool bar" when documentHasFocus is undefined (not provided)', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'Application toolbar', itemText: '', backendNodeId: null })).toBe(true);
-        });
+                expect(detector.check({ phrase: 'tool bar', itemText: '' })).toBe(true);
+            });
 
-        it('detects "address bar" when backendNodeId is null', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects "toolbar" (no space)', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'address bar', itemText: '', backendNodeId: null })).toBe(true);
-        });
+                expect(detector.check({ phrase: 'Application toolbar', itemText: '' })).toBe(true);
+            });
 
-        it('detects Chrome browser window', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects "address bar"', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(
-                detector.check({ phrase: 'My Page - Google Chrome, region', itemText: '', backendNodeId: null })
-            ).toBe(true);
-        });
+                expect(detector.check({ phrase: 'address bar', itemText: '' })).toBe(true);
+            });
 
-        it('detects Firefox browser window', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects "address and search bar"', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'My Page - Mozilla Firefox', itemText: '', backendNodeId: null })).toBe(
-                true
-            );
-        });
+                expect(detector.check({ phrase: 'address and search bar', itemText: '' })).toBe(true);
+            });
 
-        it('detects Edge browser window', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects Chrome browser window', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'My Page - Microsoft Edge', itemText: '', backendNodeId: null })).toBe(
-                true
-            );
-        });
+                expect(detector.check({ phrase: 'My Page - Google Chrome, region', itemText: '' })).toBe(true);
+            });
 
-        it('detects Safari browser window', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects Firefox browser window', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'My Page - Safari', itemText: '', backendNodeId: null })).toBe(true);
-        });
+                expect(detector.check({ phrase: 'My Page - Mozilla Firefox', itemText: '' })).toBe(true);
+            });
 
-        it('detects Brave browser window', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects Edge browser window', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'My Page - Brave', itemText: '', backendNodeId: null })).toBe(true);
-        });
+                expect(detector.check({ phrase: 'My Page - Microsoft Edge', itemText: '' })).toBe(true);
+            });
 
-        it('is case insensitive', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects Safari browser window', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'TOOL BAR', itemText: '', backendNodeId: null })).toBe(true);
-        });
+                expect(detector.check({ phrase: 'My Page - Safari', itemText: '' })).toBe(true);
+            });
 
-        it('returns false for page content phrases even with null backendNodeId', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('detects Brave browser window', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'Submit button', itemText: '', backendNodeId: null })).toBe(false);
-        });
+                expect(detector.check({ phrase: 'My Page - Brave', itemText: '' })).toBe(true);
+            });
 
-        it('supports additional patterns', () => {
-            const strategy: EndDetectionStrategy = {
-                type: 'document-boundary',
-                additionalPatterns: ['custom browser'],
-            };
-            const detector = createEndDetector(strategy);
+            it('is case insensitive', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'Custom Browser UI', itemText: '', backendNodeId: null })).toBe(true);
-            expect(detector.check({ phrase: 'tool bar', itemText: '', backendNodeId: null })).toBe(true);
-        });
+                expect(detector.check({ phrase: 'TOOL BAR', itemText: '' })).toBe(true);
+            });
 
-        it('treats undefined backendNodeId as outside document', () => {
-            const strategy: EndDetectionStrategy = { type: 'document-boundary' };
-            const detector = createEndDetector(strategy);
+            it('returns false for page content phrases when documentHasFocus is not false', () => {
+                const strategy: EndDetectionStrategy = { type: 'document-boundary' };
+                const detector = createEndDetector(strategy);
 
-            // undefined means not provided, should be treated same as null (outside document)
-            expect(detector.check({ phrase: 'tool bar', itemText: '' })).toBe(true);
+                expect(detector.check({ phrase: 'Submit button', itemText: '' })).toBe(false);
+                expect(detector.check({ phrase: 'Main navigation', itemText: '' })).toBe(false);
+                expect(detector.check({ phrase: 'Search input', itemText: '' })).toBe(false);
+            });
+
+            it('supports additional patterns', () => {
+                const strategy: EndDetectionStrategy = {
+                    type: 'document-boundary',
+                    additionalPatterns: ['custom browser'],
+                };
+                const detector = createEndDetector(strategy);
+
+                expect(detector.check({ phrase: 'Custom Browser UI', itemText: '' })).toBe(true);
+                expect(detector.check({ phrase: 'tool bar', itemText: '' })).toBe(true);
+            });
         });
     });
 
