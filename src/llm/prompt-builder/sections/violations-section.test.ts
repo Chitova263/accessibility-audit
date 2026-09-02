@@ -63,7 +63,6 @@ const createScreenReaderViolation = (overrides: Partial<ScreenReaderViolation> =
 
 const createStrategySection = (overrides: Partial<PromptStrategySection> = {}): PromptStrategySection => ({
     strategyName: 'tab',
-    strategyType: 'tab-navigation',
     description: 'Tab through focusable elements',
     mode: 'focus',
     totalSteps: 10,

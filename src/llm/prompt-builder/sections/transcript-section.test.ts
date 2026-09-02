@@ -97,7 +97,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -136,7 +135,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'heading',
-                        strategyType: 'heading',
                         description: 'Heading navigation',
                         mode: 'browse',
                         completionReason: { kind: 'exhausted', detail: 'no more headings found on page' },
@@ -168,7 +166,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -202,7 +199,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -239,7 +235,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -286,7 +281,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'button',
-                        strategyType: 'button',
                         description: 'Button navigation',
                         mode: 'browse',
                         completionReason: { kind: 'exhausted', detail: 'no more buttons found on page' },
@@ -315,7 +309,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -347,7 +340,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'landmark',
-                        strategyType: 'landmark',
                         description: 'Landmark navigation',
                         mode: 'browse',
                         completionReason: { kind: 'exhausted', detail: 'no more landmarks found on page' },
@@ -373,7 +365,6 @@ describe('renderTranscriptXml', () => {
                     },
                     {
                         strategyName: 'heading',
-                        strategyType: 'heading',
                         description: 'Heading navigation',
                         mode: 'browse',
                         completionReason: { kind: 'exhausted', detail: 'no more headings found on page' },
@@ -407,7 +398,6 @@ describe('renderTranscriptXml', () => {
                     },
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -438,7 +428,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -467,7 +456,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab <navigation> & more',
                         mode: 'focus',
                         completionReason: { kind: 'limit-reached', detail: 'stopped at safety limit' },
@@ -501,7 +489,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'custom-strategy<test>',
-                        strategyType: 'custom&type',
                         description: 'Description with "quotes"',
                         mode: 'browse',
                         completionReason: { kind: 'exhausted', detail: 'reason with <angle> brackets' },
@@ -532,7 +519,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -561,7 +547,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -590,7 +575,6 @@ describe('renderTranscriptXml', () => {
                 sections: [
                     {
                         strategyName: 'tab',
-                        strategyType: 'tab',
                         description: 'Tab navigation',
                         mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -973,7 +957,6 @@ describe('edge cases', () => {
             sections: [
                 {
                     strategyName: 'tab',
-                    strategyType: 'tab',
                     description: 'Tab navigation',
                     mode: 'focus',
                     completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -1002,7 +985,6 @@ describe('edge cases', () => {
             sections: [
                 {
                     strategyName: 'tab',
-                    strategyType: 'tab',
                     description: 'Tab navigation',
                     mode: 'focus',
                     completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -1035,7 +1017,6 @@ describe('edge cases', () => {
             sections: [
                 {
                     strategyName: 'tab',
-                    strategyType: 'tab',
                     description: 'Tab navigation',
                     mode: 'focus',
                     completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -1068,7 +1049,6 @@ describe('edge cases', () => {
             sections: [
                 {
                     strategyName: 'tab',
-                    strategyType: 'tab',
                     description: 'Tab navigation',
                     mode: 'focus',
                     completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
@@ -1097,7 +1077,6 @@ describe('edge cases', () => {
             sections: [
                 {
                     strategyName: 'tab',
-                    strategyType: 'tab',
                     description: 'Tab navigation',
                     mode: 'focus',
                     completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },

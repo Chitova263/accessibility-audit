@@ -65,7 +65,7 @@ export async function createDriver(options: CreateDriverOptions): Promise<Driver
     }
 
     log.info('Creating NVDA screen reader driver');
-    const nvda = new Nvda();
+    const nvda = new Nvda({ page });
 
     return {
         reader: nvda,
