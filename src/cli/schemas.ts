@@ -16,7 +16,6 @@ export const auditOptionsSchema = z.object({
     outputDir: z.string().optional(),
     maxSteps: z.coerce.number().int().positive().default(500),
     reader: screenReaderTypeSchema,
-    speech: z.boolean().default(false),
     verbose: z.boolean().default(false),
 });
 export type AuditOptions = z.infer<typeof auditOptionsSchema>;

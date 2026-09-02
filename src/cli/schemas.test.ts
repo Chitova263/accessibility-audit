@@ -54,7 +54,6 @@ describe('auditOptionsSchema', () => {
         expect(result).toEqual({
             maxSteps: 500,
             reader: 'nvda',
-            speech: false,
             verbose: false,
         });
     });
@@ -74,14 +73,12 @@ describe('auditOptionsSchema', () => {
             outputDir: './output',
             maxSteps: 200,
             reader: 'virtual',
-            speech: true,
             verbose: true,
         });
         expect(result).toEqual({
             outputDir: './output',
             maxSteps: 200,
             reader: 'virtual',
-            speech: true,
             verbose: true,
         });
     });

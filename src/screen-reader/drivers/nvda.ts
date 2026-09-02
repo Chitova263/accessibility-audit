@@ -5,29 +5,11 @@ import type { ScreenReader, PressResult } from './types';
 
 export type { ScreenReader, PressResult } from './types';
 
-/** CLI-friendly capture mode names */
-export type CaptureMode = 'off' | 'all';
-
-/** Maps CLI capture mode to Guidepup API value */
-function toGuidepupCapture(speech: boolean): boolean {
-    return speech;
-}
-
-export interface NvdaOptions {
-    /** Enable speech audio output. Default: false (silent) */
-    speech?: boolean;
-}
-
 export class Nvda implements ScreenReader {
     readonly name = 'nvda' as const;
     private readonly pollIntervalMs = 100;
     private readonly stableThreshold = 3;
     private readonly timeoutMs = 3000;
-    private readonly speech: boolean;
-
-    constructor(options: NvdaOptions = {}) {
-        this.speech = options.speech ?? false;
-    }
 
     async start(): Promise<void> {
         // Bring Chrome to foreground - NVDA needs window focus
@@ -43,7 +25,7 @@ export class Nvda implements ScreenReader {
                 `[W32]::SetForegroundWindow($hwnd)"`,
             { stdio: 'ignore' }
         );
-        return nvda.start({ capture: toGuidepupCapture(this.speech) });
+        return nvda.start();
     }
 
     stop(): Promise<void> {

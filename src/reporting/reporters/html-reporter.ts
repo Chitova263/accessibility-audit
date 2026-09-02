@@ -63,6 +63,66 @@ function pill(text: string, color: string, bg?: string): string {
     return `<span class="pill" style="color:${color};${bgStyle}border-color:${color}20">${escapeHtml(text)}</span>`;
 }
 
+/**
+ * Replaces [strategy:stepIndex:stepId] tokens in prose text with anchor links.
+ * Must be used in combination with renderViolationRefs for complete reference rendering.
+ */
+function renderStepRefsOnly(text: string): string {
+    // Token format: [strategy:stepIndex:uuid]
+    const TOKEN = /\[([a-z0-9_-]+):(\d+):([0-9a-f-]{36})\]/gi;
+    const parts: string[] = [];
+    let last = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = TOKEN.exec(text)) !== null) {
+        // Escape the plain text before this token
+        parts.push(escapeHtml(text.slice(last, match.index)));
+        const [, strategy, stepIndex, stepId] = match as unknown as [string, string, string, string];
+        parts.push(
+            `<a href="#step-${escapeHtml(stepId)}" class="step-ref" title="Jump to ${escapeHtml(strategy)} step ${escapeHtml(stepIndex)}">` +
+                `<span class="step-ref__strategy">${escapeHtml(strategy)}</span>` +
+                `<span class="step-ref__idx">${escapeHtml(stepIndex)}</span>` +
+                `</a>`
+        );
+        last = match.index + match[0].length;
+    }
+
+    // Escape any remaining plain text after the last token
+    parts.push(escapeHtml(text.slice(last)));
+    return parts.join('');
+}
+
+/**
+ * Replaces [ruleId:violationId] tokens in prose text with anchor links.
+ * The input should already be HTML (e.g., output of renderStepRefsOnly).
+ */
+function renderViolationRefsOnly(html: string): string {
+    // Token format: [ruleId:violationId] where violationId is ruleId + "-" + uuid
+    // Examples: [multiple-h1:multiple-h1-da2c0148-7d23-438b-9ed5-2fc3d38671d2]
+    //           [focus-trap:focus-trap-7f958390-ff16-4903-93c6-a58e6db7723f]
+    // ViolationId format: {ruleId}-{uuid} where uuid is 8-4-4-4-12 hex chars
+    // Note: This must NOT match step refs which have format [strategy:number:uuid]
+    const TOKEN = /\[([a-z][a-z0-9_-]*):([a-z][a-z0-9_-]+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
+    
+    return html.replace(TOKEN, (_match, ruleId: string, violationId: string) => {
+        return `<a href="#violation-${escapeHtml(violationId)}" class="violation-ref" title="Jump to ${escapeHtml(ruleId)} violation">` +
+            `<span class="violation-ref__rule">${escapeHtml(ruleId)}</span>` +
+            `</a>`;
+    });
+}
+
+/**
+ * Replaces both [strategy:stepIndex:stepId] and [ruleId:violationId] tokens in prose text
+ * with anchor links, then HTML-escapes the remaining text. Must be used instead of plain
+ * escapeHtml for any LLM-generated free-text field that may contain references.
+ */
+function renderStepRefs(text: string): string {
+    // First render step refs (which also escapes plain text)
+    const withStepRefs = renderStepRefsOnly(text);
+    // Then render violation refs on the already-HTML output
+    return renderViolationRefsOnly(withStepRefs);
+}
+
 function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
     const result: Record<string, T[]> = {};
     for (const item of items) {
@@ -312,7 +372,7 @@ ${this.getScripts()}
                 ? `<div class="concerns">
             <h3 class="concerns__heading">Major concerns</h3>
             <ul class="concerns__list">
-              ${summary.majorConcerns.map((c) => `<li>${escapeHtml(c)}</li>`).join('\n')}
+              ${summary.majorConcerns.map((c) => `<li>${renderStepRefs(c)}</li>`).join('\n')}
             </ul>
           </div>`
                 : '';
@@ -530,8 +590,8 @@ ${impactSections}
 
         const enhancementBlock = enhancement
             ? `<div class="enhancement">
-              ${enhancement.userImpactDescription ? `<p><strong>Impact:</strong> ${escapeHtml(enhancement.userImpactDescription)}</p>` : ''}
-              ${enhancement.remediationSuggestion ? `<p><strong>Fix:</strong> ${escapeHtml(enhancement.remediationSuggestion)}</p>` : ''}
+              ${enhancement.userImpactDescription ? `<p><strong>Impact:</strong> ${renderStepRefs(enhancement.userImpactDescription)}</p>` : ''}
+              ${enhancement.remediationSuggestion ? `<p><strong>Fix:</strong> ${renderStepRefs(enhancement.remediationSuggestion)}</p>` : ''}
             </div>`
             : '';
 
@@ -559,11 +619,20 @@ ${impactSections}
 </section>`;
         }
 
+        // Build a map from ruleId to first violation ID for linking relatedRuleId
+        const ruleToViolationId = new Map<string, string>();
+        for (const v of data.violations) {
+            const ruleId = v.rule?.id;
+            if (ruleId && !ruleToViolationId.has(ruleId)) {
+                ruleToViolationId.set(ruleId, v.id);
+            }
+        }
+
         const byCategory = groupBy(findings, (f) => f.category);
 
         const categoryBlocks = Object.entries(byCategory)
             .map(([category, items]) => {
-                const cards = items.map((f) => this.buildFindingCard(f)).join('\n');
+                const cards = items.map((f) => this.buildFindingCard(f, ruleToViolationId)).join('\n');
                 return `
       <div class="category-group">
         <h3 class="category-heading">${escapeHtml(category.replace(/-/g, ' '))} <span class="section__count">${items.length}</span></h3>
@@ -582,7 +651,7 @@ ${impactSections}
 </section>`;
     }
 
-    private buildFindingCard(finding: LlmFinding): string {
+    private buildFindingCard(finding: LlmFinding, ruleToViolationId: Map<string, string>): string {
         const cColor = confidenceColor(finding.confidence);
         const needsReview = finding.requiresHumanReview ? `<span class="review-flag">⚠ Needs review</span>` : '';
 
@@ -590,23 +659,27 @@ ${impactSections}
             ? pill(finding.classification.replace(/-/g, ' '), '#4a5568')
             : '';
 
-        const evidenceLinks = finding.evidence.steps
-            .map(
-                (s) =>
-                    `<a href="#step-${escapeHtml(s.identifier)}" class="evidence-link">
-                <span class="evidence-link__strategy">${escapeHtml(s.strategy)}</span><span class="evidence-link__step">[${s.stepIndex}]</span>
-              </a> <code class="evidence-spoken">${escapeHtml(s.spokenPhrase)}</code>`
-            )
-            .join('\n');
+        // Make relatedRuleId a clickable link if we have a matching violation
+        let relatedRulePill = '';
+        if (finding.relatedRuleId) {
+            const violationId = ruleToViolationId.get(finding.relatedRuleId);
+            if (violationId) {
+                relatedRulePill = `<a href="#violation-${escapeHtml(violationId)}" class="violation-ref" title="Jump to ${escapeHtml(finding.relatedRuleId)} violation"><span class="violation-ref__rule">${escapeHtml(finding.relatedRuleId)}</span></a>`;
+            } else {
+                relatedRulePill = pill(finding.relatedRuleId, '#4a5568');
+            }
+        }
+
+        const evidenceBlock = this.buildEvidenceBlock(finding);
 
         return `
     <article class="finding-card">
       <div class="finding-card__top">
-        <p class="finding-issue">${escapeHtml(finding.issue)}</p>
+        <p class="finding-issue">${renderStepRefs(finding.issue)}</p>
         <div class="finding-pills">
           ${pill(finding.confidence, cColor)}
           ${classificationPill}
-          ${finding.relatedRuleId ? pill(finding.relatedRuleId, '#4a5568') : ''}
+          ${relatedRulePill}
           ${needsReview}
         </div>
       </div>
@@ -614,27 +687,76 @@ ${impactSections}
       <div class="finding-body">
         <div class="finding-section">
           <h4>Impact</h4>
-          <p>${escapeHtml(finding.impact)}</p>
+          <p>${renderStepRefs(finding.impact)}</p>
         </div>
 
         <div class="finding-section">
           <h4>Evidence</h4>
-          <div class="evidence-list">
-            ${evidenceLinks}
-          </div>
-          ${finding.evidence.pattern ? `<p class="evidence-pattern">${escapeHtml(finding.evidence.pattern)}</p>` : ''}
+          ${evidenceBlock}
         </div>
+
+        ${
+            finding.stepsToReproduce && finding.stepsToReproduce.length > 0
+                ? `<div class="finding-section">
+          <h4>Steps to Reproduce</h4>
+          <ol class="steps-to-reproduce">
+            ${finding.stepsToReproduce.map((step) => `<li>${renderStepRefs(step)}</li>`).join('\n            ')}
+          </ol>
+        </div>`
+                : ''
+        }
 
         ${
             finding.semanticJustification
                 ? `<div class="finding-section">
           <h4>Justification</h4>
-          <p>${escapeHtml(finding.semanticJustification)}</p>
+          <p>${renderStepRefs(finding.semanticJustification)}</p>
         </div>`
                 : ''
         }
       </div>
     </article>`;
+    }
+
+    private buildEvidenceBlock(finding: LlmFinding): string {
+        const { steps, pattern } = finding.evidence;
+
+        const patternCaption = pattern ? `<p class="evidence-excerpt__pattern">${renderStepRefs(pattern)}</p>` : '';
+
+        // Single step — inline row, no surrounding box
+        if (steps.length === 1) {
+            const s = steps[0]!;
+            return `
+          <div class="evidence-inline">
+            <a href="#step-${escapeHtml(s.identifier)}" class="evidence-badge" title="Jump to transcript step">
+              <span class="evidence-badge__strategy">${escapeHtml(s.strategy)}</span><span class="evidence-badge__idx">${s.stepIndex}</span>
+            </a>
+            <span class="evidence-inline__spoken">"${escapeHtml(s.spokenPhrase)}"</span>
+          </div>
+          ${patternCaption}`;
+        }
+
+        // Multiple steps — mini transcript excerpt block
+        const rows = steps
+            .map(
+                (s) => `
+            <div class="evidence-excerpt__row">
+              <span class="evidence-excerpt__num">${s.stepIndex}</span>
+              <span class="evidence-excerpt__spoken">"${escapeHtml(s.spokenPhrase)}"</span>
+              <a href="#step-${escapeHtml(s.identifier)}" class="evidence-badge evidence-badge--sm" title="Jump to transcript step">
+                <span class="evidence-badge__strategy">${escapeHtml(s.strategy)}</span>
+              </a>
+            </div>`
+            )
+            .join('\n');
+
+        return `
+          <div class="evidence-excerpt">
+            <div class="evidence-excerpt__rail">
+              ${rows}
+            </div>
+            ${patternCaption}
+          </div>`;
     }
 
     private buildTranscript(data: ReportData): string {
@@ -753,7 +875,7 @@ ${impactSections}
   <h2 id="limits-h" class="section__heading">Analysis Limitations</h2>
   <p>These aspects could not be determined from the transcript alone:</p>
   <ul class="limitations-list">
-    ${limitations.map((l) => `<li>${escapeHtml(l)}</li>`).join('\n')}
+    ${limitations.map((l) => `<li>${renderStepRefs(l)}</li>`).join('\n')}
   </ul>
 </section>`;
     }
@@ -1357,9 +1479,22 @@ code,pre{font-family:ui-monospace,'Cascadia Code','Fira Code',monospace}
   padding:.1rem .45rem;
 }
 
-/* Evidence */
-.evidence-list{display:flex;flex-direction:column;gap:.4rem}
-.evidence-link{
+/* Evidence — inline (single step) */
+.evidence-inline{
+  display:flex;
+  align-items:baseline;
+  gap:.5rem;
+  flex-wrap:wrap;
+}
+.evidence-inline__spoken{
+  font-family:ui-monospace,'Cascadia Code','Fira Code',monospace;
+  font-size:.8rem;
+  color:#1a1a2e;
+  line-height:1.5;
+}
+
+/* Evidence badge (strategy + index) */
+.evidence-badge{
   display:inline-flex;
   align-items:stretch;
   border-radius:3px;
@@ -1368,24 +1503,142 @@ code,pre{font-family:ui-monospace,'Cascadia Code','Fira Code',monospace}
   text-decoration:none;
   font-family:ui-monospace,monospace;
   font-size:.72rem;
-  margin-right:.35rem;
+  flex-shrink:0;
+  line-height:1;
 }
-.evidence-link:hover{border-color:#1452cc}
-.evidence-link__strategy{background:#1452cc;color:#fff;padding:.1rem .4rem;font-weight:600}
-.evidence-link__step{background:#edf2f7;color:#4a5568;padding:.1rem .35rem}
-.evidence-spoken{
-  font-family:ui-monospace,monospace;
-  font-size:.75rem;
-  background:#f0f2f5;
+.evidence-badge:hover{border-color:#1452cc;box-shadow:0 1px 3px rgba(20,82,204,.15)}
+.evidence-badge:focus-visible{outline:2px solid #1452cc;outline-offset:2px}
+.evidence-badge__strategy{
+  background:#1452cc;
+  color:#fff;
+  padding:.2rem .45rem;
+  font-weight:600;
+}
+.evidence-badge__idx{
+  background:#edf2f7;
+  color:#4a5568;
+  padding:.2rem .4rem;
+}
+.evidence-badge--sm .evidence-badge__strategy{
+  padding:.15rem .35rem;
+  font-size:.68rem;
+}
+
+/* Inline step reference — appears mid-sentence in prose fields */
+.step-ref{
+  display:inline-flex;
+  align-items:stretch;
   border-radius:3px;
-  padding:.1rem .35rem;
-  color:#374151;
+  overflow:hidden;
+  border:1px solid #cbd5e0;
+  text-decoration:none;
+  font-family:ui-monospace,monospace;
+  font-size:.72em;
+  vertical-align:baseline;
+  line-height:1.4;
+  position:relative;
+  top:-.05em;
 }
-.evidence-pattern{
+.step-ref:hover{border-color:#1452cc;box-shadow:0 1px 3px rgba(20,82,204,.15)}
+.step-ref:focus-visible{outline:2px solid #1452cc;outline-offset:2px}
+.step-ref__strategy{
+  background:#1452cc;
+  color:#fff;
+  padding:.1rem .35rem;
+  font-weight:600;
+}
+.step-ref__idx{
+  background:#edf2f7;
+  color:#4a5568;
+  padding:.1rem .3rem;
+}
+
+/* Inline violation reference — links to violations in report */
+.violation-ref{
+  display:inline-flex;
+  align-items:stretch;
+  border-radius:3px;
+  overflow:hidden;
+  border:1px solid #e8a87c;
+  text-decoration:none;
+  font-family:ui-monospace,monospace;
+  font-size:.72em;
+  vertical-align:baseline;
+  line-height:1.4;
+  position:relative;
+  top:-.05em;
+}
+.violation-ref:hover{border-color:#e8500a;box-shadow:0 1px 3px rgba(232,80,10,.15)}
+.violation-ref:focus-visible{outline:2px solid #e8500a;outline-offset:2px}
+.violation-ref__rule{
+  background:#e8500a;
+  color:#fff;
+  padding:.1rem .35rem;
+  font-weight:600;
+}
+
+/* Evidence excerpt (multi-step) */
+.evidence-excerpt{
+  border:1px solid #e2e8f0;
+  border-left:3px solid #1452cc;
+  border-radius:0 4px 4px 0;
+  overflow:hidden;
+  font-size:.82rem;
+}
+.evidence-excerpt__rail{
+  display:flex;
+  flex-direction:column;
+}
+.evidence-excerpt__row{
+  display:grid;
+  grid-template-columns:2.5ch 1fr auto;
+  column-gap:.75rem;
+  align-items:baseline;
+  padding:.35rem .6rem;
+  border-bottom:1px solid #f0f2f5;
+}
+.evidence-excerpt__row:last-child{border-bottom:none}
+.evidence-excerpt__row:hover{background:#f8faff}
+.evidence-excerpt__num{
+  font-family:ui-monospace,monospace;
+  font-size:.68rem;
+  color:#9ca3af;
+  text-align:right;
+  user-select:none;
+}
+.evidence-excerpt__spoken{
+  font-family:ui-monospace,'Cascadia Code','Fira Code',monospace;
+  font-size:.78rem;
+  color:#1a1a2e;
+  line-height:1.5;
+}
+.evidence-excerpt__pattern{
   font-size:.8rem;
+  color:#4a5568;
+  line-height:1.55;
+  padding:.5rem .6rem;
+  background:#f8f9fa;
+  border-top:1px solid #e2e8f0;
+  margin:0;
+}
+
+/* Steps to reproduce */
+.steps-to-reproduce{
+  margin:0;
+  padding-left:1.5rem;
+  font-size:.875rem;
+  color:#374151;
+  line-height:1.6;
+  display:flex;
+  flex-direction:column;
+  gap:.35rem;
+}
+.steps-to-reproduce li{
+  padding-left:.25rem;
+}
+.steps-to-reproduce li::marker{
   color:#6b7280;
-  margin-top:.4rem;
-  font-style:italic;
+  font-weight:600;
 }
 
 /* Pill (generic) */

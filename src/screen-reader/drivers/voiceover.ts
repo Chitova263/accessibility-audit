@@ -2,24 +2,14 @@ import { voiceOver } from '@guidepup/guidepup';
 import { delay } from '@guidepup/guidepup/lib/delay';
 import type { ScreenReader, PressResult } from './types';
 
-export interface VoiceOverOptions {
-    /** Enable speech audio output. Default: false (silent) */
-    speech?: boolean;
-}
-
 export class VoiceOverDriver implements ScreenReader {
     readonly name = 'voiceover' as const;
     private readonly pollIntervalMs = 100;
     private readonly stableThreshold = 3;
     private readonly timeoutMs = 3000;
-    private readonly speech: boolean;
-
-    constructor(options: VoiceOverOptions = {}) {
-        this.speech = options.speech ?? false;
-    }
 
     async start(): Promise<void> {
-        await voiceOver.start({ capture: this.speech });
+        await voiceOver.start({ capture: false });
     }
 
     async stop(): Promise<void> {

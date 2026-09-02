@@ -136,14 +136,14 @@ flowchart LR
 
 **Command:** `a11y audit <url> [options]`
 
-| Input          | Description                         | Default        |
-| -------------- | ----------------------------------- | -------------- |
-| `url`          | Target URL to audit                 | Required       |
-| `--reader`     | Screen reader: nvda/virtual/voiceover | Required     |
-| `--max-steps`  | Max steps per strategy              | `500`          |
-| `--output-dir` | Output directory                    | Auto-generated |
-| `--speech`     | Enable speech audio (NVDA/VoiceOver)| `false`        |
-| `--verbose`    | Enable verbose output               | `false`        |
+| Input          | Description                           | Default        |
+| -------------- | ------------------------------------- | -------------- |
+| `url`          | Target URL to audit                   | Required       |
+| `--reader`     | Screen reader: nvda/virtual/voiceover | Required       |
+| `--max-steps`  | Max steps per strategy                | `500`          |
+| `--output-dir` | Output directory                      | Auto-generated |
+| `--speech`     | Enable speech audio (NVDA/VoiceOver)  | `false`        |
+| `--verbose`    | Enable verbose output                 | `false`        |
 
 ---
 

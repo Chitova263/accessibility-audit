@@ -174,6 +174,12 @@ export const llmFindingSchema = z
         confidence: confidenceLevelSchema,
         issue: z.string().min(10).describe('Clear description of the accessibility issue found'),
         evidence: llmEvidenceSchema,
+        stepsToReproduce: z
+            .array(z.string())
+            .min(1)
+            .describe(
+                'Step-by-step instructions to reproduce this issue using a screen reader. Include specific keys to press (e.g., "Press H to navigate to next heading", "Press Tab 5 times"). Reference exact step numbers from the transcript.'
+            ),
         impact: z.string().min(10).describe('How this issue affects screen reader users in plain language'),
         relatedRuleId: z
             .string()

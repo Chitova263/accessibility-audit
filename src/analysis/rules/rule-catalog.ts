@@ -288,6 +288,14 @@ export const RULES = {
         supportsScreenshot: false, // pattern issue
     },
 
+    'unexited-subtree-repetition': {
+        wcag: { primary: { criterion: '4.1.2', level: 'A' } },
+        impact: 'moderate',
+        axeEquivalent: [],
+        summary: 'Button with unnamed child nodes causes repeated NVDA announcements during linear reading',
+        supportsScreenshot: true, // element (the button) can be captured
+    },
+
     'excessive-blank-announcements': {
         wcag: { primary: { criterion: '1.3.1', level: 'A' } },
         impact: 'moderate',

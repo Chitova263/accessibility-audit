@@ -28,6 +28,7 @@ import { rule as genericLinkText } from './link-text/generic-link-text/generic-l
 import { rule as contentDensityPerRegion } from './content-structure/content-density-per-region/content-density-per-region';
 import { rule as excessiveNavigationLinks } from './content-structure/excessive-navigation-links/excessive-navigation-links';
 import { rule as excessiveRepetition } from './content-structure/excessive-repetition/excessive-repetition';
+import { rule as unexitedSubtreeRepetition } from './content-structure/unexited-subtree-repetition/unexited-subtree-repetition';
 import { rule as excessiveBlankAnnouncements } from './content-structure/excessive-blank-announcements/excessive-blank-announcements';
 import { rule as landmarkWithoutHeading } from './content-structure/landmark-without-heading/landmark-without-heading';
 import { rule as largeContentGap } from './content-structure/large-content-gap/large-content-gap';
@@ -77,6 +78,7 @@ export const RULES: readonly Rule<unknown, unknown>[] = [
     excessiveBlankAnnouncements,
     excessiveNavigationLinks,
     excessiveRepetition,
+    unexitedSubtreeRepetition,
     landmarkWithoutHeading,
     largeContentGap,
     readingOrderLandmarkSequence,

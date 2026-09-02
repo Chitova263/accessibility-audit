@@ -319,7 +319,41 @@ Your task is to:
 - If you cannot cite evidence, state "insufficient evidence"
 - Do NOT infer issues that aren't directly supported by the transcript
 - Rate your confidence: high, medium, or low
-- Never claim something is accessible just because no issue is obvious`);
+- Never claim something is accessible just because no issue is obvious
+
+STEP REFERENCE FORMAT:
+- Whenever you mention a transcript step in ANY free-text field (issue, impact, pattern, stepsToReproduce, semanticJustification, remediationSuggestion, userImpactDescription, severityRationale, majorConcerns), you MUST use the token format: [strategy:index:stepId]
+- Format: [strategy:stepIndex:identifier] — e.g. [arrow:48:f6351200-cb74-481f-a507-eaadf5707e04]
+- The strategy is the navigation strategy name (tab, heading, arrow, link, landmark, button, etc.)
+- The stepIndex is the 0-based integer index of the step within that strategy
+- The identifier is the UUID from the step's id attribute in the transcript
+- Use this token every time you reference a specific step, even in mid-sentence: "The user hears [arrow:48:f6351200-cb74-481f-a507-eaadf5707e04] and then..."
+- Do NOT write "arrow step 48" or "step 48 of arrow" in plain prose — always use the token
+- The token will be rendered as a clickable link in the report — this is the ONLY way step references become navigable
+
+VIOLATION REFERENCE FORMAT:
+- Whenever you reference an existing rule violation in ANY free-text field (issue, impact, pattern, stepsToReproduce, semanticJustification, remediationSuggestion, userImpactDescription, severityRationale, majorConcerns, limitations), you MUST use the token format: [ruleId:violationId]
+- Format: [ruleId:violationId] — e.g. [multiple-h1:multiple-h1-da2c0148-7d23-438b-9ed5-2fc3d38671d2]
+- The ruleId is the rule identifier (e.g., multiple-h1, focus-trap, missing-main-landmark, excessive-repetition)
+- The violationId is the full violation ID from the violations section (e.g., multiple-h1-da2c0148-7d23-438b-9ed5-2fc3d38671d2)
+- Use this token every time you reference a rule finding, even in mid-sentence: "This compounds the issues found in [multiple-h1:multiple-h1-da2c0148-7d23-438b-9ed5-2fc3d38671d2]..."
+- Do NOT write "the multiple-h1 rule" or "the focus trap violation" in plain prose without the token — always include the full reference
+- The token will be rendered as a clickable anchor link in the report, allowing users to jump to the specific violation
+- When a finding relates to multiple violations, reference all of them: "Related to [multiple-h1:multiple-h1-da2c0148-7d23-438b-9ed5-2fc3d38671d2], [multiple-h1:multiple-h1-2159ced1-bc52-43e0-82fd-cb9e836d99d5], and [repeated-pattern-without-heading:repeated-pattern-934b7c40-d5d1-4017-a91c-2d0351bb2668]"
+
+STEPS TO REPRODUCE:
+- For each finding, provide clear step-by-step instructions to reproduce the issue
+- Include the specific screen reader commands to use:
+  * "Press H" for next heading
+  * "Press D" for next landmark
+  * "Press K" for next link
+  * "Press B" for next button
+  * "Press Tab" for next focusable element
+  * "Press Down Arrow" for linear reading
+  * "Press 1-6" for heading levels 1-6
+- Reference exact step numbers from the transcript, e.g. "After step 12, you will hear..."
+- Include what the user should hear/notice at each step
+- Make steps actionable so someone can verify the issue independently`);
 
         if (this.config.systemPromptAdditions) {
             parts.push(this.config.systemPromptAdditions);

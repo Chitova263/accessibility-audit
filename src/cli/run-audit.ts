@@ -27,7 +27,6 @@ program
     .option('-o, --output-dir <dir>', 'Output directory for audit files')
     .option('--max-steps <number>', 'Maximum steps per strategy')
     .option('-r, --reader <type>', 'Screen reader: nvda, virtual, or voiceover (required)')
-    .option('-s, --speech', 'Enable NVDA speech audio output')
     .option('-v, --verbose', 'Enable verbose output')
     .action(() => {})
     .parse();
@@ -47,9 +46,6 @@ try {
     Logger.section('Starting Accessibility Audit');
     Logger.info(`Target URL: ${url}`);
     Logger.info(`Screen reader: ${options.reader}`);
-    if (options.reader === 'nvda' || options.reader === 'voiceover') {
-        Logger.info(`Speech: ${options.speech ? 'on' : 'off'}`);
-    }
     Logger.debug(`Output directory: ${outputDir}`);
     Logger.debug(`Max steps per strategy: ${options.maxSteps}`);
 
@@ -76,7 +72,7 @@ try {
     const page = await chromeDevToolsProtocolConnection.goToPage(pageUrl);
     Logger.info('Page loaded');
 
-    const driver = await createDriver({ type: options.reader, page, speech: options.speech });
+    const driver = await createDriver({ type: options.reader, page });
 
     const navigator = Navigator.fromConfig({
         reader: driver.reader,
