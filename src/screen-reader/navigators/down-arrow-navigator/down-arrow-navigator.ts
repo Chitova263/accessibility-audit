@@ -19,6 +19,9 @@ export class DownArrowNavigator implements IElementNavigator {
         // Reset end detector state at start of iteration
         this.endDetector?.reset();
 
+        // Reset end detector state at start of iteration
+        this.endDetector?.reset();
+
         while (true) {
             const { spokenPhrases, itemText } = await this.sr.press(this.arrowKey);
 
