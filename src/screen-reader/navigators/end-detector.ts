@@ -1,4 +1,4 @@
-import type { EndDetectionStrategy, EndDetector, EndDetectionContext } from './types';
+import type { EndDetectionContext, EndDetectionStrategy, EndDetector } from './types';
 
 const DEFAULT_DOCUMENT_BOUNDARY_PATTERNS = [
     'tool bar',
@@ -18,100 +18,121 @@ const DEFAULT_DOCUMENT_BOUNDARY_PATTERNS = [
 export function createEndDetector(strategy: EndDetectionStrategy): EndDetector {
     switch (strategy.type) {
         case 'phrase-contains':
-            return createPhraseContainsDetector(strategy.text, strategy.caseSensitive ?? false);
-
+            return new PhraseContainsDetector(strategy.text, strategy.caseSensitive ?? false);
         case 'phrase-regex':
-            return createPhraseRegexDetector(strategy.pattern, strategy.flags);
-
+            return new PhraseRegexDetector(strategy.pattern, strategy.flags);
         case 'loop-detection':
-            return createLoopDetector(strategy.key ?? 'phrase');
-
+            return new LoopDetector(strategy.key ?? 'phrase');
         case 'document-boundary':
-            return createDocumentBoundaryDetector(strategy.additionalPatterns);
-
+            return new DocumentBoundaryDetector(strategy.additionalPatterns);
         case 'any':
-            return createAnyDetector(strategy.of);
-
+            return new CompositeAnyDetector(strategy.of);
         default: {
-            const _exhaustive: never = strategy;
-            throw new Error(`Unknown end detection strategy type: ${(_exhaustive as EndDetectionStrategy).type}`);
+            throw new Error(`Unknown end detection strategy`);
         }
     }
 }
 
-function createPhraseContainsDetector(text: string, caseSensitive: boolean): EndDetector {
-    const searchText = caseSensitive ? text : text.toLowerCase();
+/**
+ * Detects end when phrase contains a specific text.
+ */
+class PhraseContainsDetector implements EndDetector {
+    private readonly searchText: string;
 
-    return {
-        check(ctx: EndDetectionContext): boolean {
-            const phrase = caseSensitive ? ctx.phrase : ctx.phrase.toLowerCase();
-            return phrase.includes(searchText);
-        },
-        reset(): void {},
-    };
+    constructor(
+        text: string,
+        private readonly caseSensitive: boolean
+    ) {
+        this.searchText = caseSensitive ? text : text.toLowerCase();
+    }
+
+    check(ctx: EndDetectionContext): boolean {
+        const phrase = this.caseSensitive ? ctx.phrase : ctx.phrase.toLowerCase();
+        return phrase.includes(this.searchText);
+    }
+
+    reset(): void {}
 }
 
-function createPhraseRegexDetector(pattern: string, flags?: string): EndDetector {
-    const regex = new RegExp(pattern, flags ?? 'i');
+/**
+ * Detects end when phrase matches a regex pattern.
+ */
+class PhraseRegexDetector implements EndDetector {
+    private readonly regex: RegExp;
 
-    return {
-        check(ctx: EndDetectionContext): boolean {
-            return regex.test(ctx.phrase);
-        },
-        reset(): void {
-            regex.lastIndex = 0;
-        },
-    };
+    constructor(pattern: string, flags?: string) {
+        this.regex = new RegExp(pattern, flags ?? 'i');
+    }
+
+    check(ctx: EndDetectionContext): boolean {
+        return this.regex.test(ctx.phrase);
+    }
+
+    reset(): void {
+        this.regex.lastIndex = 0;
+    }
 }
 
-function createLoopDetector(key: 'phrase' | 'itemText'): EndDetector {
-    const seen = new Set<string>();
+/**
+ * Detects end when the same value is seen twice (loop/wrap-around).
+ */
+class LoopDetector implements EndDetector {
+    private readonly seen = new Set<string>();
 
-    return {
-        check(ctx: EndDetectionContext): boolean {
-            const value = ctx[key];
-            if (seen.has(value)) {
-                return true;
-            }
-            seen.add(value);
+    constructor(private readonly key: 'phrase' | 'itemText') {}
+
+    check(ctx: EndDetectionContext): boolean {
+        const value = ctx[this.key];
+        if (this.seen.has(value)) {
+            return true;
+        }
+        this.seen.add(value);
+        return false;
+    }
+
+    reset(): void {
+        this.seen.clear();
+    }
+}
+
+/**
+ * Detects end when focus leaves the document (e.g., browser toolbar).
+ */
+class DocumentBoundaryDetector implements EndDetector {
+    private readonly patterns: string[];
+
+    constructor(additionalPatterns?: string[]) {
+        this.patterns = additionalPatterns
+            ? [...DEFAULT_DOCUMENT_BOUNDARY_PATTERNS, ...additionalPatterns]
+            : DEFAULT_DOCUMENT_BOUNDARY_PATTERNS;
+    }
+
+    check(ctx: EndDetectionContext): boolean {
+        if (typeof ctx.backendNodeId === 'number') {
             return false;
-        },
-        reset(): void {
-            seen.clear();
-        },
-    };
+        }
+        const phraseLower = ctx.phrase.toLowerCase();
+        return this.patterns.some((pattern) => phraseLower.includes(pattern));
+    }
+
+    reset(): void {}
 }
 
-function createDocumentBoundaryDetector(additionalPatterns?: string[]): EndDetector {
-    const patterns = additionalPatterns
-        ? [...DEFAULT_DOCUMENT_BOUNDARY_PATTERNS, ...additionalPatterns]
-        : DEFAULT_DOCUMENT_BOUNDARY_PATTERNS;
+/**
+ * Composite detector that triggers when ANY child detector triggers.
+ */
+class CompositeAnyDetector implements EndDetector {
+    private readonly detectors: EndDetector[];
 
-    return {
-        check(ctx: EndDetectionContext): boolean {
-            // Only trigger when focus is outside the document
-            // backendNodeId is a number when focus is on a DOM element
-            // backendNodeId is null/undefined when focus is outside the document
-            if (typeof ctx.backendNodeId === 'number') {
-                return false;
-            }
+    constructor(strategies: EndDetectionStrategy[]) {
+        this.detectors = strategies.map(createEndDetector);
+    }
 
-            const phraseLower = ctx.phrase.toLowerCase();
-            return patterns.some((pattern) => phraseLower.includes(pattern));
-        },
-        reset(): void {},
-    };
-}
+    check(ctx: EndDetectionContext): boolean {
+        return this.detectors.some((detector) => detector.check(ctx));
+    }
 
-function createAnyDetector(strategies: EndDetectionStrategy[]): EndDetector {
-    const detectors = strategies.map(createEndDetector);
-
-    return {
-        check(ctx: EndDetectionContext): boolean {
-            return detectors.some((detector) => detector.check(ctx));
-        },
-        reset(): void {
-            detectors.forEach((detector) => detector.reset());
-        },
-    };
+    reset(): void {
+        this.detectors.forEach((detector) => detector.reset());
+    }
 }

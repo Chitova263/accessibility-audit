@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 import { createRequire } from 'node:module';
-import type { ScreenReader, PressResult } from './nvda';
+import type { ScreenReader, PressResult } from './types';
 import { Logger } from '../../utils/logger';
 
 const _require = createRequire(import.meta.url);

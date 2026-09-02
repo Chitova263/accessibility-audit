@@ -1,6 +1,9 @@
 import { nvda } from '@guidepup/guidepup';
 import { execSync } from 'node:child_process';
 import { delay } from '@guidepup/guidepup/lib/delay';
+import type { ScreenReader, PressResult } from './types';
+
+export type { ScreenReader, PressResult } from './types';
 
 /** CLI-friendly capture mode names */
 export type CaptureMode = 'off' | 'all';
@@ -13,19 +16,6 @@ function toGuidepupCapture(speech: boolean): boolean {
 export interface NvdaOptions {
     /** Enable speech audio output. Default: false (silent) */
     speech?: boolean;
-}
-
-export interface PressResult {
-    /** Phrases spoken in response to this action (empty if NVDA didn't speak) */
-    spokenPhrases: string[];
-    /** The focused element's text */
-    itemText: string;
-}
-
-export interface ScreenReader {
-    start(): Promise<void>;
-    stop(): Promise<void>;
-    press(key: string): Promise<PressResult>;
 }
 
 export class Nvda implements ScreenReader {

@@ -1,6 +1,6 @@
 import { voiceOver } from '@guidepup/guidepup';
 import { delay } from '@guidepup/guidepup/lib/delay';
-import type { ScreenReader, PressResult } from './nvda';
+import type { ScreenReader, PressResult } from './types';
 
 export interface VoiceOverOptions {
     /** Enable speech audio output. Default: false (silent) */

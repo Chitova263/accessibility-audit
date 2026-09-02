@@ -1,5 +1,5 @@
 import type { Page } from 'playwright';
-import type { ScreenReader } from './nvda';
+import type { ScreenReader } from './types';
 import type { ScreenReaderKeyBindings, ScreenReaderEndDetection } from '../navigators/types';
 import type { ScreenReaderType } from '../../cli/schemas';
 

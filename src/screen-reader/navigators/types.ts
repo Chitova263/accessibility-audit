@@ -1,4 +1,4 @@
-import type { ScreenReader } from '../drivers/nvda';
+import type { ScreenReader } from '../drivers/types';
 
 export interface NavigationItem {
     /** The spoken phrase */
