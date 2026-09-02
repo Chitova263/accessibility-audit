@@ -8,9 +8,9 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 
@@ -47,7 +47,7 @@ interface FormFieldInfo {
     backendNodeId?: number;
 }
 
-export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelStats> {
+export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormFieldNoLabelStats> {
     readonly id = 'form-field-no-label';
 
     readonly meta: RuleMeta = {
@@ -62,9 +62,9 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
         summary: 'Form field has no accessible label',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, FormFieldNoLabelStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, FormFieldNoLabelStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         const byRole: Record<string, { total: number; unlabeled: number }> = {};
 
         const formFields: FormFieldInfo[] = [];
@@ -112,7 +112,7 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
 
             if (!hasLabel) {
                 roleStats.unlabeled++;
-                const context = createNvdaContext(
+                const context = createScreenReaderContext(
                     {
                         identifier: field.identifier,
                         spokenPhrases: field.spokenPhrases,
@@ -120,7 +120,8 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
                         axNode: field.axNode,
                     },
                     field.strategyType,
-                    field.stepIndex
+                    field.stepIndex,
+                    ctx.screenReader
                 );
                 if (typeof field.backendNodeId === 'number') {
                     const filename = `${this.id}-${field.identifier}`;
@@ -177,7 +178,7 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
         return descriptions[role] ?? role;
     }
 
-    private createViolation(field: FormFieldInfo, context: NvdaContext): NvdaViolation {
+    private createViolation(field: FormFieldInfo, context: ScreenReaderContext): ScreenReaderViolation {
         const roleDesc = this.getRoleDescription(field.role);
 
         return {
@@ -190,7 +191,7 @@ export class FormFieldNoLabelRule implements Rule<NvdaContext, FormFieldNoLabelS
             },
             message: `${capitalize(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. NVDA announced: "${field.itemText || '(nothing)'}"`,
             ...(field.htmlSnippet != null && { element: { htmlSnippet: field.htmlSnippet } }),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: field.timestamp,
             context,
         };

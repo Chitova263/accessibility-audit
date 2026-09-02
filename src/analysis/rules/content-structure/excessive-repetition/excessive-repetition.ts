@@ -1,8 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRule } from '../../rule-catalog';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -30,16 +31,17 @@ function createViolation(
     message: string,
     step: NavigationStep,
     strategyName: string,
+    screenReader: ScreenReaderName,
     impactOverride?: Parameters<typeof getRule>[1]
-): NvdaViolation {
+): ScreenReaderViolation {
     return {
         id: `${ruleId}-${step.identifier}`,
         rule: getRule(ruleId, impactOverride),
         message,
         ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'nvda-audit',
+        tool: 'screen-reader-audit',
         timestamp: step.timestamp,
-        context: createNvdaContext(step, strategyName, step.index),
+        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
     };
 }
 
@@ -49,7 +51,7 @@ function createViolation(
  *
  * WCAG 1.3.1: Info and Relationships (Level A)
  */
-export class ExcessiveRepetitionRule implements Rule<NvdaContext, ExcessiveRepetitionStats> {
+export class ExcessiveRepetitionRule implements Rule<ScreenReaderContext, ExcessiveRepetitionStats> {
     readonly id = 'excessive-repetition';
 
     /**
@@ -73,8 +75,11 @@ export class ExcessiveRepetitionRule implements Rule<NvdaContext, ExcessiveRepet
         summary: 'Same phrase announced many times consecutively',
     };
 
-    async run({ transcript }: AuditContext): Promise<RuleResult<NvdaContext, ExcessiveRepetitionStats>> {
-        const violations: NvdaViolation[] = [];
+    async run({
+        transcript,
+        screenReader,
+    }: AuditContext): Promise<RuleResult<ScreenReaderContext, ExcessiveRepetitionStats>> {
+        const violations: ScreenReaderViolation[] = [];
         const repetitions: RepetitionInfo[] = [];
         const { threshold, minPhraseLength } = this;
 
@@ -133,7 +138,8 @@ export class ExcessiveRepetitionRule implements Rule<NvdaContext, ExcessiveRepet
                     'excessive-repetition',
                     `"${rep.phrase}" is announced ${rep.count} times consecutively (steps ${rep.startStep}-${rep.endStep}). This repetition may confuse screen reader users or indicate redundant content.`,
                     step,
-                    arrowResult.meta.name
+                    arrowResult.meta.name,
+                    screenReader
                 )
             );
         }

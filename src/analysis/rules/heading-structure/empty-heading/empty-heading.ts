@@ -1,5 +1,5 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
@@ -9,7 +9,7 @@ export interface EmptyHeadingStats {
     violationsFound: number;
 }
 
-export class EmptyHeadingRule implements Rule<NvdaContext, EmptyHeadingStats> {
+export class EmptyHeadingRule implements Rule<ScreenReaderContext, EmptyHeadingStats> {
     readonly id = 'empty-heading';
 
     readonly meta: RuleMeta = {
@@ -20,15 +20,15 @@ export class EmptyHeadingRule implements Rule<NvdaContext, EmptyHeadingStats> {
         summary: 'Heading has no text content',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, EmptyHeadingStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, EmptyHeadingStats>> {
         const { page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         const headings = collectHeadings(ctx);
 
         for (const heading of headings) {
             if (heading.name.trim() !== '') continue;
 
-            const context = createHeadingContext(heading);
+            const context = createHeadingContext(heading, ctx.screenReader);
 
             if (typeof heading.backendNodeId === 'number') {
                 const filename = `${this.id}-${heading.identifier}`;
@@ -54,7 +54,7 @@ export class EmptyHeadingRule implements Rule<NvdaContext, EmptyHeadingStats> {
         };
     }
 
-    private createViolation(heading: HeadingInfo, context: NvdaContext): NvdaViolation {
+    private createViolation(heading: HeadingInfo, context: ScreenReaderContext): ScreenReaderViolation {
         return {
             id: `empty-heading-${heading.identifier}`,
             rule: {

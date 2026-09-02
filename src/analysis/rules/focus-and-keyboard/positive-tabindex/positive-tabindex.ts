@@ -8,13 +8,13 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import type {
     StrategyResult,
     NavigationStep,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 
 export interface PositiveTabindexStats {
@@ -36,7 +36,7 @@ interface TabindexAnomaly {
     tabindexValue: number;
 }
 
-export class PositiveTabindexRule implements Rule<NvdaContext, PositiveTabindexStats> {
+export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveTabindexStats> {
     readonly id = 'positive-tabindex';
 
     readonly meta: RuleMeta = {
@@ -47,15 +47,20 @@ export class PositiveTabindexRule implements Rule<NvdaContext, PositiveTabindexS
         summary: 'Element has positive tabindex disrupting natural order',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, PositiveTabindexStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, PositiveTabindexStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const focusableElements = this.collectTabOrderElements(transcript);
         const anomalies = this.detectAnomalies(focusableElements);
 
         for (const anomaly of anomalies) {
-            const context = createNvdaContext(anomaly.element.step, 'tab', anomaly.element.tabIndex);
+            const context = createScreenReaderContext(
+                anomaly.element.step,
+                'tab',
+                anomaly.element.tabIndex,
+                ctx.screenReader
+            );
             if (typeof anomaly.element.backendNodeId === 'number') {
                 const filename = `${this.id}-${anomaly.element.step.identifier}`;
                 context.screenshot = await captureScreenshotToFile(
@@ -131,7 +136,7 @@ export class PositiveTabindexRule implements Rule<NvdaContext, PositiveTabindexS
         return null;
     }
 
-    private createViolation(anomaly: TabindexAnomaly, context: NvdaContext): NvdaViolation {
+    private createViolation(anomaly: TabindexAnomaly, context: ScreenReaderContext): ScreenReaderViolation {
         return {
             id: `positive-tabindex-${anomaly.element.step.identifier}`,
             rule: {

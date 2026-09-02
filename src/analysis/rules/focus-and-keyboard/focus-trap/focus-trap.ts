@@ -8,16 +8,17 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 export interface FocusTrapStats {
     tabStrategiesChecked: number;
     focusTrapsFound: number;
 }
 
-export class FocusTrapRule implements Rule<NvdaContext, FocusTrapStats> {
+export class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> {
     readonly id = 'focus-trap';
 
     readonly meta: RuleMeta = {
@@ -28,9 +29,9 @@ export class FocusTrapRule implements Rule<NvdaContext, FocusTrapStats> {
         summary: 'Keyboard focus trap where the user cannot escape using Tab',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, FocusTrapStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, FocusTrapStats>> {
         const { transcript } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         let tabStrategiesChecked = 0;
 
         for (const result of transcript) {
@@ -45,7 +46,7 @@ export class FocusTrapRule implements Rule<NvdaContext, FocusTrapStats> {
                 const trappedStep = steps[steps.length - 1];
 
                 if (trappedStep) {
-                    violations.push(this.createViolation(trappedStep, steps.length));
+                    violations.push(this.createViolation(trappedStep, steps.length, ctx.screenReader));
                 }
             }
         }
@@ -68,9 +69,10 @@ export class FocusTrapRule implements Rule<NvdaContext, FocusTrapStats> {
             htmlSnippet: string | null;
             axNode: unknown;
         },
-        stepsBeforeTrap: number
-    ): NvdaViolation {
-        const context = createNvdaContext(step, 'tab', stepsBeforeTrap - 1);
+        stepsBeforeTrap: number,
+        screenReader: ScreenReaderName
+    ): ScreenReaderViolation {
+        const context = createScreenReaderContext(step, 'tab', stepsBeforeTrap - 1, screenReader);
 
         return {
             id: `focus-trap-${step.identifier}`,

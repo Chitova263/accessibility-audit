@@ -44,6 +44,7 @@ const VSR_COMMAND_MAP: Record<string, string> = {
  * Runs headless in the browser - no OS-level screen reader required.
  */
 export class VirtualScreenReader implements ScreenReader {
+    readonly name = 'virtual' as const;
     private readonly log = Logger.context('VirtualDriver');
 
     constructor(private readonly page: Page) {}

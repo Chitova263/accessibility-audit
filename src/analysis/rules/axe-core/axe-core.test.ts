@@ -50,6 +50,7 @@ const context: AuditContext = {
     transcript: [],
     cdp: {} as CDPSession,
     screenshotsDir: '/tmp/screenshots',
+    screenReader: 'nvda',
 };
 
 beforeEach(() => {
@@ -164,6 +165,7 @@ describe('axe-core rule', () => {
             transcript: [],
             cdp: {} as CDPSession,
             screenshotsDir: '/tmp/screenshots',
+            screenReader: 'nvda',
         };
 
         const result = await rule.run(contextWithoutPage);

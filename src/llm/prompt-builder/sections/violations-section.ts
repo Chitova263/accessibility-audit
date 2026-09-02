@@ -1,7 +1,7 @@
 import { parse } from 'node-html-parser';
 import { create } from 'xmlbuilder2';
-import type { Violation, NvdaViolation, NvdaContext } from '../../../analysis/core/violation';
-import { isNvdaViolation } from '../../../analysis/core/violation';
+import type { Violation, ScreenReaderViolation, ScreenReaderContext } from '../../../analysis/core/violation';
+import { isScreenReaderViolation } from '../../../analysis/core/violation';
 import type {
     PromptNavigationStep,
     PromptStrategySection,
@@ -43,7 +43,7 @@ function cleanHtmlSnippet(html: string, maxLength: number): string {
 /**
  * Extracts correlation from NVDA violation.
  */
-function extractCorrelation(violation: NvdaViolation): TranscriptCorrelation {
+function extractCorrelation(violation: ScreenReaderViolation): TranscriptCorrelation {
     const context = violation.context;
     return {
         strategyName: context.source.strategy,
@@ -61,7 +61,7 @@ function findCorrelation(
     strategySections: PromptStrategySection[]
 ): TranscriptCorrelation | undefined {
     // NVDA violations have direct correlation
-    if (isNvdaViolation(violation)) {
+    if (isScreenReaderViolation(violation)) {
         return extractCorrelation(violation);
     }
 

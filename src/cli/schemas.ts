@@ -15,7 +15,7 @@ export const urlSchema = z.string().url('Must be a valid URL');
 export const auditOptionsSchema = z.object({
     outputDir: z.string().optional(),
     maxSteps: z.coerce.number().int().positive().default(500),
-    reader: screenReaderTypeSchema.default('nvda'),
+    reader: screenReaderTypeSchema,
     speech: z.boolean().default(false),
     verbose: z.boolean().default(false),
 });

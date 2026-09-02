@@ -1,8 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRule } from '../../rule-catalog';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -34,16 +35,17 @@ function createViolation(
     message: string,
     step: NavigationStep,
     strategyName: string,
+    screenReader: ScreenReaderName,
     impactOverride?: Parameters<typeof getRule>[1]
-): NvdaViolation {
+): ScreenReaderViolation {
     return {
         id: `${ruleId}-${step.identifier}`,
         rule: getRule(ruleId, impactOverride),
         message,
         ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'nvda-audit',
+        tool: 'screen-reader-audit',
         timestamp: step.timestamp,
-        context: createNvdaContext(step, strategyName, step.index),
+        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
     };
 }
 
@@ -53,7 +55,7 @@ function createViolation(
  *
  * WCAG 2.4.1: Bypass Blocks (Level A)
  */
-export class StepsToMainContentRule implements Rule<NvdaContext, StepsToMainContentStats> {
+export class StepsToMainContentRule implements Rule<ScreenReaderContext, StepsToMainContentStats> {
     readonly id = 'steps-to-main-content';
 
     /** Default threshold: 30 steps before main landmark is too many. */
@@ -69,8 +71,11 @@ export class StepsToMainContentRule implements Rule<NvdaContext, StepsToMainCont
         summary: 'Main content reached only after excessive linear reading steps',
     };
 
-    async run({ transcript }: AuditContext): Promise<RuleResult<NvdaContext, StepsToMainContentStats>> {
-        const violations: NvdaViolation[] = [];
+    async run({
+        transcript,
+        screenReader,
+    }: AuditContext): Promise<RuleResult<ScreenReaderContext, StepsToMainContentStats>> {
+        const violations: ScreenReaderViolation[] = [];
         const threshold = this.threshold;
 
         const arrowResult = getArrowStrategyResult(transcript);
@@ -112,7 +117,8 @@ export class StepsToMainContentRule implements Rule<NvdaContext, StepsToMainCont
                     'steps-to-main-content',
                     `Main content reached after ${stepsToMain} steps (threshold: ${threshold}). Users must navigate through excessive content before reaching main content. Consider adding or improving skip links.`,
                     step,
-                    arrowResult.meta.name
+                    arrowResult.meta.name,
+                    screenReader
                 )
             );
         }
@@ -125,7 +131,8 @@ export class StepsToMainContentRule implements Rule<NvdaContext, StepsToMainCont
                     'missing-main-landmark',
                     `No main landmark was announced across ${steps.length} steps of linear reading. Without a main landmark, screen reader users cannot jump past repeated header and navigation content. Wrap the primary content in a <main> element.`,
                     steps[0]!,
-                    arrowResult.meta.name
+                    arrowResult.meta.name,
+                    screenReader
                 )
             );
         }

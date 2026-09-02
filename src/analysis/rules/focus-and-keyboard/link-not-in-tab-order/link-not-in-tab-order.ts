@@ -1,7 +1,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 import {
@@ -18,7 +18,7 @@ export interface LinkNotInTabOrderStats {
     violationsFound: number;
 }
 
-export class LinkNotInTabOrderRule implements Rule<NvdaContext, LinkNotInTabOrderStats> {
+export class LinkNotInTabOrderRule implements Rule<ScreenReaderContext, LinkNotInTabOrderStats> {
     readonly id = 'link-not-in-tab-order';
 
     readonly meta: RuleMeta = {
@@ -29,9 +29,9 @@ export class LinkNotInTabOrderRule implements Rule<NvdaContext, LinkNotInTabOrde
         summary: 'Link reachable via K key but not Tab',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, LinkNotInTabOrderStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, LinkNotInTabOrderStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const { elements: links, tabOrderSignatures } = collectElementsByStrategy(transcript, 'link', 'link');
 
@@ -39,7 +39,7 @@ export class LinkNotInTabOrderRule implements Rule<NvdaContext, LinkNotInTabOrde
             const signature = createSignature(link.step);
 
             if (!tabOrderSignatures.has(signature) && !isLikelyInTabOrder(link, tabOrderSignatures)) {
-                const context = createNvdaContext(link.step, link.strategyType, 0);
+                const context = createScreenReaderContext(link.step, link.strategyType, 0, ctx.screenReader);
 
                 if (typeof link.backendNodeId === 'number') {
                     const filename = `${this.id}-${link.step.identifier}`;
@@ -67,7 +67,7 @@ export class LinkNotInTabOrderRule implements Rule<NvdaContext, LinkNotInTabOrde
         };
     }
 
-    private createViolation(link: ElementSignature, context: NvdaContext): NvdaViolation {
+    private createViolation(link: ElementSignature, context: ScreenReaderContext): ScreenReaderViolation {
         return {
             id: `${this.id}-${link.step.identifier}`,
             rule: {

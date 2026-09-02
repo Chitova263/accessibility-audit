@@ -48,8 +48,6 @@ export interface EndDetectionContext {
     backendNodeId?: number | null;
 }
 
-// ============== Declarative End Detection Strategy ==============
-
 /**
  * Declarative end detection strategies.
  * These describe *what* signals the end of navigation, not *how* to compute it.

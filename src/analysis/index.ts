@@ -1,14 +1,14 @@
 export type {
     Violation,
-    NvdaViolation,
-    NvdaContext,
+    ScreenReaderViolation,
+    ScreenReaderContext,
     AxeViolation,
     AxeContext,
     AxeNode,
     WcagCriterion,
     Impact,
 } from './core/violation';
-export { isNvdaViolation } from './core/violation';
+export { isScreenReaderViolation } from './core/violation';
 
 export type { AuditContext } from './core/context';
 
@@ -23,7 +23,7 @@ export type { ViolationTotals } from './utils/summarize-violations';
 export { RULES as ALL_RULES, runRules, getRuleById } from './rules/runner';
 export type { RunResult } from './rules/runner';
 
-export { createNvdaContext } from './utils/tool-details';
+export { createScreenReaderContext } from './utils/tool-details';
 export type { ContextSource } from './utils/tool-details';
 
 export {

@@ -8,7 +8,7 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { getRule } from '../../rule-catalog';
@@ -17,7 +17,7 @@ import {
     getReadingSteps,
     findSurroundingContext,
     formatSurroundingContext,
-    createNvdaContextFromLink,
+    createScreenReaderContextFromLink,
 } from '../../utils/link-utils';
 import type { LinkInfo, SurroundingContext } from '../../utils/link-utils';
 
@@ -50,7 +50,7 @@ export interface GenericLinkTextStats {
     genericLinksWithSurroundingContext: number;
 }
 
-export class GenericLinkTextRule implements Rule<NvdaContext, GenericLinkTextStats> {
+export class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLinkTextStats> {
     readonly id = 'generic-link-text';
 
     readonly meta: RuleMeta = {
@@ -61,9 +61,9 @@ export class GenericLinkTextRule implements Rule<NvdaContext, GenericLinkTextSta
         summary: 'Link uses generic text like "click here" or "read more"',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, GenericLinkTextStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, GenericLinkTextStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         let genericLinksWithSurroundingContext = 0;
 
         const links = collectLinks(transcript);
@@ -75,7 +75,7 @@ export class GenericLinkTextRule implements Rule<NvdaContext, GenericLinkTextSta
             const surroundingContext = findSurroundingContext(readingSteps, link.backendNodeId);
             if (surroundingContext) genericLinksWithSurroundingContext++;
 
-            const context = createNvdaContextFromLink(link);
+            const context = createScreenReaderContextFromLink(link, ctx.screenReader);
             if (typeof link.backendNodeId === 'number') {
                 const filename = `${this.id}-${link.identifier}`;
                 context.screenshot = await captureScreenshotToFile(
@@ -104,8 +104,8 @@ export class GenericLinkTextRule implements Rule<NvdaContext, GenericLinkTextSta
     private createViolation(
         link: LinkInfo,
         surroundingContext: SurroundingContext | null,
-        context: NvdaContext
-    ): NvdaViolation {
+        context: ScreenReaderContext
+    ): ScreenReaderViolation {
         const base = `Link has generic text "${link.name}". Link text should describe the destination or purpose, not use generic phrases like "click here" or "read more".`;
 
         const message = surroundingContext
@@ -117,7 +117,7 @@ export class GenericLinkTextRule implements Rule<NvdaContext, GenericLinkTextSta
             rule: getRule('generic-link-text', surroundingContext ? 'moderate' : 'serious'),
             message,
             ...(link.htmlSnippet != null && { element: { htmlSnippet: link.htmlSnippet } }),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: link.timestamp,
             context,
         };

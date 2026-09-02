@@ -1,12 +1,13 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRule } from '../../rule-catalog';
 import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 export interface FragmentedSequence {
     startStep: number;
@@ -54,14 +55,19 @@ function isSingleCharLink(itemText: string): { isLink: boolean; char: string | n
     return { isLink: true, char: null };
 }
 
-function createViolation(message: string, step: NavigationStep, strategyName: string): NvdaViolation {
+function createViolation(
+    message: string,
+    step: NavigationStep,
+    strategyName: string,
+    screenReader: ScreenReaderName
+): ScreenReaderViolation {
     return {
         id: `fragmented-link-text-${step.identifier}`,
         rule: getRule('fragmented-link-text'),
         message,
-        tool: 'nvda-audit',
+        tool: 'screen-reader-audit',
         timestamp: step.timestamp,
-        context: createNvdaContext(step, strategyName, step.index),
+        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
     };
 }
 
@@ -74,7 +80,7 @@ function createViolation(message: string, step: NavigationStep, strategyName: st
  *
  * WCAG 2.4.4: Link Purpose (In Context) (Level A)
  */
-export class FragmentedLinkTextRule implements Rule<NvdaContext, FragmentedLinkTextStats> {
+export class FragmentedLinkTextRule implements Rule<ScreenReaderContext, FragmentedLinkTextStats> {
     readonly id = 'fragmented-link-text';
     readonly threshold: number;
 
@@ -89,7 +95,10 @@ export class FragmentedLinkTextRule implements Rule<NvdaContext, FragmentedLinkT
         summary: 'Link text is fragmented into individual characters',
     };
 
-    async run({ transcript }: AuditContext): Promise<RuleResult<NvdaContext, FragmentedLinkTextStats>> {
+    async run({
+        transcript,
+        screenReader,
+    }: AuditContext): Promise<RuleResult<ScreenReaderContext, FragmentedLinkTextStats>> {
         const { threshold } = this;
         const sequences: FragmentedSequence[] = [];
 
@@ -140,14 +149,15 @@ export class FragmentedLinkTextRule implements Rule<NvdaContext, FragmentedLinkT
             });
         }
 
-        const violations: NvdaViolation[] = sequences.map((seq) => {
+        const violations: ScreenReaderViolation[] = sequences.map((seq) => {
             const step = steps[seq.startStep]!;
             return createViolation(
                 `Link text fragmented into ${seq.characters.length} single-character links at steps ${seq.startStep}-${seq.endStep}. ` +
                     `Reconstructed text: "${seq.reconstructedText}". ` +
                     'Screen reader users hear each character announced as a separate link, making the content unusable.',
                 step,
-                arrowResult.meta.name
+                arrowResult.meta.name,
+                screenReader
             );
         });
 

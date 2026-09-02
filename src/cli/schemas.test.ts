@@ -49,8 +49,8 @@ describe('urlSchema', () => {
 });
 
 describe('auditOptionsSchema', () => {
-    it('applies defaults for missing options', () => {
-        const result = auditOptionsSchema.parse({});
+    it('applies defaults for missing optional fields', () => {
+        const result = auditOptionsSchema.parse({ reader: 'nvda' });
         expect(result).toEqual({
             maxSteps: 500,
             reader: 'nvda',
@@ -59,8 +59,12 @@ describe('auditOptionsSchema', () => {
         });
     });
 
+    it('requires reader option', () => {
+        expect(() => auditOptionsSchema.parse({})).toThrow();
+    });
+
     it('coerces maxSteps from string to number', () => {
-        const result = auditOptionsSchema.parse({ maxSteps: '1000' });
+        const result = auditOptionsSchema.parse({ reader: 'nvda', maxSteps: '1000' });
         expect(result.maxSteps).toBe(1000);
         expect(typeof result.maxSteps).toBe('number');
     });
@@ -83,9 +87,9 @@ describe('auditOptionsSchema', () => {
     });
 
     it('rejects invalid maxSteps', () => {
-        expect(() => auditOptionsSchema.parse({ maxSteps: -1 })).toThrow();
-        expect(() => auditOptionsSchema.parse({ maxSteps: 0 })).toThrow();
-        expect(() => auditOptionsSchema.parse({ maxSteps: 'abc' })).toThrow();
+        expect(() => auditOptionsSchema.parse({ reader: 'nvda', maxSteps: -1 })).toThrow();
+        expect(() => auditOptionsSchema.parse({ reader: 'nvda', maxSteps: 0 })).toThrow();
+        expect(() => auditOptionsSchema.parse({ reader: 'nvda', maxSteps: 'abc' })).toThrow();
     });
 
     it('rejects invalid reader', () => {
@@ -108,7 +112,7 @@ describe('auditInputSchema', () => {
         expect(() =>
             auditInputSchema.parse({
                 url: 'not-valid',
-                options: {},
+                options: { reader: 'nvda' },
             })
         ).toThrow();
     });
@@ -116,6 +120,15 @@ describe('auditInputSchema', () => {
     it('rejects missing URL', () => {
         expect(() =>
             auditInputSchema.parse({
+                options: { reader: 'nvda' },
+            })
+        ).toThrow();
+    });
+
+    it('rejects missing reader', () => {
+        expect(() =>
+            auditInputSchema.parse({
+                url: 'https://example.com',
                 options: {},
             })
         ).toThrow();

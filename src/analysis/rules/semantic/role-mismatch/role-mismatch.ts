@@ -8,9 +8,9 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 
 type RoleMismatchIssue =
@@ -77,7 +77,7 @@ interface MismatchInfo {
     description: string;
 }
 
-export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
+export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchStats> {
     readonly id = 'role-mismatch';
 
     readonly meta: RuleMeta = {
@@ -88,9 +88,9 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
         summary: "Element's ARIA role doesn't match the underlying HTML element",
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, RoleMismatchStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, RoleMismatchStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         const byIssue: Record<string, number> = {};
         let totalChecked = 0;
 
@@ -135,7 +135,7 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
 
             if (mismatch) {
                 byIssue[mismatch.issue] = (byIssue[mismatch.issue] ?? 0) + 1;
-                const context = createNvdaContext(
+                const context = createScreenReaderContext(
                     {
                         identifier: element.identifier,
                         spokenPhrases: element.spokenPhrases,
@@ -143,7 +143,8 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
                         axNode: element.axNode,
                     },
                     element.strategyType,
-                    element.stepIndex
+                    element.stepIndex,
+                    ctx.screenReader
                 );
                 if (typeof element.backendNodeId === 'number') {
                     const filename = `${this.id}-${element.identifier}`;
@@ -238,7 +239,11 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
         return unique;
     }
 
-    private createViolation(element: ElementInfo, mismatch: MismatchInfo, context: NvdaContext): NvdaViolation {
+    private createViolation(
+        element: ElementInfo,
+        mismatch: MismatchInfo,
+        context: ScreenReaderContext
+    ): ScreenReaderViolation {
         return {
             id: `role-mismatch-${element.identifier}`,
             rule: {
@@ -251,7 +256,7 @@ export class RoleMismatchRule implements Rule<NvdaContext, RoleMismatchStats> {
             element: {
                 ...(element.htmlSnippet != null && { htmlSnippet: element.htmlSnippet }),
             },
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: element.timestamp,
             context,
         };

@@ -8,13 +8,14 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import type {
     StrategyResult,
     NavigationStep,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 const BACKWARDS_JUMP_THRESHOLD = 5;
 
@@ -40,7 +41,7 @@ interface FocusOrderAnomaly {
     jumpDistance: number;
 }
 
-export class FocusOrderAnomalyRule implements Rule<NvdaContext, FocusOrderAnomalyStats> {
+export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrderAnomalyStats> {
     readonly id = 'focus-order-anomaly';
 
     readonly meta: RuleMeta = {
@@ -51,16 +52,16 @@ export class FocusOrderAnomalyRule implements Rule<NvdaContext, FocusOrderAnomal
         summary: 'Focus jumps backwards or skips large sections',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, FocusOrderAnomalyStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, FocusOrderAnomalyStats>> {
         const { transcript } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const readingOrder = this.buildReadingOrderIndex(transcript);
         const focusableElements = this.collectTabOrderElements(transcript, readingOrder);
         const anomalies = this.detectAnomalies(focusableElements);
 
         for (const anomaly of anomalies) {
-            violations.push(this.createViolation(anomaly));
+            violations.push(this.createViolation(anomaly, ctx.screenReader));
         }
 
         return {
@@ -149,11 +150,16 @@ export class FocusOrderAnomalyRule implements Rule<NvdaContext, FocusOrderAnomal
         return anomalies;
     }
 
-    private createViolation(anomaly: FocusOrderAnomaly): NvdaViolation {
+    private createViolation(anomaly: FocusOrderAnomaly, screenReader: ScreenReaderName): ScreenReaderViolation {
         const previousLabel = anomaly.previousElement.name || anomaly.previousElement.role;
         const currentLabel = anomaly.element.name || anomaly.element.role;
 
-        const context: NvdaContext = createNvdaContext(anomaly.element.step, 'tab', anomaly.element.tabIndex);
+        const context: ScreenReaderContext = createScreenReaderContext(
+            anomaly.element.step,
+            'tab',
+            anomaly.element.tabIndex,
+            screenReader
+        );
 
         return {
             id: `focus-order-${anomaly.element.step.identifier}`,

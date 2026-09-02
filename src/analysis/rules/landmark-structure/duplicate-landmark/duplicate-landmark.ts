@@ -1,9 +1,10 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { collectLandmarks, type LandmarkInfo } from '../../utils/landmark-utils';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 export interface DuplicateLandmarkStats {
     totalLandmarks: number;
@@ -11,7 +12,7 @@ export interface DuplicateLandmarkStats {
     byRole: Record<string, number>;
 }
 
-export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmarkStats> {
+export class DuplicateLandmarkRule implements Rule<ScreenReaderContext, DuplicateLandmarkStats> {
     readonly id = 'duplicate-landmark';
 
     readonly meta: RuleMeta = {
@@ -22,9 +23,9 @@ export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmar
         summary: 'Multiple landmarks of same type without unique names',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, DuplicateLandmarkStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, DuplicateLandmarkStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         const byRole: Record<string, number> = {};
 
         const landmarks = collectLandmarks(transcript);
@@ -44,7 +45,7 @@ export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmar
 
                 byRole[role] = (byRole[role] ?? 0) + 1;
 
-                const context = this.createContext(landmark);
+                const context = this.createContext(landmark, ctx.screenReader);
                 if (typeof landmark.backendNodeId === 'number') {
                     const filename = `${this.id}-${landmark.identifier}`;
                     context.screenshot = await captureScreenshotToFile(
@@ -71,7 +72,11 @@ export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmar
         };
     }
 
-    private createViolation(landmark: LandmarkInfo, totalCount: number, context: NvdaContext): NvdaViolation {
+    private createViolation(
+        landmark: LandmarkInfo,
+        totalCount: number,
+        context: ScreenReaderContext
+    ): ScreenReaderViolation {
         const hasName = landmark.name.trim() !== '';
         const message = hasName
             ? `Multiple "${landmark.role}" landmarks with same name "${landmark.name}" (${totalCount} total). Each landmark of the same type should have a unique accessible name.`
@@ -87,14 +92,14 @@ export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmar
             },
             message,
             ...(landmark.htmlSnippet != null && { element: { htmlSnippet: landmark.htmlSnippet } }),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: landmark.timestamp,
             context,
         };
     }
 
-    private createContext(landmark: LandmarkInfo): NvdaContext {
-        return createNvdaContext(
+    private createContext(landmark: LandmarkInfo, screenReader: ScreenReaderName): ScreenReaderContext {
+        return createScreenReaderContext(
             {
                 identifier: landmark.identifier,
                 spokenPhrases: landmark.spokenPhrases,
@@ -102,7 +107,8 @@ export class DuplicateLandmarkRule implements Rule<NvdaContext, DuplicateLandmar
                 axNode: landmark.axNode,
             },
             'landmark',
-            landmark.stepIndex
+            landmark.stepIndex,
+            screenReader
         );
     }
 }

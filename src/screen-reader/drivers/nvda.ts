@@ -19,6 +19,7 @@ export interface NvdaOptions {
 }
 
 export class Nvda implements ScreenReader {
+    readonly name = 'nvda' as const;
     private readonly pollIntervalMs = 100;
     private readonly stableThreshold = 3;
     private readonly timeoutMs = 3000;

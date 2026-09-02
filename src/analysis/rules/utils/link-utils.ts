@@ -9,8 +9,8 @@ import type {
     StrategyResult,
     NavigationStep,
 } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import { createNvdaContext } from '../../utils/tool-details';
-import type { NvdaContext } from '../../core/violation';
+import { createScreenReaderContext } from '../../utils/tool-details';
+import type { ScreenReaderContext } from '../../core/violation';
 
 /** Roles that carry their own purpose and do not count as context for a link */
 const INTERACTIVE_ROLES = ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'switch', 'textbox', 'combobox'];
@@ -119,9 +119,11 @@ export function formatSurroundingContext(context: SurroundingContext): string {
     return parts.join(', ');
 }
 
-/** Builds an `NvdaContext` from a collected `LinkInfo`. */
-export function createNvdaContextFromLink(link: LinkInfo): NvdaContext {
-    return createNvdaContext(
+import type { ScreenReaderName } from '../../../screen-reader/drivers/types';
+
+/** Builds a `ScreenReaderContext` from a collected `LinkInfo`. */
+export function createScreenReaderContextFromLink(link: LinkInfo, screenReader: ScreenReaderName): ScreenReaderContext {
+    return createScreenReaderContext(
         {
             identifier: link.identifier,
             spokenPhrases: link.spokenPhrases,
@@ -129,7 +131,8 @@ export function createNvdaContextFromLink(link: LinkInfo): NvdaContext {
             axNode: link.axNode,
         },
         'link',
-        link.stepIndex
+        link.stepIndex,
+        screenReader
     );
 }
 

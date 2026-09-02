@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildViolationsData, renderViolationsXml, buildViolationsSection } from './violations-section';
-import type { Violation, NvdaViolation } from '../../../analysis/core/violation';
+import type { Violation, ScreenReaderViolation } from '../../../analysis/core/violation';
 import type { PromptStrategySection, PromptViolationsData } from '../schemas';
 
 interface AxeContext {
@@ -32,7 +32,7 @@ const createViolation = (overrides: Partial<Violation<AxeContext>> = {}): Violat
     ...overrides,
 });
 
-const createNvdaViolation = (overrides: Partial<NvdaViolation> = {}): NvdaViolation => ({
+const createScreenReaderViolation = (overrides: Partial<ScreenReaderViolation> = {}): ScreenReaderViolation => ({
     id: 'nvda-violation-1',
     rule: {
         id: 'empty-accessible-name',
@@ -47,10 +47,11 @@ const createNvdaViolation = (overrides: Partial<NvdaViolation> = {}): NvdaViolat
         htmlSnippet: '<button></button>',
         selector: 'button',
     },
-    tool: 'nvda-audit',
+    tool: 'screen-reader-audit',
     timestamp: 1234567890,
     context: {
         source: {
+            screenReader: 'nvda',
             strategy: 'tab',
             stepIndex: 5,
             stepId: 'step-5',
@@ -393,7 +394,7 @@ describe('buildViolationsSection', () => {
                 },
                 message: 'Links must have text',
             }),
-            createNvdaViolation({ id: 'v3' }),
+            createScreenReaderViolation({ id: 'v3' }),
         ];
 
         const strategySections = [createStrategySection()];
@@ -459,7 +460,7 @@ describe('buildViolationsSection', () => {
 
 describe('buildViolationsData', () => {
     it('should build data structure with correlations', () => {
-        const violations: Violation[] = [createNvdaViolation()];
+        const violations: Violation[] = [createScreenReaderViolation()];
         const strategySections = [createStrategySection()];
 
         const data = buildViolationsData(violations, strategySections, { includeCorrelations: true });
@@ -467,7 +468,7 @@ describe('buildViolationsData', () => {
     });
 
     it('should build data structure without correlations', () => {
-        const violations: Violation[] = [createNvdaViolation()];
+        const violations: Violation[] = [createScreenReaderViolation()];
 
         const data = buildViolationsData(violations, [], { includeCorrelations: false });
         expect(data).toMatchSnapshot();

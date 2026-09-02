@@ -1,3 +1,5 @@
+import type { ScreenReaderName } from '../../screen-reader/drivers/types';
+
 export interface WcagCriterion {
     criterion: string;
     level: 'A' | 'AA' | 'AAA';
@@ -57,8 +59,10 @@ export function isScreenshotSuccess(screenshot: Screenshot): screenshot is Scree
     return 'path' in screenshot;
 }
 
-export interface NvdaContext {
+export interface ScreenReaderContext {
     source: {
+        /** The screen reader used for this audit */
+        screenReader: ScreenReaderName;
         strategy: string;
         stepIndex: number;
         stepId: string;
@@ -73,7 +77,7 @@ export interface NvdaContext {
     screenshot?: Screenshot;
 }
 
-export type NvdaViolation = Violation<NvdaContext>;
+export type ScreenReaderViolation = Violation<ScreenReaderContext>;
 
 export interface AxeNode {
     html: string;
@@ -88,6 +92,10 @@ export interface AxeContext {
 
 export type AxeViolation = Violation<AxeContext>;
 
-export function isNvdaViolation(violation: Violation): violation is NvdaViolation {
-    return violation.tool === 'nvda-audit' && violation.context != null && 'source' in (violation.context as object);
+export function isScreenReaderViolation(violation: Violation): violation is ScreenReaderViolation {
+    return (
+        violation.tool === 'screen-reader-audit' &&
+        violation.context != null &&
+        'source' in (violation.context as object)
+    );
 }

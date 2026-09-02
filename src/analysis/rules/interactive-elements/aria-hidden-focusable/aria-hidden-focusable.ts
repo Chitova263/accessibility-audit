@@ -9,9 +9,9 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 
 export interface AriaHiddenFocusableStats {
@@ -19,7 +19,7 @@ export interface AriaHiddenFocusableStats {
     ariaHiddenFocusableCount: number;
 }
 
-export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocusableStats> {
+export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHiddenFocusableStats> {
     readonly id = 'aria-hidden-focusable';
 
     readonly meta: RuleMeta = {
@@ -31,9 +31,9 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
         summary: 'Focusable element has aria-hidden="true", creating silent focus',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, AriaHiddenFocusableStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, AriaHiddenFocusableStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         let totalFocusable = 0;
         const seen = new Set<string>();
 
@@ -54,7 +54,7 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
                 seen.add(htmlSnippet);
 
                 if (this.hasAriaHidden(htmlSnippet)) {
-                    const context = createNvdaContext(step, 'tab', stepIndex);
+                    const context = createScreenReaderContext(step, 'tab', stepIndex, ctx.screenReader);
                     const backendNodeId = step.axNode?.backendDOMNodeId;
                     if (typeof backendNodeId === 'number') {
                         const filename = `${this.id}-${step.identifier}`;
@@ -93,8 +93,8 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
             timestamp: number;
             htmlSnippet: string | null;
         },
-        context: NvdaContext
-    ): NvdaViolation {
+        context: ScreenReaderContext
+    ): ScreenReaderViolation {
         const spokenText = step.spokenPhrases.length > 0 ? step.spokenPhrases.join(', ') : '(nothing announced)';
 
         return {
@@ -107,7 +107,7 @@ export class AriaHiddenFocusableRule implements Rule<NvdaContext, AriaHiddenFocu
             },
             message: `Focusable element has aria-hidden="true". Focus landed on this element but screen readers are instructed to ignore it, creating a confusing silent focus. NVDA announced: "${spokenText}"`,
             element: step.htmlSnippet != null ? { htmlSnippet: step.htmlSnippet } : {},
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: step.timestamp,
             context,
         };

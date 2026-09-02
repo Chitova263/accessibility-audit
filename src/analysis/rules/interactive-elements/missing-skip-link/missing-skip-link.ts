@@ -11,9 +11,10 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 /** How many tab stops to check for skip link */
 const MAX_TAB_STOPS_TO_CHECK = 5;
@@ -48,7 +49,7 @@ export interface MissingSkipLinkStats {
     firstFewTabStops: string[];
 }
 
-export class MissingSkipLinkRule implements Rule<NvdaContext, MissingSkipLinkStats> {
+export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSkipLinkStats> {
     readonly id = 'missing-skip-link';
 
     readonly meta: RuleMeta = {
@@ -59,9 +60,9 @@ export class MissingSkipLinkRule implements Rule<NvdaContext, MissingSkipLinkSta
         summary: 'No skip link found in the first tab stops',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, MissingSkipLinkStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, MissingSkipLinkStats>> {
         const { transcript } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         let skipLinkFound = false;
         let skipLinkPosition: number | null = null;
         const firstFewTabStops: string[] = [];
@@ -90,7 +91,7 @@ export class MissingSkipLinkRule implements Rule<NvdaContext, MissingSkipLinkSta
 
             if (result.navigationSteps.length > 0 && !skipLinkFound) {
                 const firstStep = result.navigationSteps[0]!;
-                violations.push(this.createViolation(firstStep, firstFewTabStops));
+                violations.push(this.createViolation(firstStep, firstFewTabStops, ctx.screenReader));
             }
 
             break;
@@ -121,9 +122,10 @@ export class MissingSkipLinkRule implements Rule<NvdaContext, MissingSkipLinkSta
             htmlSnippet: string | null;
             axNode: unknown;
         },
-        firstFewTabStops: string[]
-    ): NvdaViolation {
-        const context = createNvdaContext(firstStep, 'tab', 0);
+        firstFewTabStops: string[],
+        screenReader: ScreenReaderName
+    ): ScreenReaderViolation {
+        const context = createScreenReaderContext(firstStep, 'tab', 0, screenReader);
 
         return {
             id: `missing-skip-link-${firstStep.identifier}`,
@@ -135,7 +137,7 @@ export class MissingSkipLinkRule implements Rule<NvdaContext, MissingSkipLinkSta
             },
             message: `No skip link found in the first ${MAX_TAB_STOPS_TO_CHECK} tab stops. Skip links help keyboard users bypass navigation and jump to main content. First tab stops: ${firstFewTabStops.join(', ')}.`,
             element: {},
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: firstStep.timestamp,
             context,
         };

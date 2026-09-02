@@ -1,6 +1,6 @@
 import type { AuditContext } from '../../core/context';
-import type { NvdaContext } from '../../core/violation';
-import { createNvdaContext } from '../../utils/tool-details';
+import type { ScreenReaderContext } from '../../core/violation';
+import { createScreenReaderContext } from '../../utils/tool-details';
 
 export interface HeadingInfo {
     level: number;
@@ -71,9 +71,11 @@ function deduplicateHeadings(headings: HeadingInfo[]): HeadingInfo[] {
     return unique;
 }
 
-/** Build an NvdaContext from a HeadingInfo entry. */
-export function createHeadingContext(heading: HeadingInfo): NvdaContext {
-    return createNvdaContext(
+import type { ScreenReaderName } from '../../../screen-reader/drivers/types';
+
+/** Build a ScreenReaderContext from a HeadingInfo entry. */
+export function createHeadingContext(heading: HeadingInfo, screenReader: ScreenReaderName): ScreenReaderContext {
+    return createScreenReaderContext(
         {
             identifier: heading.identifier,
             spokenPhrases: heading.spokenPhrases,
@@ -81,6 +83,7 @@ export function createHeadingContext(heading: HeadingInfo): NvdaContext {
             axNode: heading.axNode,
         },
         'heading',
-        heading.stepIndex
+        heading.stepIndex,
+        screenReader
     );
 }

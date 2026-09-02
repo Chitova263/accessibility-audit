@@ -8,6 +8,7 @@ export interface VoiceOverOptions {
 }
 
 export class VoiceOverDriver implements ScreenReader {
+    readonly name = 'voiceover' as const;
     private readonly pollIntervalMs = 100;
     private readonly stableThreshold = 3;
     private readonly timeoutMs = 3000;

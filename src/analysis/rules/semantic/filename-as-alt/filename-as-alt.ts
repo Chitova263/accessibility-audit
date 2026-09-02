@@ -8,9 +8,9 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 
 /** Patterns that indicate filename used as alt text */
@@ -54,7 +54,7 @@ interface ImageInfo {
     backendNodeId?: number;
 }
 
-export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> {
+export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAltStats> {
     readonly id = 'filename-as-alt';
 
     readonly meta: RuleMeta = {
@@ -65,9 +65,9 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
         summary: 'Image has a filename as alt text (e.g., "IMG_1234.jpg")',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, FilenameAsAltStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, FilenameAsAltStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         const byIssue: Record<'filename-as-alt', number> = { 'filename-as-alt': 0 };
 
         const images: ImageInfo[] = [];
@@ -107,7 +107,7 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
 
             if (this.isFilenameAlt(name) || this.isStockPhotoId(name)) {
                 byIssue['filename-as-alt']++;
-                const context = createNvdaContext(
+                const context = createScreenReaderContext(
                     {
                         identifier: image.identifier,
                         spokenPhrases: image.spokenPhrases,
@@ -115,7 +115,8 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
                         axNode: image.axNode,
                     },
                     'graphics',
-                    image.stepIndex
+                    image.stepIndex,
+                    ctx.screenReader
                 );
                 if (typeof image.backendNodeId === 'number') {
                     const filename = `${this.id}-${image.identifier}`;
@@ -165,7 +166,7 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
         return unique;
     }
 
-    private createViolation(image: ImageInfo, context: NvdaContext): NvdaViolation {
+    private createViolation(image: ImageInfo, context: ScreenReaderContext): ScreenReaderViolation {
         return {
             id: `filename-alt-${image.identifier}`,
             rule: {
@@ -178,7 +179,7 @@ export class FilenameAsAltRule implements Rule<NvdaContext, FilenameAsAltStats> 
             element: {
                 ...(image.htmlSnippet != null && { htmlSnippet: image.htmlSnippet }),
             },
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: image.timestamp,
             context,
         };

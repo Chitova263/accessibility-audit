@@ -1,5 +1,5 @@
 /**
- * Utilities for tracking NVDA's virtual cursor position against a flattened AX tree.
+ * Utilities for tracking screen reader virtual cursor position against a flattened AX tree.
  */
 
 // @ts-ignore - Protocol is a global namespace from playwright-core/types/protocol.d.ts
@@ -12,7 +12,7 @@ export interface MatchResult {
 
 /**
  * Flattens the AX tree into document (reading) order starting from the root node.
- * Skips ignored nodes in output since NVDA's virtual cursor won't stop on them,
+ * Skips ignored nodes in output since screen reader virtual cursor won't stop on them,
  * but still traverses their children to capture the full accessible content.
  */
 export function flattenAxTree(nodes: AXNode[]): AXNode[] {
@@ -36,7 +36,7 @@ export function flattenAxTree(nodes: AXNode[]): AXNode[] {
 }
 
 /**
- * Tracks NVDA's virtual cursor position against a flattened AX tree,
+ * Tracks screen reader virtual cursor position against a flattened AX tree,
  * disambiguating repeated names/roles by always searching forward
  * from the last matched index.
  */
@@ -72,10 +72,10 @@ export class AxTreeCursor {
     }
 
     /**
-     * Given the phrase NVDA just spoke, find the next matching node after
+     * Given the phrase the screen reader just spoke, find the next matching node after
      * the current cursor position and advance the cursor to it.
      *
-     * @param spokenPhrase - The phrase NVDA spoke (from lastSpokenPhrase or itemText)
+     * @param spokenPhrase - The phrase spoken (from lastSpokenPhrase or itemText)
      * @param role - Optional role to filter by (e.g. 'heading', 'link', 'button')
      * @returns The matched node and its index, or null if no match found
      */

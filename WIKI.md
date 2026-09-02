@@ -19,7 +19,7 @@ flowchart LR
 flowchart TB
     subgraph INPUT["1️⃣ INPUT"]
         URL["Target URL"]
-        OPTIONS["Options<br/>--reader nvda|virtual<br/>--max-steps N<br/>--output-dir path"]
+        OPTIONS["Options<br/>--reader nvda|virtual|voiceover<br/>--max-steps N<br/>--output-dir path<br/>--speech"]
     end
 
     subgraph CONNECT["2️⃣ BROWSER CONNECTION"]
@@ -136,12 +136,14 @@ flowchart LR
 
 **Command:** `a11y audit <url> [options]`
 
-| Input          | Description            | Default        |
-| -------------- | ---------------------- | -------------- |
-| `url`          | Target URL to audit    | Required       |
-| `--reader`     | Screen reader driver   | `nvda`         |
-| `--max-steps`  | Max steps per strategy | `500`          |
-| `--output-dir` | Output directory       | Auto-generated |
+| Input          | Description                         | Default        |
+| -------------- | ----------------------------------- | -------------- |
+| `url`          | Target URL to audit                 | Required       |
+| `--reader`     | Screen reader: nvda/virtual/voiceover | Required     |
+| `--max-steps`  | Max steps per strategy              | `500`          |
+| `--output-dir` | Output directory                    | Auto-generated |
+| `--speech`     | Enable speech audio (NVDA/VoiceOver)| `false`        |
+| `--verbose`    | Enable verbose output               | `false`        |
 
 ---
 
@@ -188,6 +190,7 @@ flowchart TB
 
     subgraph DriverFactory["createDriver()"]
         NVDA["NVDA Driver<br/>• Real screen reader<br/>• Windows only<br/>• @guidepup/guidepup"]
+        VOICEOVER["VoiceOver Driver<br/>• Real screen reader<br/>• macOS only<br/>• @guidepup/guidepup"]
         VIRTUAL["Virtual Driver<br/>• Headless<br/>• Cross-platform<br/>• @guidepup/virtual-screen-reader"]
     end
 
@@ -210,10 +213,11 @@ flowchart TB
 
 **Driver Capabilities:**
 
-| Driver  | Platform | Real SR      | Speed  |
-| ------- | -------- | ------------ | ------ |
-| NVDA    | Windows  | ✅ Yes       | Slower |
-| Virtual | Any      | ❌ Simulated | Faster |
+| Driver    | Platform | Real SR      | Speed  |
+| --------- | -------- | ------------ | ------ |
+| NVDA      | Windows  | ✅ Yes       | Slower |
+| VoiceOver | macOS    | ✅ Yes       | Slower |
+| Virtual   | Any      | ❌ Simulated | Faster |
 
 ---
 
@@ -362,8 +366,13 @@ flowchart TB
     "message": "Focus trap detected in modal dialog",
     "htmlSnippet": "<div class=\"modal\">...</div>",
     "context": {
-        "strategy": "tab",
-        "stepIndex": 45,
+        "source": {
+            "screenReader": "nvda",
+            "strategy": "tab",
+            "stepIndex": 45,
+            "stepId": "step-45",
+            "spokenPhrase": "dialog, modal"
+        },
         "screenshot": "data:image/png;base64,..."
     }
 }
@@ -625,8 +634,18 @@ interface Violation {
     message: string;
     htmlSnippet?: string;
     context?: {
-        strategy?: string;
-        stepIndex?: number;
+        source: {
+            screenReader: 'nvda' | 'voiceover' | 'virtual';
+            strategy: string;
+            stepIndex: number;
+            stepId: string;
+            spokenPhrase: string;
+        };
+        axNode?: {
+            nodeId: string;
+            role?: string;
+            name?: string;
+        };
         screenshot?: string; // base64 or file path
     };
 }

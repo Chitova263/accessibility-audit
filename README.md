@@ -111,23 +111,25 @@ a11y audit <url> [options]
 | ------------------------ | ------------------------------------------------ | -------------------------------------- |
 | `-o, --output-dir <dir>` | Output directory for audit files                 | `audit-results/<url-slug>-<timestamp>` |
 | `--max-steps <number>`   | Maximum steps per navigation strategy            | `500`                                  |
-| `-r, --reader <type>`    | Screen reader: `nvda`, `virtual`, or `voiceover` | `nvda`                                 |
-| `-s, --speech`           | Enable NVDA speech audio output                  | `false`                                |
+| `-r, --reader <type>`    | Screen reader: `nvda`, `virtual`, or `voiceover` | _(required)_                           |
+| `-s, --speech`           | Enable speech audio output (NVDA/VoiceOver)      | `false`                                |
 | `-v, --verbose`          | Enable verbose output                            | `false`                                |
 | `-h, --help`             | Display help                                     |                                        |
 
 **Example:**
 
 ```bash
-# Using NVDA (default, requires Windows + NVDA installed)
-# Output goes to audit-results/example.com-shop-products-step-1-2026-09-01T13-09/
-a11y audit https://example.com/shop/products --verbose
-
-# Specify a custom output directory
-a11y audit -o ./my-audit --verbose
+# Using NVDA (requires Windows)
+a11y audit https://example.com --reader nvda --verbose
 
 # Using virtual screen reader (works on any platform)
-npx a11y audit https://example.com --reader virtual
+a11y audit https://example.com --reader virtual
+
+# Using VoiceOver (requires macOS)
+a11y audit https://example.com --reader voiceover
+
+# Specify a custom output directory
+a11y audit https://example.com --reader nvda -o ./my-audit
 ```
 
 **Output files (inside the run directory):**
@@ -178,7 +180,7 @@ a11y report \
 1. Run the audit to collect violations and generate LLM prompts:
 
     ```bash
-    a11y audit https://example.com
+    a11y audit https://example.com --reader virtual
     # Output goes to audit-results/example.com-2026-09-01T13-09/
     ```
 

@@ -11,13 +11,14 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 const GAP_THRESHOLD_DEFAULT = 15;
 
@@ -46,7 +47,7 @@ interface MainContentRegion {
     endIndex: number;
 }
 
-export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapStats> {
+export class LargeContentGapRule implements Rule<ScreenReaderContext, LargeContentGapStats> {
     readonly id = 'large-content-gap';
 
     readonly meta: RuleMeta = {
@@ -64,9 +65,9 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
         this.threshold = threshold;
     }
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, LargeContentGapStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, LargeContentGapStats>> {
         const { transcript } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const arrowResult = this.getArrowStrategyResult(transcript);
 
@@ -94,7 +95,7 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
         const gaps = this.findLargeContentGaps(mainRegion);
 
         for (const gap of gaps) {
-            violations.push(this.createViolation(gap));
+            violations.push(this.createViolation(gap, ctx.screenReader));
         }
 
         return {
@@ -230,7 +231,7 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
         return indices;
     }
 
-    private createViolation(gap: ContentGap): NvdaViolation {
+    private createViolation(gap: ContentGap, screenReader: ScreenReaderName): ScreenReaderViolation {
         return {
             id: `large-content-gap-${gap.startStep.identifier}`,
             rule: {
@@ -241,9 +242,9 @@ export class LargeContentGapRule implements Rule<NvdaContext, LargeContentGapSta
             },
             message: `Large content section (${gap.stepCount} items) within main content without a heading. Content between steps ${gap.originalStartIndex} and ${gap.originalEndIndex} may need a section heading for screen reader navigation. Threshold: ${this.threshold} items.`,
             ...(gap.startStep.htmlSnippet != null ? { element: { htmlSnippet: gap.startStep.htmlSnippet } } : {}),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: gap.startStep.timestamp,
-            context: createNvdaContext(gap.startStep, 'arrow', gap.originalStartIndex),
+            context: createScreenReaderContext(gap.startStep, 'arrow', gap.originalStartIndex, screenReader),
         };
     }
 }

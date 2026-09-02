@@ -9,11 +9,11 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { getRule } from '../../rule-catalog';
-import { collectLinks, createNvdaContextFromLink } from '../../utils/link-utils';
+import { collectLinks, createScreenReaderContextFromLink } from '../../utils/link-utils';
 import type { LinkInfo } from '../../utils/link-utils';
 
 export interface DuplicateLinkTextStats {
@@ -22,7 +22,7 @@ export interface DuplicateLinkTextStats {
     duplicateGroups: number;
 }
 
-export class DuplicateLinkTextRule implements Rule<NvdaContext, DuplicateLinkTextStats> {
+export class DuplicateLinkTextRule implements Rule<ScreenReaderContext, DuplicateLinkTextStats> {
     readonly id = 'duplicate-link-text';
 
     readonly meta: RuleMeta = {
@@ -33,9 +33,9 @@ export class DuplicateLinkTextRule implements Rule<NvdaContext, DuplicateLinkTex
         summary: 'Multiple links with same text but different destinations',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, DuplicateLinkTextStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, DuplicateLinkTextStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const links = collectLinks(transcript);
         const linksByName = groupBy(links, (l) => l.name.trim().toLowerCase());
@@ -51,7 +51,7 @@ export class DuplicateLinkTextRule implements Rule<NvdaContext, DuplicateLinkTex
             duplicateGroups++;
 
             for (const link of group) {
-                const context = createNvdaContextFromLink(link);
+                const context = createScreenReaderContextFromLink(link, ctx.screenReader);
                 if (typeof link.backendNodeId === 'number') {
                     const filename = `${this.id}-${link.identifier}`;
                     context.screenshot = await captureScreenshotToFile(
@@ -81,14 +81,14 @@ export class DuplicateLinkTextRule implements Rule<NvdaContext, DuplicateLinkTex
         link: LinkInfo,
         totalCount: number,
         uniqueDestinations: number,
-        context: NvdaContext
-    ): NvdaViolation {
+        context: ScreenReaderContext
+    ): ScreenReaderViolation {
         return {
             id: `duplicate-link-${link.identifier}`,
             rule: getRule('duplicate-link-text'),
             message: `${totalCount} links share the text "${link.name}" but point to ${uniqueDestinations} different destinations. Links with the same text should go to the same destination, or have unique text.`,
             ...(link.htmlSnippet != null && { element: { htmlSnippet: link.htmlSnippet } }),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: link.timestamp,
             context,
         };

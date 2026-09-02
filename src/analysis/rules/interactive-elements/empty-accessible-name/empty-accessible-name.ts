@@ -1,7 +1,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 
@@ -32,7 +32,7 @@ export interface EmptyAccessibleNameStats {
     byRole: Record<string, number>;
 }
 
-export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibleNameStats> {
+export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyAccessibleNameStats> {
     readonly id = 'empty-accessible-name';
 
     readonly meta: RuleMeta = {
@@ -44,9 +44,9 @@ export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibl
         summary: 'Interactive element has no accessible name',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, EmptyAccessibleNameStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, EmptyAccessibleNameStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         let totalChecked = 0;
         const byRole: Record<string, number> = {};
 
@@ -68,7 +68,12 @@ export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibl
 
                 byRole[role] = (byRole[role] ?? 0) + 1;
 
-                const context = createNvdaContext(step, result.meta.type ?? result.meta.name, stepIndex);
+                const context = createScreenReaderContext(
+                    step,
+                    result.meta.type ?? result.meta.name,
+                    stepIndex,
+                    ctx.screenReader
+                );
 
                 const backendNodeId = node.backendDOMNodeId;
                 if (typeof backendNodeId === 'number') {
@@ -100,8 +105,8 @@ export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibl
     private createViolation(
         step: { identifier: string; htmlSnippet?: string | null; timestamp: number },
         role: string,
-        context: NvdaContext
-    ): NvdaViolation {
+        context: ScreenReaderContext
+    ): ScreenReaderViolation {
         return {
             id: step.identifier,
             rule: {
@@ -112,7 +117,7 @@ export class EmptyAccessibleNameRule implements Rule<NvdaContext, EmptyAccessibl
             },
             message: `${capitalize(role)} has no accessible name. Screen readers will announce only "${role}" with no indication of purpose.`,
             element: step.htmlSnippet != null ? { htmlSnippet: step.htmlSnippet } : {},
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: step.timestamp,
             context,
         };

@@ -26,7 +26,7 @@ program
     .argument('<url>', 'URL to audit')
     .option('-o, --output-dir <dir>', 'Output directory for audit files')
     .option('--max-steps <number>', 'Maximum steps per strategy')
-    .option('-r, --reader <type>', 'Screen reader: nvda, virtual, or voiceover')
+    .option('-r, --reader <type>', 'Screen reader: nvda, virtual, or voiceover (required)')
     .option('-s, --speech', 'Enable NVDA speech audio output')
     .option('-v, --verbose', 'Enable verbose output')
     .action(() => {})
@@ -101,6 +101,7 @@ try {
         page: result.page,
         cdp,
         screenshotsDir,
+        screenReader: options.reader,
     });
 
     const fs = await import('fs/promises');

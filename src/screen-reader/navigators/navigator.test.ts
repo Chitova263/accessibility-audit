@@ -8,6 +8,7 @@ import type { ScreenReaderKeyBindings, ScreenReaderEndDetection } from './types'
 
 function createMockScreenReader(): ScreenReader {
     return {
+        name: 'nvda',
         start: vi.fn().mockResolvedValue(undefined),
         stop: vi.fn().mockResolvedValue(undefined),
         press: vi.fn().mockResolvedValue({

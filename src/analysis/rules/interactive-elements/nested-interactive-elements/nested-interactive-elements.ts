@@ -1,12 +1,13 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRule } from '../../rule-catalog';
 import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 export interface NestedPattern {
     step: number;
@@ -45,15 +46,20 @@ function detectNestedPattern(itemText: string): string | null {
     return null;
 }
 
-function createViolation(message: string, step: NavigationStep, strategyName: string): NvdaViolation {
+function createViolation(
+    message: string,
+    step: NavigationStep,
+    strategyName: string,
+    screenReader: ScreenReaderName
+): ScreenReaderViolation {
     return {
         id: `nested-interactive-elements-${step.identifier}`,
         rule: getRule('nested-interactive-elements'),
         message,
         ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'nvda-audit',
+        tool: 'screen-reader-audit',
         timestamp: step.timestamp,
-        context: createNvdaContext(step, strategyName, step.index),
+        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
     };
 }
 
@@ -64,7 +70,7 @@ function createViolation(message: string, step: NavigationStep, strategyName: st
  *
  * WCAG 4.1.1: Parsing (Level A) - proper nesting of interactive elements
  */
-export class NestedInteractiveElementsRule implements Rule<NvdaContext, NestedInteractiveElementsStats> {
+export class NestedInteractiveElementsRule implements Rule<ScreenReaderContext, NestedInteractiveElementsStats> {
     readonly id = 'nested-interactive-elements';
 
     readonly meta: RuleMeta = {
@@ -73,7 +79,10 @@ export class NestedInteractiveElementsRule implements Rule<NvdaContext, NestedIn
         summary: 'Interactive elements are improperly nested',
     };
 
-    async run({ transcript }: AuditContext): Promise<RuleResult<NvdaContext, NestedInteractiveElementsStats>> {
+    async run({
+        transcript,
+        screenReader,
+    }: AuditContext): Promise<RuleResult<ScreenReaderContext, NestedInteractiveElementsStats>> {
         const patterns: NestedPattern[] = [];
         const seen = new Set<string>();
 
@@ -89,14 +98,15 @@ export class NestedInteractiveElementsRule implements Rule<NvdaContext, NestedIn
             this.analyzeSteps(linkResult.navigationSteps, linkResult.meta.name, patterns, seen);
         }
 
-        const violations: NvdaViolation[] = patterns.map((p) => {
+        const violations: ScreenReaderViolation[] = patterns.map((p) => {
             const step = (arrowResult ?? linkResult)!.navigationSteps[p.step]!;
             return createViolation(
                 `Nested interactive elements detected: "${p.pattern}". ` +
                     `The announcement "${p.itemText.substring(0, 100)}${p.itemText.length > 100 ? '...' : ''}" ` +
                     'indicates improperly nested links or buttons, which confuses screen reader users.',
                 step,
-                (arrowResult ?? linkResult)!.meta.name
+                (arrowResult ?? linkResult)!.meta.name,
+                screenReader
             );
         });
 

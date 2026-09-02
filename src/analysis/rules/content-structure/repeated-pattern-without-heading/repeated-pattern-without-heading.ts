@@ -9,13 +9,14 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 const REPETITION_THRESHOLD_DEFAULT = 3;
 
@@ -35,7 +36,10 @@ interface RepeatedPattern {
     startIndex: number;
 }
 
-export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, RepeatedPatternWithoutHeadingStats> {
+export class RepeatedPatternWithoutHeadingRule implements Rule<
+    ScreenReaderContext,
+    RepeatedPatternWithoutHeadingStats
+> {
     readonly id = 'repeated-pattern-without-heading';
 
     readonly meta: RuleMeta = {
@@ -53,9 +57,9 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
         this.repetitionThreshold = repetitionThreshold;
     }
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, RepeatedPatternWithoutHeadingStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, RepeatedPatternWithoutHeadingStats>> {
         const { transcript } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const arrowResult = this.getArrowStrategyResult(transcript);
 
@@ -75,7 +79,7 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
         const flagged = allPatterns.filter((p) => !this.hasHeadingBefore(arrowResult.navigationSteps, p.startIndex));
 
         for (const pattern of flagged) {
-            violations.push(this.createViolation(pattern));
+            violations.push(this.createViolation(pattern, ctx.screenReader));
         }
 
         return {
@@ -158,7 +162,7 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
         return false;
     }
 
-    private createViolation(pattern: RepeatedPattern): NvdaViolation {
+    private createViolation(pattern: RepeatedPattern, screenReader: ScreenReaderName): ScreenReaderViolation {
         const first = pattern.occurrences[0]!;
 
         return {
@@ -171,9 +175,9 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<NvdaContext, Repe
             },
             message: `Repeated content pattern detected: ${pattern.occurrences.length} similar "${pattern.pattern}" without a preceding section heading. Consider adding a heading to group this content (e.g., "Products", "Results", "Items").`,
             ...(first.htmlSnippet != null ? { element: { htmlSnippet: first.htmlSnippet } } : {}),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: first.timestamp,
-            context: createNvdaContext(first, 'arrow', pattern.startIndex),
+            context: createScreenReaderContext(first, 'arrow', pattern.startIndex, screenReader),
         };
     }
 }

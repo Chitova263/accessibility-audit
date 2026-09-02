@@ -1,8 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRule } from '../../rule-catalog';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -57,16 +58,17 @@ function createViolation(
     message: string,
     step: NavigationStep,
     strategyName: string,
+    screenReader: ScreenReaderName,
     impactOverride?: Parameters<typeof getRule>[1]
-): NvdaViolation {
+): ScreenReaderViolation {
     return {
         id: `${ruleId}-${step.identifier}`,
         rule: getRule(ruleId, impactOverride),
         message,
         ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'nvda-audit',
+        tool: 'screen-reader-audit',
         timestamp: step.timestamp,
-        context: createNvdaContext(step, strategyName, step.index),
+        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
     };
 }
 
@@ -81,7 +83,7 @@ function createViolation(
  *
  * WCAG 2.4.1: Bypass Blocks (Level A)
  */
-export class ContentDensityPerRegionRule implements Rule<NvdaContext, ContentDensityPerRegionStats> {
+export class ContentDensityPerRegionRule implements Rule<ScreenReaderContext, ContentDensityPerRegionStats> {
     readonly id = 'content-density-per-region';
 
     /** Default threshold: 50 items per region is excessive. */
@@ -97,8 +99,11 @@ export class ContentDensityPerRegionRule implements Rule<NvdaContext, ContentDen
         summary: 'Landmark region contains an overwhelming number of items',
     };
 
-    async run({ transcript }: AuditContext): Promise<RuleResult<NvdaContext, ContentDensityPerRegionStats>> {
-        const violations: NvdaViolation[] = [];
+    async run({
+        transcript,
+        screenReader,
+    }: AuditContext): Promise<RuleResult<ScreenReaderContext, ContentDensityPerRegionStats>> {
+        const violations: ScreenReaderViolation[] = [];
         const regions: RegionDensity[] = [];
         const threshold = this.threshold;
 
@@ -145,7 +150,8 @@ export class ContentDensityPerRegionRule implements Rule<NvdaContext, ContentDen
                         'content-density-per-region',
                         `${current.landmark} region contains ${itemCount} items (threshold: ${threshold}). This high density may overwhelm screen reader users. Consider breaking into smaller sections or adding sub-headings.`,
                         step,
-                        arrowResult.meta.name
+                        arrowResult.meta.name,
+                        screenReader
                     )
                 );
             }

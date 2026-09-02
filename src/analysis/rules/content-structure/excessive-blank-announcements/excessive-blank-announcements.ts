@@ -1,8 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRule } from '../../rule-catalog';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -31,14 +32,19 @@ function isBlank(itemText: string): boolean {
     return normalized === 'blank' || normalized.endsWith(', blank') || normalized.endsWith(' blank');
 }
 
-function createViolation(message: string, step: NavigationStep, strategyName: string): NvdaViolation {
+function createViolation(
+    message: string,
+    step: NavigationStep,
+    strategyName: string,
+    screenReader: ScreenReaderName
+): ScreenReaderViolation {
     return {
         id: `excessive-blank-announcements-${step.identifier}`,
         rule: getRule('excessive-blank-announcements'),
         message,
-        tool: 'nvda-audit',
+        tool: 'screen-reader-audit',
         timestamp: step.timestamp,
-        context: createNvdaContext(step, strategyName, step.index),
+        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
     };
 }
 
@@ -49,7 +55,7 @@ function createViolation(message: string, step: NavigationStep, strategyName: st
  *
  * WCAG 1.3.1: Info and Relationships (Level A)
  */
-export class ExcessiveBlankAnnouncementsRule implements Rule<NvdaContext, ExcessiveBlankAnnouncementsStats> {
+export class ExcessiveBlankAnnouncementsRule implements Rule<ScreenReaderContext, ExcessiveBlankAnnouncementsStats> {
     readonly id = 'excessive-blank-announcements';
     readonly threshold: number;
 
@@ -63,7 +69,10 @@ export class ExcessiveBlankAnnouncementsRule implements Rule<NvdaContext, Excess
         summary: 'Long run of blank announcements in linear reading',
     };
 
-    async run({ transcript }: AuditContext): Promise<RuleResult<NvdaContext, ExcessiveBlankAnnouncementsStats>> {
+    async run({
+        transcript,
+        screenReader,
+    }: AuditContext): Promise<RuleResult<ScreenReaderContext, ExcessiveBlankAnnouncementsStats>> {
         const { threshold } = this;
         const blankRuns: BlankRun[] = [];
 
@@ -114,7 +123,7 @@ export class ExcessiveBlankAnnouncementsRule implements Rule<NvdaContext, Excess
             });
         }
 
-        const violations: NvdaViolation[] = blankRuns.map((run) => {
+        const violations: ScreenReaderViolation[] = blankRuns.map((run) => {
             const step = steps[run.startStep]!;
             const contextParts: string[] = [];
             if (run.beforeContext) contextParts.push(`after "${run.beforeContext}"`);
@@ -125,7 +134,8 @@ export class ExcessiveBlankAnnouncementsRule implements Rule<NvdaContext, Excess
                 `${run.count} consecutive blank announcements at steps ${run.startStep}-${run.endStep}${contextStr}. ` +
                     'This indicates empty or improperly structured content that wastes time for screen reader users.',
                 step,
-                arrowResult.meta.name
+                arrowResult.meta.name,
+                screenReader
             );
         });
 

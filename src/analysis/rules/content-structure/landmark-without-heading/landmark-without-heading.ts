@@ -8,13 +8,14 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 const LANDMARK_ITEM_THRESHOLD_DEFAULT = 5;
 
@@ -32,7 +33,7 @@ interface LandmarkContent {
     hasHeading: boolean;
 }
 
-export class LandmarkWithoutHeadingRule implements Rule<NvdaContext, LandmarkWithoutHeadingStats> {
+export class LandmarkWithoutHeadingRule implements Rule<ScreenReaderContext, LandmarkWithoutHeadingStats> {
     readonly id = 'landmark-without-heading';
 
     readonly meta: RuleMeta = {
@@ -50,9 +51,9 @@ export class LandmarkWithoutHeadingRule implements Rule<NvdaContext, LandmarkWit
         this.itemThreshold = itemThreshold;
     }
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, LandmarkWithoutHeadingStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, LandmarkWithoutHeadingStats>> {
         const { transcript } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const arrowResult = this.getArrowStrategyResult(transcript);
 
@@ -74,7 +75,7 @@ export class LandmarkWithoutHeadingRule implements Rule<NvdaContext, LandmarkWit
         );
 
         for (const landmark of flagged) {
-            violations.push(this.createViolation(landmark));
+            violations.push(this.createViolation(landmark, ctx.screenReader));
         }
 
         return {
@@ -124,7 +125,7 @@ export class LandmarkWithoutHeadingRule implements Rule<NvdaContext, LandmarkWit
         });
     }
 
-    private createViolation(landmark: LandmarkContent): NvdaViolation {
+    private createViolation(landmark: LandmarkContent, screenReader: ScreenReaderName): ScreenReaderViolation {
         const landmarkSpoken = landmark.landmark.spokenPhrases.join(' ');
 
         return {
@@ -139,9 +140,9 @@ export class LandmarkWithoutHeadingRule implements Rule<NvdaContext, LandmarkWit
             ...(landmark.landmark.htmlSnippet != null
                 ? { element: { htmlSnippet: landmark.landmark.htmlSnippet } }
                 : {}),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: landmark.landmark.timestamp,
-            context: createNvdaContext(landmark.landmark, 'arrow', landmark.stepIndex),
+            context: createScreenReaderContext(landmark.landmark, 'arrow', landmark.stepIndex, screenReader),
         };
     }
 }

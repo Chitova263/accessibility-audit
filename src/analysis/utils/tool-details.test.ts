@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { createNvdaContext } from './tool-details';
+import { createScreenReaderContext } from './tool-details';
 import { runRules, RULES } from '../rules/runner';
 import { broadTranscript, mockContext } from '../rules/test-fixtures';
-import type { NvdaViolation } from '../core/violation';
+import type { ScreenReaderViolation } from '../core/violation';
 
-describe('createNvdaContext', () => {
+describe('createScreenReaderContext', () => {
     const source = {
         identifier: 'step-0',
         spokenPhrases: ['button', 'Submit'],
@@ -15,7 +15,7 @@ describe('createNvdaContext', () => {
     it('flattens the AX node role and name off their AXValue wrappers', async () => {
         const axNode = { nodeId: '7', role: { value: 'button' }, name: { value: 'Submit' } };
 
-        const context = createNvdaContext({ ...source, axNode }, 'tab', 3);
+        const context = createScreenReaderContext({ ...source, axNode }, 'tab', 3, 'nvda');
 
         expect(context.axNode).toEqual({ nodeId: '7', role: 'button', name: 'Submit', properties: undefined });
     });
@@ -24,19 +24,25 @@ describe('createNvdaContext', () => {
         const properties = [{ name: 'level', value: { value: 2 } }];
         const axNode = { nodeId: '1', role: { value: 'heading' }, name: { value: 'About' }, properties };
 
-        expect(createNvdaContext({ ...source, axNode }, 'heading', 0).axNode?.properties).toEqual(properties);
+        expect(createScreenReaderContext({ ...source, axNode }, 'heading', 0, 'nvda').axNode?.properties).toEqual(
+            properties
+        );
     });
 
     it('drops backendDOMNodeId and childIds from the axNode', async () => {
         const axNode = { nodeId: '1', role: { value: 'link' }, childIds: ['2', '3'], backendDOMNodeId: 44 };
 
-        expect(Object.keys(createNvdaContext({ ...source, axNode }, 'link', 0).axNode!)).toEqual(['nodeId', 'role']);
+        expect(Object.keys(createScreenReaderContext({ ...source, axNode }, 'link', 0, 'nvda').axNode!)).toEqual([
+            'nodeId',
+            'role',
+        ]);
     });
 
     it('carries source info through', async () => {
-        const context = createNvdaContext(source, 'tab', 3);
+        const context = createScreenReaderContext(source, 'tab', 3, 'nvda');
 
         expect(context.source).toEqual({
+            screenReader: 'nvda',
             strategy: 'tab',
             stepIndex: 3,
             stepId: 'step-0',
@@ -45,11 +51,11 @@ describe('createNvdaContext', () => {
     });
 
     it('reports no node when the step had none', async () => {
-        expect(createNvdaContext(source, 'tab', 0).axNode).toBeUndefined();
+        expect(createScreenReaderContext(source, 'tab', 0, 'nvda').axNode).toBeUndefined();
     });
 
     it('survives a node missing its role and name', async () => {
-        expect(createNvdaContext({ ...source, axNode: { nodeId: '9' } }, 'tab', 0).axNode).toEqual({
+        expect(createScreenReaderContext({ ...source, axNode: { nodeId: '9' } }, 'tab', 0, 'nvda').axNode).toEqual({
             nodeId: '9',
         });
     });
@@ -58,12 +64,12 @@ describe('createNvdaContext', () => {
 describe('context shape across all rules', () => {
     const transcript = broadTranscript();
 
-    const nvdaRules = RULES.filter((rule) => rule.id !== 'axe-core');
+    const screenReaderRules = RULES.filter((rule) => rule.id !== 'axe-core');
 
     it('reports axNode.role as a string, never a raw AXValue', async () => {
-        const { violations } = await runRules(mockContext(transcript), nvdaRules);
+        const { violations } = await runRules(mockContext(transcript), screenReaderRules);
 
-        const withNodes = (violations as NvdaViolation[]).filter(
+        const withNodes = (violations as ScreenReaderViolation[]).filter(
             (violation) => violation.context?.axNode !== undefined
         );
 
@@ -77,8 +83,8 @@ describe('context shape across all rules', () => {
     it('produces the same violations on repeated runs', async () => {
         const context = mockContext(transcript);
 
-        const first = await runRules(context, nvdaRules);
-        const second = await runRules(context, nvdaRules);
+        const first = await runRules(context, screenReaderRules);
+        const second = await runRules(context, screenReaderRules);
 
         expect(JSON.stringify(second.violations)).toBe(JSON.stringify(first.violations));
     });

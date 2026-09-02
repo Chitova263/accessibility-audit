@@ -12,7 +12,7 @@ const violation = (overrides: Partial<Violation> = {}): Violation => ({
     },
     message: 'x',
     element: {},
-    tool: 'nvda-audit',
+    tool: 'screen-reader-audit',
     timestamp: 0,
     context: {},
     ...overrides,
@@ -22,7 +22,7 @@ describe('summarizeViolations', () => {
     it('counts by tool, impact and rule', async () => {
         const totals = summarizeViolations([
             violation({
-                tool: 'nvda-audit',
+                tool: 'screen-reader-audit',
                 rule: {
                     id: 'empty-accessible-name',
                     summary: '',
@@ -31,7 +31,7 @@ describe('summarizeViolations', () => {
                 },
             }),
             violation({
-                tool: 'nvda-audit',
+                tool: 'screen-reader-audit',
                 rule: {
                     id: 'focus-trap',
                     summary: '',
@@ -52,7 +52,7 @@ describe('summarizeViolations', () => {
 
         expect(totals).toEqual({
             total: 3,
-            byTool: { 'nvda-audit': 2, 'axe-core': 1 },
+            byTool: { 'screen-reader-audit': 2, 'axe-core': 1 },
             byImpact: { serious: 2, critical: 1 },
             byRule: { 'empty-accessible-name': 1, 'focus-trap': 1, 'color-contrast': 1 },
         });

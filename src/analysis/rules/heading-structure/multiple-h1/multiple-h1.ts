@@ -1,5 +1,5 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
@@ -10,7 +10,7 @@ export interface MultipleH1Stats {
     violationsFound: number;
 }
 
-export class MultipleH1Rule implements Rule<NvdaContext, MultipleH1Stats> {
+export class MultipleH1Rule implements Rule<ScreenReaderContext, MultipleH1Stats> {
     readonly id = 'multiple-h1';
 
     readonly meta: RuleMeta = {
@@ -21,9 +21,9 @@ export class MultipleH1Rule implements Rule<NvdaContext, MultipleH1Stats> {
         summary: 'Page has more than one H1',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, MultipleH1Stats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, MultipleH1Stats>> {
         const { page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
         const headings = collectHeadings(ctx);
 
         const h1Headings = headings.filter((h) => h.level === 1);
@@ -31,7 +31,7 @@ export class MultipleH1Rule implements Rule<NvdaContext, MultipleH1Stats> {
         if (h1Headings.length > 1) {
             for (let i = 1; i < h1Headings.length; i++) {
                 const heading = h1Headings[i]!;
-                const context = createHeadingContext(heading);
+                const context = createHeadingContext(heading, ctx.screenReader);
 
                 if (typeof heading.backendNodeId === 'number') {
                     const filename = `${this.id}-${heading.identifier}`;
@@ -59,7 +59,7 @@ export class MultipleH1Rule implements Rule<NvdaContext, MultipleH1Stats> {
         };
     }
 
-    private createViolation(heading: HeadingInfo, count: number, context: NvdaContext): NvdaViolation {
+    private createViolation(heading: HeadingInfo, count: number, context: ScreenReaderContext): ScreenReaderViolation {
         return {
             id: `multiple-h1-${heading.identifier}`,
             rule: {
@@ -70,7 +70,7 @@ export class MultipleH1Rule implements Rule<NvdaContext, MultipleH1Stats> {
             },
             message: `Multiple H1 headings found (this is H1 #${count}). Pages should have exactly one H1 that describes the main content.`,
             ...(heading.htmlSnippet != null && { element: { htmlSnippet: heading.htmlSnippet } }),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: heading.timestamp,
             context,
         };

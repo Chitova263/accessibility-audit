@@ -155,4 +155,5 @@ export const mockContext = (transcript: StrategyResult[]): import('../core/conte
     } as never,
     cdp: null as never,
     screenshotsDir: '/tmp/screenshots',
+    screenReader: 'nvda',
 });

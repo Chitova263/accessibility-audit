@@ -1,7 +1,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 import {
@@ -18,7 +18,7 @@ export interface ButtonNotInTabOrderStats {
     violationsFound: number;
 }
 
-export class ButtonNotInTabOrderRule implements Rule<NvdaContext, ButtonNotInTabOrderStats> {
+export class ButtonNotInTabOrderRule implements Rule<ScreenReaderContext, ButtonNotInTabOrderStats> {
     readonly id = 'button-not-in-tab-order';
 
     readonly meta: RuleMeta = {
@@ -29,9 +29,9 @@ export class ButtonNotInTabOrderRule implements Rule<NvdaContext, ButtonNotInTab
         summary: 'Button reachable via B key but not Tab',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, ButtonNotInTabOrderStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, ButtonNotInTabOrderStats>> {
         const { transcript, page, cdp, screenshotsDir } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const { elements: buttons, tabOrderSignatures } = collectElementsByStrategy(transcript, 'button', 'button');
 
@@ -39,7 +39,7 @@ export class ButtonNotInTabOrderRule implements Rule<NvdaContext, ButtonNotInTab
             const signature = createSignature(button.step);
 
             if (!tabOrderSignatures.has(signature) && !isLikelyInTabOrder(button, tabOrderSignatures)) {
-                const context = createNvdaContext(button.step, button.strategyType, 0);
+                const context = createScreenReaderContext(button.step, button.strategyType, 0, ctx.screenReader);
 
                 if (typeof button.backendNodeId === 'number') {
                     const filename = `${this.id}-${button.step.identifier}`;
@@ -67,7 +67,7 @@ export class ButtonNotInTabOrderRule implements Rule<NvdaContext, ButtonNotInTab
         };
     }
 
-    private createViolation(button: ElementSignature, context: NvdaContext): NvdaViolation {
+    private createViolation(button: ElementSignature, context: ScreenReaderContext): ScreenReaderViolation {
         return {
             id: `${this.id}-${button.step.identifier}`,
             rule: {

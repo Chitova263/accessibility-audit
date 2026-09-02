@@ -1,15 +1,16 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { collectLandmarks, type LandmarkInfo } from '../../utils/landmark-utils';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 export interface MissingMainLandmarkStats {
     totalLandmarks: number;
     violationsFound: number;
 }
 
-export class MissingMainLandmarkRule implements Rule<NvdaContext, MissingMainLandmarkStats> {
+export class MissingMainLandmarkRule implements Rule<ScreenReaderContext, MissingMainLandmarkStats> {
     readonly id = 'missing-main-landmark';
 
     readonly meta: RuleMeta = {
@@ -20,15 +21,15 @@ export class MissingMainLandmarkRule implements Rule<NvdaContext, MissingMainLan
         summary: 'Page has no main landmark',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, MissingMainLandmarkStats>> {
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, MissingMainLandmarkStats>> {
         const { transcript } = ctx;
-        const violations: NvdaViolation[] = [];
+        const violations: ScreenReaderViolation[] = [];
 
         const landmarks = collectLandmarks(transcript);
 
         const hasMain = landmarks.some((l) => l.role === 'main');
         if (!hasMain && landmarks.length > 0) {
-            violations.push(this.createViolation(landmarks[0]!));
+            violations.push(this.createViolation(landmarks[0]!, ctx.screenReader));
         }
 
         return {
@@ -40,8 +41,8 @@ export class MissingMainLandmarkRule implements Rule<NvdaContext, MissingMainLan
         };
     }
 
-    private createViolation(firstLandmark: LandmarkInfo): NvdaViolation {
-        const context = this.createContext(firstLandmark);
+    private createViolation(firstLandmark: LandmarkInfo, screenReader: ScreenReaderName): ScreenReaderViolation {
+        const context = this.createContext(firstLandmark, screenReader);
         return {
             id: `missing-main-${firstLandmark.identifier}`,
             rule: {
@@ -51,14 +52,14 @@ export class MissingMainLandmarkRule implements Rule<NvdaContext, MissingMainLan
                 impact: this.meta.impact,
             },
             message: `Page is missing a "main" landmark. Screen reader users rely on landmarks to navigate directly to main content.`,
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: firstLandmark.timestamp,
             context,
         };
     }
 
-    private createContext(landmark: LandmarkInfo): NvdaContext {
-        return createNvdaContext(
+    private createContext(landmark: LandmarkInfo, screenReader: ScreenReaderName): ScreenReaderContext {
+        return createScreenReaderContext(
             {
                 identifier: landmark.identifier,
                 spokenPhrases: landmark.spokenPhrases,
@@ -66,7 +67,8 @@ export class MissingMainLandmarkRule implements Rule<NvdaContext, MissingMainLan
                 axNode: landmark.axNode,
             },
             'landmark',
-            landmark.stepIndex
+            landmark.stepIndex,
+            screenReader
         );
     }
 }

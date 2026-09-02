@@ -1,7 +1,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 export interface MissingH1Stats {
     totalHeadings: number;
@@ -9,7 +10,7 @@ export interface MissingH1Stats {
     violationsFound: number;
 }
 
-export class MissingH1Rule implements Rule<NvdaContext, MissingH1Stats> {
+export class MissingH1Rule implements Rule<ScreenReaderContext, MissingH1Stats> {
     readonly id = 'missing-h1';
 
     readonly meta: RuleMeta = {
@@ -20,8 +21,8 @@ export class MissingH1Rule implements Rule<NvdaContext, MissingH1Stats> {
         summary: 'Page has no H1 heading',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, MissingH1Stats>> {
-        const violations: NvdaViolation[] = [];
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, MissingH1Stats>> {
+        const violations: ScreenReaderViolation[] = [];
         const headings = collectHeadings(ctx);
 
         const h1Count = headings.filter((h) => h.level === 1).length;
@@ -29,7 +30,7 @@ export class MissingH1Rule implements Rule<NvdaContext, MissingH1Stats> {
         // Only flag missing H1 when there are other headings present;
         // a completely heading-free page may be appropriate for simple content.
         if (h1Count === 0 && headings.length > 0) {
-            violations.push(this.createViolation(headings[0]!));
+            violations.push(this.createViolation(headings[0]!, ctx.screenReader));
         }
 
         return {
@@ -42,7 +43,7 @@ export class MissingH1Rule implements Rule<NvdaContext, MissingH1Stats> {
         };
     }
 
-    private createViolation(firstHeading: HeadingInfo): NvdaViolation {
+    private createViolation(firstHeading: HeadingInfo, screenReader: ScreenReaderName): ScreenReaderViolation {
         return {
             id: `missing-h1-${firstHeading.identifier}`,
             rule: {
@@ -53,9 +54,9 @@ export class MissingH1Rule implements Rule<NvdaContext, MissingH1Stats> {
             },
             message: `Page has no H1 heading. First heading found is H${firstHeading.level}. Pages should have exactly one H1 that describes the main content.`,
             ...(firstHeading.htmlSnippet != null && { element: { htmlSnippet: firstHeading.htmlSnippet } }),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: firstHeading.timestamp,
-            context: createHeadingContext(firstHeading),
+            context: createHeadingContext(firstHeading, screenReader),
         };
     }
 }

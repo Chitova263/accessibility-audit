@@ -9,9 +9,10 @@
  */
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 /** Threshold for "excessive" navigation links */
 const EXCESSIVE_NAV_LINKS_THRESHOLD = 40;
@@ -25,7 +26,7 @@ export interface ExcessiveNavigationLinksStats {
     linksPerNavigation: Record<string, number>;
 }
 
-export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, ExcessiveNavigationLinksStats> {
+export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, ExcessiveNavigationLinksStats> {
     readonly id = 'excessive-navigation-links';
 
     readonly meta: RuleMeta = {
@@ -36,9 +37,9 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
         summary: 'Page has an excessive number of links',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<NvdaContext, ExcessiveNavigationLinksStats>> {
-        const { transcript } = ctx;
-        const violations: NvdaViolation[] = [];
+    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, ExcessiveNavigationLinksStats>> {
+        const { transcript, screenReader } = ctx;
+        const violations: ScreenReaderViolation[] = [];
 
         let totalLinks = 0;
         for (const result of transcript) {
@@ -72,9 +73,9 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
 
         if (firstLinkStep !== null) {
             if (totalLinks >= VERY_EXCESSIVE_NAV_LINKS_THRESHOLD) {
-                violations.push(this.createViolation(totalLinks, firstLinkStep, 'serious'));
+                violations.push(this.createViolation(totalLinks, firstLinkStep, 'serious', screenReader));
             } else if (totalLinks >= EXCESSIVE_NAV_LINKS_THRESHOLD) {
-                violations.push(this.createViolation(totalLinks, firstLinkStep, 'moderate'));
+                violations.push(this.createViolation(totalLinks, firstLinkStep, 'moderate', screenReader));
             }
         }
 
@@ -107,10 +108,11 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
             htmlSnippet: string | null;
             axNode: unknown;
         },
-        impact: 'serious' | 'moderate'
-    ): NvdaViolation {
+        impact: 'serious' | 'moderate',
+        screenReader: ScreenReaderName
+    ): ScreenReaderViolation {
         const threshold = impact === 'serious' ? VERY_EXCESSIVE_NAV_LINKS_THRESHOLD : EXCESSIVE_NAV_LINKS_THRESHOLD;
-        const context = createNvdaContext(
+        const context = createScreenReaderContext(
             {
                 identifier: firstLinkStep.identifier,
                 spokenPhrases: firstLinkStep.spokenPhrases,
@@ -118,7 +120,8 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
                 axNode: firstLinkStep.axNode,
             },
             'link',
-            0
+            0,
+            screenReader
         );
 
         return {
@@ -131,7 +134,7 @@ export class ExcessiveNavigationLinksRule implements Rule<NvdaContext, Excessive
             },
             message: `Page has ${linkCount} links (threshold: ${threshold}). Excessive links make keyboard navigation tedious. Consider grouping links, using skip links, or simplifying navigation structure.`,
             element: {},
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: firstLinkStep.timestamp,
             context,
         };

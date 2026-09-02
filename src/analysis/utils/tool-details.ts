@@ -1,4 +1,5 @@
-import type { NvdaContext } from '../core/violation';
+import type { ScreenReaderContext } from '../core/violation';
+import type { ScreenReaderName } from '../../screen-reader/drivers/types';
 
 export interface ContextSource {
     identifier: string;
@@ -7,10 +8,16 @@ export interface ContextSource {
     axNode?: unknown;
 }
 
-export function createNvdaContext(source: ContextSource, strategy: string, stepIndex: number): NvdaContext {
+export function createScreenReaderContext(
+    source: ContextSource,
+    strategy: string,
+    stepIndex: number,
+    screenReader: ScreenReaderName
+): ScreenReaderContext {
     const axNode = projectAxNode(source.axNode);
     return {
         source: {
+            screenReader,
             strategy,
             stepIndex,
             stepId: source.identifier,
@@ -20,7 +27,7 @@ export function createNvdaContext(source: ContextSource, strategy: string, stepI
     };
 }
 
-function projectAxNode(node: unknown): NvdaContext['axNode'] | undefined {
+function projectAxNode(node: unknown): ScreenReaderContext['axNode'] | undefined {
     if (typeof node !== 'object' || node === null) return undefined;
 
     const axNode = node as {
@@ -33,7 +40,7 @@ function projectAxNode(node: unknown): NvdaContext['axNode'] | undefined {
     const role = typeof axNode.role?.value === 'string' ? axNode.role.value : undefined;
     const name = typeof axNode.name?.value === 'string' ? axNode.name.value : undefined;
 
-    const result: NvdaContext['axNode'] = {
+    const result: ScreenReaderContext['axNode'] = {
         nodeId: typeof axNode.nodeId === 'string' ? axNode.nodeId : String(axNode.nodeId ?? ''),
     };
 

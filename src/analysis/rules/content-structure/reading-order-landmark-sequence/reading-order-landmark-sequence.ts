@@ -1,8 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
-import type { NvdaContext, NvdaViolation } from '../../../core/violation';
+import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { createNvdaContext } from '../../../utils/tool-details';
+import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRule } from '../../rule-catalog';
+import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -56,16 +57,17 @@ function createViolation(
     message: string,
     step: NavigationStep,
     strategyName: string,
+    screenReader: ScreenReaderName,
     impactOverride?: Parameters<typeof getRule>[1]
-): NvdaViolation {
+): ScreenReaderViolation {
     return {
         id: `${ruleId}-${step.identifier}`,
         rule: getRule(ruleId, impactOverride),
         message,
         ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'nvda-audit',
+        tool: 'screen-reader-audit',
         timestamp: step.timestamp,
-        context: createNvdaContext(step, strategyName, step.index),
+        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
     };
 }
 
@@ -75,7 +77,7 @@ function createViolation(
  *
  * WCAG 1.3.2: Meaningful Sequence (Level A)
  */
-export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, ReadingOrderLandmarkSequenceStats> {
+export class ReadingOrderLandmarkSequenceRule implements Rule<ScreenReaderContext, ReadingOrderLandmarkSequenceStats> {
     readonly id = 'reading-order-landmark-sequence';
 
     readonly meta: RuleMeta = {
@@ -84,8 +86,11 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, Readi
         summary: 'Landmarks announced out of logical reading order',
     };
 
-    async run({ transcript }: AuditContext): Promise<RuleResult<NvdaContext, ReadingOrderLandmarkSequenceStats>> {
-        const violations: NvdaViolation[] = [];
+    async run({
+        transcript,
+        screenReader,
+    }: AuditContext): Promise<RuleResult<ScreenReaderContext, ReadingOrderLandmarkSequenceStats>> {
+        const violations: ScreenReaderViolation[] = [];
         const landmarkSequence: LandmarkSequenceInfo[] = [];
 
         const arrowResult = getArrowStrategyResult(transcript);
@@ -136,7 +141,8 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, Readi
                     'reading-order-landmark-sequence',
                     `Footer/contentinfo landmark (step ${landmarkSequence[footerIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Screen reader users will hear footer content before main content.`,
                     footerStep,
-                    arrowResult.meta.name
+                    arrowResult.meta.name,
+                    screenReader
                 )
             );
             violationMessages.push('Footer before main');
@@ -150,6 +156,7 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<NvdaContext, Readi
                     `Complementary/aside landmark (step ${landmarkSequence[asideIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Consider if sidebar content should come after main content.`,
                     asideStep,
                     arrowResult.meta.name,
+                    screenReader,
                     'moderate'
                 )
             );
