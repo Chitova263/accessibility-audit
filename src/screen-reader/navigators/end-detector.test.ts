@@ -101,21 +101,27 @@ describe('createEndDetector', () => {
             const strategy: EndDetectionStrategy = { type: 'document-boundary' };
             const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'My Page - Google Chrome, region', itemText: '', backendNodeId: null })).toBe(true);
+            expect(
+                detector.check({ phrase: 'My Page - Google Chrome, region', itemText: '', backendNodeId: null })
+            ).toBe(true);
         });
 
         it('detects Firefox browser window', () => {
             const strategy: EndDetectionStrategy = { type: 'document-boundary' };
             const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'My Page - Mozilla Firefox', itemText: '', backendNodeId: null })).toBe(true);
+            expect(detector.check({ phrase: 'My Page - Mozilla Firefox', itemText: '', backendNodeId: null })).toBe(
+                true
+            );
         });
 
         it('detects Edge browser window', () => {
             const strategy: EndDetectionStrategy = { type: 'document-boundary' };
             const detector = createEndDetector(strategy);
 
-            expect(detector.check({ phrase: 'My Page - Microsoft Edge', itemText: '', backendNodeId: null })).toBe(true);
+            expect(detector.check({ phrase: 'My Page - Microsoft Edge', itemText: '', backendNodeId: null })).toBe(
+                true
+            );
         });
 
         it('detects Safari browser window', () => {

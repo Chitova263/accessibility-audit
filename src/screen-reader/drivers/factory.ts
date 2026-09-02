@@ -20,13 +20,15 @@ export interface DriverConfig {
 export interface CreateDriverOptions {
     type: ScreenReaderType;
     page?: Page;
+    /** Enable NVDA speech audio output. Default: false (silent) */
+    speech?: boolean;
 }
 
 /**
  * Creates a screen reader driver with its matching configuration.
  */
 export async function createDriver(options: CreateDriverOptions): Promise<DriverConfig> {
-    const { type, page } = options;
+    const { type, page, speech } = options;
     const log = Logger.context('DriverFactory');
 
     if (type === 'virtual') {
@@ -47,8 +49,8 @@ export async function createDriver(options: CreateDriverOptions): Promise<Driver
         };
     }
 
-    log.info('Creating NVDA screen reader driver');
-    const nvda = new Nvda();
+    log.info(`Creating NVDA screen reader driver (speech: ${speech ? 'on' : 'off'})`);
+    const nvda = new Nvda({ speech: speech ?? false });
 
     return {
         reader: nvda,

@@ -10,10 +10,7 @@ import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 import { NavigationStrategyResult } from '../browse-mode-strategies/navigation-strategy-result';
 import type { EndDetectionStrategy, EndDetector } from '../../navigators/types';
 import { createEndDetector } from '../../navigators/end-detector';
-
-function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import { delay } from '../../../utils/delay';
 
 /** Default end detection: document boundary detection */
 const DEFAULT_END_DETECTION: EndDetectionStrategy = { type: 'document-boundary' };
@@ -36,7 +33,6 @@ export class TabNavigationStrategy implements INavigationStrategy {
     }
 
     public async execute(ctx: NavigationContext): Promise<StrategyResult> {
-        await ctx.navigator.navigateToDocumentStart();
         await ctx.navigator.navigateToDocumentStart();
         await delay(2000);
 

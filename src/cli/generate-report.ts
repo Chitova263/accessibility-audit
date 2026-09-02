@@ -2,6 +2,7 @@
 import { program } from 'commander';
 import * as path from 'path';
 import { generateReportFromFiles } from '../reporting';
+import { Logger } from '../utils/logger';
 
 program
     .name('a11y report')
@@ -15,6 +16,7 @@ program
     .option('--transcript <path>', 'Path to transcript JSON (default: <dir>/transcript.json or ./transcript.json)')
     .option('-f, --format <format>', 'Output format: html or json', 'html')
     .option('-o, --output <path>', 'Output file path (default: <dir>/report.html or ./report.html)')
+    .option('-v, --verbose', 'Enable verbose output')
     .parse();
 
 const options = program.opts<{
@@ -24,7 +26,10 @@ const options = program.opts<{
     transcript?: string;
     format: 'html' | 'json';
     output?: string;
+    verbose?: boolean;
 }>();
+
+Logger.setLevel(options.verbose ? 'debug' : 'info');
 
 function resolvePath(explicit: string | undefined, filename: string): string {
     if (explicit) return explicit;
@@ -37,13 +42,13 @@ const violationsPath = resolvePath(options.violations, 'violations.json');
 const transcriptPath = resolvePath(options.transcript, 'transcript.json');
 const outputPath = resolvePath(options.output, options.format === 'json' ? 'report.json' : 'report.html');
 
-console.log('\n=== Generating Accessibility Report ===');
-if (options.dir) console.log(`Run directory: ${options.dir}`);
-console.log(`LLM Response: ${llmResponsePath}`);
-console.log(`Violations: ${violationsPath}`);
-console.log(`Transcript: ${transcriptPath}`);
-console.log(`Format: ${options.format}`);
-console.log(`Output: ${outputPath}`);
+Logger.section('Generating Accessibility Report');
+if (options.dir) Logger.info(`Run directory: ${options.dir}`);
+Logger.info(`LLM Response: ${llmResponsePath}`);
+Logger.info(`Violations: ${violationsPath}`);
+Logger.info(`Transcript: ${transcriptPath}`);
+Logger.debug(`Format: ${options.format}`);
+Logger.debug(`Output: ${outputPath}`);
 
 await generateReportFromFiles({
     llmResponsePath,
@@ -53,4 +58,4 @@ await generateReportFromFiles({
     outputPath,
 });
 
-console.log(`\n✓ Report generated: ${outputPath}`);
+Logger.info(`Report generated: ${outputPath}`);

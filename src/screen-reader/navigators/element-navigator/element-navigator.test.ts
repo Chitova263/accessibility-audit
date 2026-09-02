@@ -62,10 +62,7 @@ describe('ElementNavigator', () => {
     });
 
     it('stops when end phrase is detected', async () => {
-        mockSR.press = createPressMock([
-            { phrase: 'link, Home' },
-            { phrase: 'no next link' },
-        ]);
+        mockSR.press = createPressMock([{ phrase: 'link, Home' }, { phrase: 'no next link' }]);
 
         const navigator = new ElementNavigator(
             mockSR,

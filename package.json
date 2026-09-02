@@ -14,16 +14,15 @@
         "rebuild": "npm run clean && npm run build",
         "typecheck": "tsc --noEmit",
         "start": "tsx src/index.ts",
-        "formart": "prettier --write .",
+        "format": "prettier --write .",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:update": "vitest run -u",
         "prepublishOnly": "npm run build",
-        "sample": "npx tsx src/run-audit.ts https://www.example.com --reader virtual"
+        "sample": "npx tsx src/cli/run-audit.ts https://www.example.com --reader virtual"
     },
     "private": true,
     "devDependencies": {
-        "@types/mailparser": "^3.4.6",
         "@types/node": "^26.4.0",
         "prettier": "3.9.6",
         "tsx": "^4.23.12",
@@ -36,7 +35,6 @@
         "@guidepup/virtual-screen-reader": "^0.32.1",
         "axe-core": "^4.13.0",
         "commander": "^15.0.0",
-        "mailparser": "^3.9.17",
         "node-html-parser": "^9.0.2",
         "playwright": "^1.62.1",
         "xmlbuilder2": "^4.0.3",

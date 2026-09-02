@@ -14,7 +14,6 @@ export type {
     NavigatorType,
     EndDetectionContext,
     ScreenReaderKeyBindings,
-    ScreenReaderEndPatterns,
     ScreenReaderConfig,
 } from './screen-reader/navigators/types';
 export { nvdaKeyBindings, nvdaEndDetection } from './screen-reader/navigators/config/nvda';

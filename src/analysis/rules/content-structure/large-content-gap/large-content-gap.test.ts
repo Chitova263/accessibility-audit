@@ -101,11 +101,7 @@ describe('large-content-gap rule', () => {
         it('returns no violations when main landmark is not found', async () => {
             const arrow = strategyResult(
                 'arrow',
-                createSteps([
-                    bannerLandmarkStep('Header'),
-                    ...plain(30),
-                    contentInfoLandmarkStep('Footer'),
-                ])
+                createSteps([bannerLandmarkStep('Header'), ...plain(30), contentInfoLandmarkStep('Footer')])
             );
 
             const result = await rule.run(mockContext([arrow, headingWalk]));
@@ -136,11 +132,7 @@ describe('large-content-gap rule', () => {
         it('reports a gap when main has no headings at all', async () => {
             const arrow = strategyResult(
                 'arrow',
-                createSteps([
-                    mainLandmarkStep('Start'),
-                    ...plain(20),
-                    contentInfoLandmarkStep('End'),
-                ])
+                createSteps([mainLandmarkStep('Start'), ...plain(20), contentInfoLandmarkStep('End')])
             );
 
             const result = await rule.run(mockContext([arrow, headingWalk]));
@@ -152,12 +144,7 @@ describe('large-content-gap rule', () => {
         it('reports the run-up to the first heading within main', async () => {
             const arrow = strategyResult(
                 'arrow',
-                createSteps([
-                    mainLandmarkStep('Content'),
-                    ...plain(16),
-                    headingStep('Overview'),
-                    ...plain(3),
-                ])
+                createSteps([mainLandmarkStep('Content'), ...plain(16), headingStep('Overview'), ...plain(3)])
             );
 
             const result = await rule.run(mockContext([arrow, headingWalk]));
@@ -224,10 +211,7 @@ describe('large-content-gap rule', () => {
 
     describe('threshold configuration', () => {
         it('honours a custom gap threshold', async () => {
-            const arrow = strategyResult(
-                'arrow',
-                createSteps([mainLandmarkStep('Content'), ...plain(6)])
-            );
+            const arrow = strategyResult('arrow', createSteps([mainLandmarkStep('Content'), ...plain(6)]));
             const customRule = new LargeContentGapRule(5);
 
             const result = await customRule.run(mockContext([arrow, headingWalk]));
@@ -237,10 +221,7 @@ describe('large-content-gap rule', () => {
         });
 
         it('does not flag gaps below threshold', async () => {
-            const arrow = strategyResult(
-                'arrow',
-                createSteps([mainLandmarkStep('Content'), ...plain(13)])
-            );
+            const arrow = strategyResult('arrow', createSteps([mainLandmarkStep('Content'), ...plain(13)]));
 
             const result = await rule.run(mockContext([arrow, headingWalk]));
 
@@ -259,10 +240,7 @@ describe('large-content-gap rule', () => {
         it('handles empty main landmark', async () => {
             const arrow = strategyResult(
                 'arrow',
-                createSteps([
-                    mainLandmarkStep('Content'),
-                    contentInfoLandmarkStep('Footer'),
-                ])
+                createSteps([mainLandmarkStep('Content'), contentInfoLandmarkStep('Footer')])
             );
 
             const result = await rule.run(mockContext([arrow, headingWalk]));

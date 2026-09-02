@@ -14,16 +14,12 @@ export class ElementNavigator implements IElementNavigator {
     ) {}
 
     async *[Symbol.asyncIterator](): AsyncIterableIterator<NavigationItem> {
-        // Reset detector state at the start of each navigation
         this.config.endDetector.reset();
 
         while (true) {
             const { spokenPhrases, itemText } = await this.sr.press(this.config.advanceKey);
 
-            // Use the last phrase (most complete announcement)
-            const phrase = spokenPhrases.length > 0 
-                ? spokenPhrases[spokenPhrases.length - 1]! 
-                : '';
+            const phrase = spokenPhrases.length > 0 ? spokenPhrases[spokenPhrases.length - 1]! : '';
 
             if (this.config.endDetector.check({ phrase, itemText })) {
                 return;

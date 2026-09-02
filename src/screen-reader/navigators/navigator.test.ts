@@ -10,9 +10,9 @@ function createMockScreenReader(): ScreenReader {
     return {
         start: vi.fn().mockResolvedValue(undefined),
         stop: vi.fn().mockResolvedValue(undefined),
-        press: vi.fn().mockResolvedValue({ 
-            spokenPhrases: ['no next heading'], 
-            itemText: '' 
+        press: vi.fn().mockResolvedValue({
+            spokenPhrases: ['no next heading'],
+            itemText: '',
         } satisfies PressResult),
     };
 }
@@ -162,9 +162,9 @@ describe('Navigator', () => {
 
         it('heading level navigator uses level-specific key', async () => {
             const mockSR = createMockScreenReader();
-            mockSR.press = vi.fn().mockResolvedValue({ 
-                spokenPhrases: ['no next'], 
-                itemText: '' 
+            mockSR.press = vi.fn().mockResolvedValue({
+                spokenPhrases: ['no next'],
+                itemText: '',
             });
             const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 

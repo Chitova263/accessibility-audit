@@ -59,6 +59,7 @@ a11y audit <url> [options]
 | `-o, --output-dir <dir>` | Output directory for audit files      | `audit-results/<url-slug>-<timestamp>` |
 | `--max-steps <number>`   | Maximum steps per navigation strategy | `500`                                  |
 | `-r, --reader <type>`    | Screen reader: `nvda` or `virtual`    | `nvda`                                 |
+| `-s, --speech`           | Enable NVDA speech audio output       | `false`                                |
 | `-v, --verbose`          | Enable verbose output                 | `false`                                |
 | `-h, --help`             | Display help                          |                                        |
 
@@ -67,13 +68,13 @@ a11y audit <url> [options]
 ```bash
 # Using NVDA (default, requires Windows + NVDA installed)
 # Output goes to audit-results/example.com-shop-products-step-1-2026-09-01T13-09/
-a11y audit--verbose
+a11y audit https://example.com/shop/products --verbose
 
 # Specify a custom output directory
 a11y audit -o ./my-audit --verbose
 
 # Using virtual screen reader (works on any platform)
-npx a11y audit --reader virtual
+npx a11y audit https://example.com --reader virtual
 ```
 
 **Output files (inside the run directory):**

@@ -8,10 +8,7 @@ import type {
 } from './navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { AxTreeUtil } from './accessibility-tree/ax-tree-util';
 import { Logger } from '../utils/logger';
-
-function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import { delay } from '../utils/delay';
 
 export interface PageSessionResult {
     page: Page;
@@ -43,7 +40,7 @@ export class PageSession {
         this.log.debug('Session started, screen reader initialized');
     }
 
-    public async endEndSession(): Promise<void> {
+    public async endSession(): Promise<void> {
         this.log.debug('Ending session');
         this.cdpSession?.detach();
         await this.reader.stop();

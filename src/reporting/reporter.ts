@@ -111,45 +111,6 @@ export function formatTimestamp(timestamp: number): string {
     return new Date(timestamp).toLocaleString();
 }
 
-export function formatDuration(ms: number): string {
-    if (ms < 1000) return `${ms}ms`;
-    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-    const minutes = Math.floor(ms / 60000);
-    const seconds = ((ms % 60000) / 1000).toFixed(0);
-    return `${minutes}m ${seconds}s`;
-}
-
-export function getSeverityColor(severity: string): string {
-    const colors: Record<string, string> = {
-        critical: '#d32f2f',
-        serious: '#f57c00',
-        moderate: '#fbc02d',
-        minor: '#388e3c',
-    };
-    return colors[severity.toLowerCase()] ?? '#757575';
-}
-
-export function getAssessmentColor(assessment: string): string {
-    const colors: Record<string, string> = {
-        good: '#388e3c',
-        'needs-review': '#f57c00',
-        problematic: '#d32f2f',
-    };
-    return colors[assessment.toLowerCase()] ?? '#757575';
-}
-
-export function getConfidenceColor(confidence: string): string {
-    const colors: Record<string, string> = {
-        high: '#388e3c',
-        medium: '#f57c00',
-        low: '#d32f2f',
-        confirmed: '#388e3c',
-        likely: '#f57c00',
-        uncertain: '#d32f2f',
-    };
-    return colors[confidence.toLowerCase()] ?? '#757575';
-}
-
 export function escapeHtml(text: string): string {
     return text
         .replace(/&/g, '&amp;')

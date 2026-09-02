@@ -11,17 +11,16 @@ export class TabNavigator implements IElementNavigator {
 
     async *[Symbol.asyncIterator](): AsyncIterableIterator<NavigationItem> {
         const firstResult = await this.sr.press(this.tabKey);
-        const firstPhrase = firstResult.spokenPhrases.length > 0
-            ? firstResult.spokenPhrases[firstResult.spokenPhrases.length - 1]!
-            : '';
+        const firstPhrase =
+            firstResult.spokenPhrases.length > 0
+                ? firstResult.spokenPhrases[firstResult.spokenPhrases.length - 1]!
+                : '';
 
         yield { phrase: firstPhrase, itemText: firstResult.itemText };
 
         while (true) {
             const { spokenPhrases, itemText } = await this.sr.press(this.tabKey);
-            const phrase = spokenPhrases.length > 0
-                ? spokenPhrases[spokenPhrases.length - 1]!
-                : '';
+            const phrase = spokenPhrases.length > 0 ? spokenPhrases[spokenPhrases.length - 1]! : '';
 
             // Cycle detection - back to first element
             if (phrase === firstPhrase) {

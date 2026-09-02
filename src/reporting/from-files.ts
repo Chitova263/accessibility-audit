@@ -128,20 +128,6 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
     };
 }
 
-/**
- * Generate a report from already-loaded data.
- *
- * @example
- * ```typescript
- * const analysis = JSON.parse(await fs.readFile('./response.json', 'utf-8'));
- * const result = await generateReport({
- *     analysis,
- *     violations: myViolations,
- *     transcript: myTranscript,
- *     pageUrl: 'https://example.com',
- * });
- * ```
- */
 export async function generateReport(options: {
     /** LLM analysis (already parsed or raw JSON) */
     analysis: LlmCompleteResponse | unknown;
@@ -177,7 +163,6 @@ export async function generateReport(options: {
     );
 }
 
-// Type guard for LlmCompleteResponse
 function isLlmCompleteResponse(value: unknown): value is LlmCompleteResponse {
     return typeof value === 'object' && value !== null && 'analysis' in value && 'enhancements' in value;
 }
