@@ -248,10 +248,19 @@ export const llmViolationEnhancementSchema = z
             .describe(
                 'Your confidence that this is a real issue: confirmed (clear evidence), likely (probable), uncertain (may be false positive)'
             ),
+        evidence: llmEvidenceSchema
+            .optional()
+            .describe('Evidence from the transcript supporting this violation enhancement'),
         severityRationale: z
             .string()
             .optional()
             .describe('Explanation of why this severity level is appropriate given the context'),
+        stepsToReproduce: z
+            .array(z.string())
+            .optional()
+            .describe(
+                'Step-by-step instructions to reproduce this violation using a screen reader. Include specific keys to press (e.g., "Press H to navigate to next heading", "Press Tab 5 times"). Reference exact step numbers from the transcript where applicable.'
+            ),
         remediationSuggestion: z.string().optional().describe('Specific code or content change to fix this issue'),
         userImpactDescription: z
             .string()
