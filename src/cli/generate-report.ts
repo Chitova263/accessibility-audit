@@ -3,31 +3,21 @@ import { program } from 'commander';
 import * as path from 'path';
 import { generateReportFromFiles } from '../reporting';
 import { Logger } from '../utils/logger';
+import { reportOptionsSchema, parseOptions } from './schemas';
 
 program
     .name('a11y report')
     .description('Generate an accessibility report from existing audit data files')
     .option('--dir <dir>', 'Audit run directory (sets default paths for all files below)')
-    .option(
-        '--llm-response <path>',
-        'Path to LLM response JSON (default: <dir>/llm-response.json or ./llm-response.json)'
-    )
-    .option('--violations <path>', 'Path to violations JSON (default: <dir>/violations.json or ./violations.json)')
-    .option('--transcript <path>', 'Path to transcript JSON (default: <dir>/transcript.json or ./transcript.json)')
-    .option('-f, --format <format>', 'Output format: html or json', 'html')
-    .option('-o, --output <path>', 'Output file path (default: <dir>/report.html or ./report.html)')
+    .option('--llm-response <path>', 'Path to LLM response JSON')
+    .option('--violations <path>', 'Path to violations JSON')
+    .option('--transcript <path>', 'Path to transcript JSON')
+    .option('-f, --format <format>', 'Output format: html or json')
+    .option('-o, --output <path>', 'Output file path')
     .option('-v, --verbose', 'Enable verbose output')
     .parse();
 
-const options = program.opts<{
-    dir?: string;
-    llmResponse?: string;
-    violations?: string;
-    transcript?: string;
-    format: 'html' | 'json';
-    output?: string;
-    verbose?: boolean;
-}>();
+const options = parseOptions(reportOptionsSchema, program.opts(), 'a11y report');
 
 Logger.setLevel(options.verbose ? 'debug' : 'info');
 
