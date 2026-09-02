@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { program } from 'commander';
-import { createDriver, type ScreenReaderType } from '../screen-reader/drivers/factory';
+import { createDriver } from '../screen-reader/drivers/factory';
 import { Navigator } from '../screen-reader/navigators/navigator';
 import { ChromeDevToolsProtocolConnection } from '../chrome-dev-tools-protocol-connection';
 import type { INavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
@@ -18,40 +18,23 @@ import { createPromptBuilder } from '../llm/prompt-builder';
 import { formatTranscriptAsText } from '../reporting';
 import { Logger } from '../utils/logger';
 import { resolveOutputDir } from '../utils/output-dir';
+import { parseAuditInput } from './schemas';
 
 program
     .name('a11y audit')
     .description('Run accessibility audit on a given URL')
     .argument('<url>', 'URL to audit')
-    .option(
-        '-o, --output-dir <dir>',
-        'Output directory for audit files (default: audit-results/<url-slug>-<timestamp>)'
-    )
-    .option('--max-steps <number>', 'Maximum steps per strategy', '500')
-    .option('-r, --reader <type>', 'Screen reader to use: nvda or virtual', 'nvda')
+    .option('-o, --output-dir <dir>', 'Output directory for audit files')
+    .option('--max-steps <number>', 'Maximum steps per strategy')
+    .option('-r, --reader <type>', 'Screen reader: nvda, virtual, or voiceover')
     .option('-s, --speech', 'Enable NVDA speech audio output')
     .option('-v, --verbose', 'Enable verbose output')
     .action(() => {})
     .parse();
 
-const url = program.processedArgs[0] as string;
-const options = program.opts<{
-    outputDir: string | undefined;
-    maxSteps: string;
-    reader: string;
-    speech: boolean;
-    verbose: boolean;
-}>();
-
-const maxSteps = parseInt(options.maxSteps, 10);
-const readerType = options.reader as ScreenReaderType;
+const { url, options } = parseAuditInput(program.processedArgs[0], program.opts());
 
 Logger.setLevel(options.verbose ? 'debug' : 'info');
-
-if (readerType !== 'nvda' && readerType !== 'virtual') {
-    Logger.error(`Invalid reader type: ${readerType}. Must be 'nvda' or 'virtual'.`);
-    process.exit(1);
-}
 
 const outputDir = await resolveOutputDir({
     ...(options.outputDir ? { explicitDir: options.outputDir } : {}),
@@ -63,37 +46,37 @@ let chromeDevToolsProtocolConnection: ChromeDevToolsProtocolConnection | undefin
 try {
     Logger.section('Starting Accessibility Audit');
     Logger.info(`Target URL: ${url}`);
-    Logger.info(`Screen reader: ${readerType}`);
-    if (readerType === 'nvda') {
+    Logger.info(`Screen reader: ${options.reader}`);
+    if (options.reader === 'nvda' || options.reader === 'voiceover') {
         Logger.info(`Speech: ${options.speech ? 'on' : 'off'}`);
     }
     Logger.debug(`Output directory: ${outputDir}`);
-    Logger.debug(`Max steps per strategy: ${maxSteps}`);
+    Logger.debug(`Max steps per strategy: ${options.maxSteps}`);
 
     chromeDevToolsProtocolConnection = ChromeDevToolsProtocolConnection.createConnection();
     await chromeDevToolsProtocolConnection.connect();
     Logger.debug('Chrome DevTools Protocol connection established');
 
     const strategies: INavigationStrategy[] = [
-        new HeadingNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
-        new LandmarkNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
-        new ButtonNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
-        new LinkNavigationStrategy({ maxSteps }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps, level: 1 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps, level: 2 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps, level: 3 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps, level: 4 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps, level: 5 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps, level: 6 }),
+        new HeadingNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
+        new LandmarkNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
+        new ButtonNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
+        new LinkNavigationStrategy({ maxSteps: options.maxSteps }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 1 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 2 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 3 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 4 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 5 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 6 }),
         new DownArrowNavigationStrategy({ maxSteps: 1000 }),
-        new TabNavigationStrategy({ maxSteps }),
+        new TabNavigationStrategy({ maxSteps: options.maxSteps }),
     ];
 
     const pageUrl = new URL(url);
     const page = await chromeDevToolsProtocolConnection.goToPage(pageUrl);
     Logger.info('Page loaded');
 
-    const driver = await createDriver({ type: readerType, page, speech: options.speech });
+    const driver = await createDriver({ type: options.reader, page, speech: options.speech });
 
     const navigator = Navigator.fromConfig({
         reader: driver.reader,

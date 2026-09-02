@@ -1,14 +1,17 @@
 import type { Page } from 'playwright';
 import type { ScreenReader } from './nvda';
 import type { ScreenReaderKeyBindings, ScreenReaderEndDetection } from '../navigators/types';
+import type { ScreenReaderType } from '../../cli/schemas';
 
 import { Nvda } from './nvda';
 import { VirtualScreenReader } from './virtual';
+import { VoiceOverDriver } from './voiceover';
 import { nvdaKeyBindings, nvdaEndDetection } from '../navigators/config/nvda';
 import { virtualKeyBindings, virtualEndDetection } from '../navigators/config/virtual';
+import { voiceOverKeyBindings, voiceOverEndDetection } from '../navigators/config/voiceover';
 import { Logger } from '../../utils/logger';
 
-export type ScreenReaderType = 'nvda' | 'virtual';
+export type { ScreenReaderType } from '../../cli/schemas';
 
 export interface DriverConfig {
     reader: ScreenReader;
@@ -20,7 +23,7 @@ export interface DriverConfig {
 export interface CreateDriverOptions {
     type: ScreenReaderType;
     page?: Page;
-    /** Enable NVDA speech audio output. Default: false (silent) */
+    /** Enable speech audio output (NVDA/VoiceOver). Default: false (silent) */
     speech?: boolean;
 }
 
@@ -43,6 +46,20 @@ export async function createDriver(options: CreateDriverOptions): Promise<Driver
             reader,
             keyBindings: virtualKeyBindings,
             endDetection: virtualEndDetection,
+            cleanup: async () => {
+                await reader.stop();
+            },
+        };
+    }
+
+    if (type === 'voiceover') {
+        log.info(`Creating VoiceOver screen reader driver (speech: ${speech ? 'on' : 'off'})`);
+        const reader = new VoiceOverDriver({ speech: speech ?? false });
+
+        return {
+            reader,
+            keyBindings: voiceOverKeyBindings,
+            endDetection: voiceOverEndDetection,
             cleanup: async () => {
                 await reader.stop();
             },

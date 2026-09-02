@@ -6,8 +6,9 @@ Static analyzers like axe-core and Lighthouse can only inspect the DOM - they ca
 
 ## Features
 
-- **Real screen reader testing** with two driver options:
+- **Real screen reader testing** with three driver options:
     - **NVDA** (default) - Uses the real NVDA screen reader via [@guidepup/guidepup](https://github.com/guidepup/guidepup). Requires Windows with NVDA installed.
+    - **VoiceOver** - Uses the real VoiceOver screen reader via [@guidepup/guidepup](https://github.com/guidepup/guidepup). Requires macOS.
     - **Virtual** - Uses [@guidepup/virtual-screen-reader](https://github.com/guidepup/virtual-screen-reader) which runs headless in the browser. Works on any platform, no screen reader installation required.
 - **Multiple navigation strategies** (headings, landmarks, links, buttons, tab order, arrow keys) that mimic how visually impaired people navigate websites
 - **Automated violation detection** with WCAG criterion mapping
@@ -19,6 +20,58 @@ Static analyzers like axe-core and Lighthouse can only inspect the DOM - they ca
 ```bash
 npm install
 ```
+
+### Screen Reader Setup (NVDA/VoiceOver)
+
+Before using NVDA or VoiceOver drivers, you need to set up your environment for screen reader automation using [@guidepup/setup](https://github.com/guidepup/setup):
+
+```bash
+# One-time machine setup (configures OS for screen reader automation)
+npx @guidepup/setup setup
+
+# Install required screen reader assets for your project
+npx @guidepup/setup install
+```
+
+#### Windows (NVDA)
+
+The setup command installs a portable NVDA instance compatible with Guidepup. No additional configuration needed.
+
+#### macOS (VoiceOver)
+
+You may need to complete manual setup steps:
+
+1. Open **System Settings > Privacy & Security > Accessibility**
+2. Add your terminal application (Terminal, iTerm2, VS Code, etc.)
+3. Enable VoiceOver in **System Settings > Accessibility > VoiceOver**
+
+For CI environments, use `npx @guidepup/setup setup --ci` to skip interactive prompts.
+
+> **Note:** The `virtual` reader option requires no screen reader setup and works on any platform.
+
+### Chrome Remote Debugging
+
+The tool connects to Chrome via the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) on port 9222. You must start Chrome with remote debugging enabled before running an audit:
+
+**Windows:**
+
+```bash
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
+```
+
+**macOS:**
+
+```bash
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+```
+
+**Linux:**
+
+```bash
+google-chrome --remote-debugging-port=9222
+```
+
+> **Tip:** Create a shortcut or alias for convenience. Make sure to close all existing Chrome instances before starting with the debug flag, or use a separate user data directory with `--user-data-dir=/tmp/chrome-debug`.
 
 ### Global CLI Installation
 
@@ -54,14 +107,14 @@ a11y audit <url> [options]
 
 **Options:**
 
-| Option                   | Description                           | Default                                |
-| ------------------------ | ------------------------------------- | -------------------------------------- |
-| `-o, --output-dir <dir>` | Output directory for audit files      | `audit-results/<url-slug>-<timestamp>` |
-| `--max-steps <number>`   | Maximum steps per navigation strategy | `500`                                  |
-| `-r, --reader <type>`    | Screen reader: `nvda` or `virtual`    | `nvda`                                 |
-| `-s, --speech`           | Enable NVDA speech audio output       | `false`                                |
-| `-v, --verbose`          | Enable verbose output                 | `false`                                |
-| `-h, --help`             | Display help                          |                                        |
+| Option                   | Description                                      | Default                                |
+| ------------------------ | ------------------------------------------------ | -------------------------------------- |
+| `-o, --output-dir <dir>` | Output directory for audit files                 | `audit-results/<url-slug>-<timestamp>` |
+| `--max-steps <number>`   | Maximum steps per navigation strategy            | `500`                                  |
+| `-r, --reader <type>`    | Screen reader: `nvda`, `virtual`, or `voiceover` | `nvda`                                 |
+| `-s, --speech`           | Enable NVDA speech audio output                  | `false`                                |
+| `-v, --verbose`          | Enable verbose output                            | `false`                                |
+| `-h, --help`             | Display help                                     |                                        |
 
 **Example:**
 
