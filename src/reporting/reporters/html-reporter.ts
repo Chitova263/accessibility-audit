@@ -260,7 +260,6 @@ ${this.getScripts()}
     <div class="site-header__identity">
       <span class="site-header__tool">Accessibility Audit</span>
       <h1 class="site-header__title">${escapeHtml(opts.title)}</h1>
-      <a class="site-header__url" href="${escapeHtml(data.page.url)}" target="_blank" rel="noopener">${escapeHtml(data.page.url)}</a>
     </div>
     <div class="site-header__verdict" style="--verdict-color:${aColor}" aria-label="Overall assessment: ${escapeHtml(label)}">
       <span class="verdict-label">Assessment</span>

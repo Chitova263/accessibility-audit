@@ -1,7 +1,9 @@
 import type { ScreenReader } from '../drivers/nvda';
 
 export interface NavigationItem {
+    /** The spoken phrase */
     phrase: string;
+    /** The item text (focused element text) */
     itemText: string;
 }
 
@@ -42,6 +44,8 @@ export interface ScreenReaderKeyBindings {
 export interface EndDetectionContext {
     phrase: string;
     itemText: string;
+    /** Backend DOM node ID of focused element. Null if focus is outside the document. */
+    backendNodeId?: number | null;
 }
 
 // ============== Declarative End Detection Strategy ==============
@@ -52,7 +56,11 @@ export interface EndDetectionContext {
  * The interpreter (createEndDetector) handles execution.
  */
 export type EndDetectionStrategy =
-    EndDetectionPhraseContains | EndDetectionPhraseRegex | EndDetectionLoopDetection | EndDetectionAny;
+    | EndDetectionPhraseContains
+    | EndDetectionPhraseRegex
+    | EndDetectionLoopDetection
+    | EndDetectionDocumentBoundary
+    | EndDetectionAny;
 
 /** Stop when phrase contains the specified text */
 export interface EndDetectionPhraseContains {
@@ -73,6 +81,16 @@ export interface EndDetectionLoopDetection {
     readonly type: 'loop-detection';
     /** Which field to use for detecting duplicates. Defaults to 'phrase'. */
     readonly key?: 'phrase' | 'itemText';
+}
+
+/**
+ * Stop when focus has left the document (e.g., moved to browser toolbar, address bar).
+ * This indicates navigation has reached the boundary of the page content.
+ */
+export interface EndDetectionDocumentBoundary {
+    readonly type: 'document-boundary';
+    /** Additional patterns to detect (merged with defaults). */
+    readonly additionalPatterns?: string[];
 }
 
 /** Stop when any of the sub-strategies triggers (OR logic) */

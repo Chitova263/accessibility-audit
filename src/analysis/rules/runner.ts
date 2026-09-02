@@ -95,7 +95,7 @@ export const RULES: readonly Rule<unknown, unknown>[] = [
     roleMismatch,
 
     // axe-core
-    axeCore,
+    // axeCore,
 ];
 
 export interface RunResult {

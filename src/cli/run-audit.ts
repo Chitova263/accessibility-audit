@@ -57,7 +57,6 @@ const outputDir = await resolveOutputDir({
 });
 
 let chromeDevToolsProtocolConnection: ChromeDevToolsProtocolConnection | undefined = undefined;
-let driverCleanup: (() => Promise<void>) | undefined = undefined;
 
 try {
     Logger.section('Starting Accessibility Audit');
@@ -71,7 +70,6 @@ try {
     Logger.debug('Chrome DevTools Protocol connection established');
 
     const strategies: INavigationStrategy[] = [
-        new DownArrowNavigationStrategy({ maxSteps: 1000 }),
         new HeadingNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
         new LandmarkNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
         new ButtonNavigationStrategy({ maxSteps: Math.min(100, maxSteps) }),
@@ -82,6 +80,7 @@ try {
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 4 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 5 }),
         new HeadingHierarchyNavigationStrategy({ maxSteps, level: 6 }),
+        new DownArrowNavigationStrategy({ maxSteps: 1000 }),
         new TabNavigationStrategy({ maxSteps }),
     ];
 
@@ -90,7 +89,6 @@ try {
     Logger.info('Page loaded');
 
     const driver = await createDriver({ type: readerType, page });
-    driverCleanup = driver.cleanup;
 
     const navigator = Navigator.fromConfig({
         reader: driver.reader,
@@ -148,9 +146,6 @@ try {
     const prompt = promptBuilder.withStrategyResults(result.results).withViolations(allViolations).build();
 
     await pageSession.endEndSession();
-    await driverCleanup();
-    driverCleanup = undefined;
-    await chromeDevToolsProtocolConnection.disconnect();
 
     Logger.section('LLM Prompt Generated');
     Logger.info(`Transcript: ${prompt.metadata.totalStrategies} strategies, ${prompt.metadata.totalSteps} steps`);
@@ -196,8 +191,7 @@ try {
     Logger.error('Audit failed', error);
     process.exit(1);
 } finally {
-    if (driverCleanup) {
-        await driverCleanup();
+    if (chromeDevToolsProtocolConnection?.isConnected()) {
+        chromeDevToolsProtocolConnection?.disconnect();
     }
-    chromeDevToolsProtocolConnection?.disconnect();
 }

@@ -3,20 +3,17 @@ import { Navigator } from './navigator';
 import { ElementNavigator } from './element-navigator/element-navigator';
 import { TabNavigator } from './tab-navigator/tab-navigator';
 import { DownArrowNavigator } from './down-arrow-navigator/down-arrow-navigator';
-import type { ScreenReader } from '../drivers/nvda';
+import type { ScreenReader, PressResult } from '../drivers/nvda';
 import type { ScreenReaderKeyBindings, ScreenReaderEndDetection } from './types';
 
-function createMockIO(): ScreenReader {
+function createMockScreenReader(): ScreenReader {
     return {
         start: vi.fn().mockResolvedValue(undefined),
         stop: vi.fn().mockResolvedValue(undefined),
-        press: vi.fn().mockResolvedValue(undefined),
-        lastSpokenPhrase: vi.fn().mockResolvedValue('no next heading'),
-        itemText: vi.fn().mockResolvedValue(''),
-        spokenPhraseLog: vi.fn().mockResolvedValue([]),
-        clearSpokenPhraseLog: vi.fn().mockResolvedValue(undefined),
-        itemTextLog: vi.fn().mockResolvedValue([]),
-        clearItemTextLog: vi.fn().mockResolvedValue(undefined),
+        press: vi.fn().mockResolvedValue({ 
+            spokenPhrases: ['no next heading'], 
+            itemText: '' 
+        } satisfies PressResult),
     };
 }
 
@@ -42,8 +39,8 @@ const testEndDetection: ScreenReaderEndDetection = {
 describe('Navigator', () => {
     describe('factory methods', () => {
         it('creates heading navigator with correct config', () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.headings();
 
@@ -52,8 +49,8 @@ describe('Navigator', () => {
         });
 
         it('creates heading level Navigator with correct types', () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             expect(nav.headingsLevel1().type).toBe('heading1');
             expect(nav.headingsLevel2().type).toBe('heading2');
@@ -64,8 +61,8 @@ describe('Navigator', () => {
         });
 
         it('creates headingsLevel navigator with specified level', () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.headingsLevel(3);
 
@@ -74,8 +71,8 @@ describe('Navigator', () => {
         });
 
         it('creates link navigator', () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.links();
 
@@ -84,8 +81,8 @@ describe('Navigator', () => {
         });
 
         it('creates landmark navigator', () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.landmarks();
 
@@ -94,8 +91,8 @@ describe('Navigator', () => {
         });
 
         it('creates button navigator', () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.buttons();
 
@@ -104,8 +101,8 @@ describe('Navigator', () => {
         });
 
         it('creates focusable elements navigator (TabNavigator)', () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.focusableElements();
 
@@ -114,8 +111,8 @@ describe('Navigator', () => {
         });
 
         it('creates linear elements navigator (ArrowNavigator)', () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.linearElements();
 
@@ -126,20 +123,20 @@ describe('Navigator', () => {
 
     describe('navigateToDocumentStart', () => {
         it('presses the document start key', async () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             await nav.navigateToDocumentStart();
 
-            expect(mockIO.press).toHaveBeenCalledWith('Control+Home');
+            expect(mockSR.press).toHaveBeenCalledWith('Control+Home');
         });
     });
 
     describe('fromConfig', () => {
         it('creates Navigator from config object', () => {
-            const mockIO = createMockIO();
+            const mockSR = createMockScreenReader();
             const config = {
-                reader: mockIO,
+                reader: mockSR,
                 keyBindings: testKeyBindings,
                 endDetection: testEndDetection,
             };
@@ -153,26 +150,29 @@ describe('Navigator', () => {
 
     describe('integration with key bindings', () => {
         it('heading navigator uses correct key from bindings', async () => {
-            const mockIO = createMockIO();
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.headings();
             for await (const _ of navigator) {
             }
 
-            expect(mockIO.press).toHaveBeenCalledWith('h');
+            expect(mockSR.press).toHaveBeenCalledWith('h');
         });
 
         it('heading level navigator uses level-specific key', async () => {
-            const mockIO = createMockIO();
-            mockIO.lastSpokenPhrase = vi.fn().mockResolvedValue('no next');
-            const nav = new Navigator(mockIO, testKeyBindings, testEndDetection);
+            const mockSR = createMockScreenReader();
+            mockSR.press = vi.fn().mockResolvedValue({ 
+                spokenPhrases: ['no next'], 
+                itemText: '' 
+            });
+            const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.headingsLevel(4);
             for await (const _ of navigator) {
             }
 
-            expect(mockIO.press).toHaveBeenCalledWith('4');
+            expect(mockSR.press).toHaveBeenCalledWith('4');
         });
     });
 });

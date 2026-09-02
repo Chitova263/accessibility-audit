@@ -1,185 +1,158 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DownArrowNavigator } from './down-arrow-navigator';
-import type { ScreenReader } from '../../drivers/nvda';
+import type { ScreenReader, PressResult } from '../../drivers/nvda';
 
-function createMockIO(overrides: Partial<ScreenReader> = {}): ScreenReader {
+function createMockScreenReader(): ScreenReader {
     return {
         start: vi.fn().mockResolvedValue(undefined),
         stop: vi.fn().mockResolvedValue(undefined),
-        press: vi.fn().mockResolvedValue(undefined),
-        lastSpokenPhrase: vi.fn().mockResolvedValue(''),
-        itemText: vi.fn().mockResolvedValue(''),
-        spokenPhraseLog: vi.fn().mockResolvedValue([]),
-        clearSpokenPhraseLog: vi.fn().mockResolvedValue(undefined),
-        itemTextLog: vi.fn().mockResolvedValue([]),
-        clearItemTextLog: vi.fn().mockResolvedValue(undefined),
-        ...overrides,
+        press: vi.fn().mockResolvedValue({ spokenPhrases: [], itemText: '' } satisfies PressResult),
     };
 }
 
-describe('ArrowNavigator', () => {
-    it('yields items until repeated phrase threshold is reached', async () => {
-        const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('Paragraph 1')
-                .mockResolvedValueOnce('Paragraph 2')
-                .mockResolvedValueOnce('Paragraph 3')
-                .mockResolvedValueOnce('End of document') // Repeat 1
-                .mockResolvedValueOnce('End of document') // Repeat 2
-                .mockResolvedValueOnce('End of document'), // Repeat 3 - triggers stop
-            itemText: vi
-                .fn()
-                .mockResolvedValueOnce('Text 1')
-                .mockResolvedValueOnce('Text 2')
-                .mockResolvedValueOnce('Text 3')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End'),
+/**
+ * Helper to create a mock press function that returns different results on each call.
+ * Use `null` phrase to simulate end of document (no speech).
+ */
+function createPressMock(results: Array<{ phrase: string | null; itemText?: string }>) {
+    let callIndex = 0;
+    return vi.fn().mockImplementation((): Promise<PressResult> => {
+        const result = results[callIndex++];
+        if (!result || result.phrase === null) {
+            return Promise.resolve({ spokenPhrases: [], itemText: '' });
+        }
+        return Promise.resolve({
+            spokenPhrases: [result.phrase],
+            itemText: result.itemText ?? '',
         });
+    });
+}
 
-        const navigator = new DownArrowNavigator(mockIO);
+describe('DownArrowNavigator', () => {
+    let mockSR: ScreenReader;
 
+    beforeEach(() => {
+        mockSR = createMockScreenReader();
+    });
+
+    it('yields items when pressing down arrow produces speech', async () => {
+        mockSR.press = createPressMock([
+            { phrase: 'First item' },
+            { phrase: 'Second item' },
+            { phrase: null }, // End - no speech
+            { phrase: null }, // Second silent press confirms end
+        ]);
+
+        const navigator = new DownArrowNavigator(mockSR, 'Down');
         const items = [];
         for await (const item of navigator) {
             items.push(item);
         }
 
-        expect(items).toHaveLength(6);
-        expect(items[0]?.phrase).toBe('Paragraph 1');
-        expect(items[1]?.phrase).toBe('Paragraph 2');
-        expect(items[2]?.phrase).toBe('Paragraph 3');
-        expect(items[3]?.phrase).toBe('End of document');
-        expect(items[4]?.phrase).toBe('End of document');
-        expect(items[5]?.phrase).toBe('End of document');
+        expect(items).toHaveLength(2);
+        expect(items[0]!.phrase).toBe('First item');
+        expect(items[1]!.phrase).toBe('Second item');
     });
 
-    it('presses Down arrow key for each advance', async () => {
-        const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('Line 1')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End'),
-            itemText: vi.fn().mockResolvedValue('text'),
-        });
+    it('stops after detecting same phrase repeated 30 times (repeat threshold)', async () => {
+        const repeatedPhrase = 'link, Support';
+        const results: Array<{ phrase: string }> = [];
+        for (let i = 0; i < 35; i++) {
+            results.push({ phrase: repeatedPhrase });
+        }
+        mockSR.press = createPressMock(results);
 
-        const navigator = new DownArrowNavigator(mockIO);
-
+        const navigator = new DownArrowNavigator(mockSR, 'Down', 30); // repeatThreshold = 30
         const items = [];
         for await (const item of navigator) {
             items.push(item);
         }
 
-        expect(mockIO.press).toHaveBeenCalledWith('Down');
+        // Should stop at 30 repetitions (repeat threshold)
+        expect(items).toHaveLength(30);
     });
 
-    it('uses custom arrow key when provided', async () => {
-        const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('Item')
-                .mockResolvedValueOnce('Item')
-                .mockResolvedValueOnce('Item')
-                .mockResolvedValueOnce('Item'),
-            itemText: vi.fn().mockResolvedValue('text'),
-        });
+    it('respects custom repeat threshold', async () => {
+        const repeatedPhrase = 'repeated item';
+        const results: Array<{ phrase: string }> = [];
+        for (let i = 0; i < 20; i++) {
+            results.push({ phrase: repeatedPhrase });
+        }
+        mockSR.press = createPressMock(results);
 
-        const navigator = new DownArrowNavigator(mockIO, 'Up');
-
+        const customThreshold = 5;
+        const navigator = new DownArrowNavigator(mockSR, 'Down', customThreshold);
         const items = [];
         for await (const item of navigator) {
             items.push(item);
         }
 
-        expect(mockIO.press).toHaveBeenCalledWith('Up');
+        expect(items).toHaveLength(customThreshold);
     });
 
-    it('uses custom repeat threshold when provided', async () => {
-        let callCount = 0;
-        const phrases = ['Content', 'End', 'End'];
+    it('stops after 2 consecutive silent presses (no speech = end of document)', async () => {
+        mockSR.press = createPressMock([
+            { phrase: 'First item' },
+            { phrase: 'Second item' },
+            { phrase: null }, // First silent press
+            { phrase: null }, // Second silent press - confirms end
+        ]);
 
-        const mockIO = createMockIO({
-            lastSpokenPhrase: vi.fn().mockImplementation(() => {
-                const phrase = callCount < phrases.length ? phrases[callCount] : 'End';
-                callCount++;
-                return Promise.resolve(phrase);
-            }),
-            itemText: vi.fn().mockResolvedValue('text'),
-        });
-
-        const navigator = new DownArrowNavigator(mockIO, 'Down', 2);
-
+        const navigator = new DownArrowNavigator(mockSR, 'Down');
         const items = [];
         for await (const item of navigator) {
             items.push(item);
         }
 
-        expect(items).toHaveLength(3);
-        expect(items[0]?.phrase).toBe('Content');
-        expect(items[1]?.phrase).toBe('End');
-        expect(items[2]?.phrase).toBe('End');
+        expect(items).toHaveLength(2);
+        expect(mockSR.press).toHaveBeenCalledTimes(4); // 2 content + 2 silent
     });
 
-    it('resets repeat count when different phrase encountered', async () => {
-        const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('A')
-                .mockResolvedValueOnce('A') // Repeat 1
-                .mockResolvedValueOnce('B') // Reset
-                .mockResolvedValueOnce('B') // Repeat 1
-                .mockResolvedValueOnce('B') // Repeat 2
-                .mockResolvedValueOnce('B'), // Repeat 3 - stop
-            itemText: vi.fn().mockResolvedValue('text'),
-        });
+    it('resets silent counter when speech occurs after one silent press', async () => {
+        mockSR.press = createPressMock([
+            { phrase: 'First item' },
+            { phrase: null }, // Silent, but not end yet
+            { phrase: 'Recovery item' }, // Speech occurs, reset counter
+            { phrase: null }, // Silent again
+            { phrase: null }, // Second consecutive silent - now it's end
+        ]);
 
-        const navigator = new DownArrowNavigator(mockIO, 'Down', 3);
-
+        const navigator = new DownArrowNavigator(mockSR, 'Down');
         const items = [];
         for await (const item of navigator) {
             items.push(item);
         }
 
-        expect(items).toHaveLength(5); // A, A, B, B, B
+        // Should get First item and Recovery item
+        expect(items).toHaveLength(2);
+        expect(items[0]!.phrase).toBe('First item');
+        expect(items[1]!.phrase).toBe('Recovery item');
     });
 
-    it('skips empty announcements', async () => {
-        const mockIO = createMockIO({
-            lastSpokenPhrase: vi
-                .fn()
-                .mockResolvedValueOnce('Content 1')
-                .mockResolvedValueOnce('') // Empty - skip
-                .mockResolvedValueOnce('Content 2')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End'),
-            itemText: vi
-                .fn()
-                .mockResolvedValueOnce('Text 1')
-                .mockResolvedValueOnce('') // Empty
-                .mockResolvedValueOnce('Text 2')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End')
-                .mockResolvedValueOnce('End'),
-        });
+    it('skips blank announcements where neither phrase nor itemText exist', async () => {
+        mockSR.press = createPressMock([
+            { phrase: 'First item' },
+            { phrase: '', itemText: '' }, // Blank - skipped
+            { phrase: '', itemText: '' }, // Blank - skipped
+            { phrase: 'After blanks' },
+            { phrase: null }, // Silent
+            { phrase: null }, // Second silent - end
+        ]);
 
-        const navigator = new DownArrowNavigator(mockIO);
-
+        const navigator = new DownArrowNavigator(mockSR, 'Down');
         const items = [];
         for await (const item of navigator) {
             items.push(item);
         }
 
-        const nonEmptyItems = items.filter((i) => i.phrase !== '' || i.itemText !== '');
-        expect(nonEmptyItems.length).toBeGreaterThanOrEqual(2);
+        // Blanks are skipped (no itemText or phrase), so 2 total
+        expect(items).toHaveLength(2);
+        expect(items[0]!.phrase).toBe('First item');
+        expect(items[1]!.phrase).toBe('After blanks');
     });
 
-    it('has correct type', () => {
-        const mockIO = createMockIO();
-        const navigator = new DownArrowNavigator(mockIO);
-
+    it('has correct type property', () => {
+        const navigator = new DownArrowNavigator(mockSR, 'Down');
         expect(navigator.type).toBe('linear');
     });
 });

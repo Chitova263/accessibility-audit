@@ -21,9 +21,14 @@ export class ChromeDevToolsProtocolConnection {
         this.browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`, { timeout });
     }
 
+    public isConnected(): boolean {
+        return !!this.browser?.isConnected();
+    }
+
     public async disconnect(): Promise<void> {
         if (this.browser?.isConnected()) {
             this.browser?.close();
+            this.browser = undefined;
         }
     }
 

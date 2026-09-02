@@ -9,14 +9,6 @@ import type { LlmCompleteResponse } from '../llm/prompt-builder';
 import type { Violation } from '../analysis/core/violation';
 import type { StrategyResult } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
-export interface ReportPage {
-    /** URL of the audited page */
-    url: string;
-
-    /** Page title */
-    title: string;
-}
-
 export interface ReportMeta {
     /** Timestamp when audit was run (ms since epoch) */
     timestamp: number;
@@ -32,9 +24,6 @@ export interface ReportMeta {
 }
 
 export interface ReportData {
-    /** Page that was audited */
-    page: ReportPage;
-
     /** LLM analysis response (validated by Zod schema) */
     analysis: LlmCompleteResponse;
 

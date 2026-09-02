@@ -1,19 +1,32 @@
 import { nvda } from '@guidepup/guidepup';
 import { execSync } from 'node:child_process';
+import { delay } from '@guidepup/guidepup/lib/delay';
+
+/**
+ * Result of a press() action - contains only the speech produced by that specific action.
+ */
+export interface PressResult {
+    /** Phrases spoken in response to this action (empty if NVDA didn't speak) */
+    spokenPhrases: string[];
+    /** The focused element's text */
+    itemText: string;
+}
 
 export interface ScreenReader {
     start(): Promise<void>;
     stop(): Promise<void>;
-    press(key: string): Promise<void>;
-    lastSpokenPhrase(): Promise<string>;
-    itemText(): Promise<string>;
-    spokenPhraseLog(): Promise<string[]>;
-    clearSpokenPhraseLog(): Promise<void>;
-    itemTextLog(): Promise<string[]>;
-    clearItemTextLog(): Promise<void>;
+    /**
+     * Press a key and wait for NVDA to finish speaking.
+     * Returns only the speech produced by this specific action.
+     */
+    press(key: string): Promise<PressResult>;
 }
 
 export class Nvda implements ScreenReader {
+    private readonly pollIntervalMs = 100;
+    private readonly stableThreshold = 3;
+    private readonly timeoutMs = 3000;
+
     async start(): Promise<void> {
         // Bring Chrome to foreground - NVDA needs window focus
         execSync(
@@ -35,31 +48,51 @@ export class Nvda implements ScreenReader {
         return nvda.stop();
     }
 
-    press(key: string): Promise<void> {
-        return nvda.press(key);
+    /**
+     * Press a key and wait for NVDA speech to stabilize.
+     * Returns only the speech produced by this specific action.
+     * If NVDA doesn't speak (e.g., at end of document), spokenPhrases will be empty.
+     */
+    async press(key: string): Promise<PressResult> {
+        // Clear log to isolate speech from this action only
+        await nvda.clearSpokenPhraseLog();
+        
+        // Perform the action
+        await nvda.press(key);
+        
+        // Wait for speech to complete and capture what was spoken
+        const spokenPhrases = await this.waitForSpeechStable();
+        const itemText = await nvda.itemText();
+        
+        return { spokenPhrases, itemText };
     }
 
-    lastSpokenPhrase(): Promise<string> {
-        return nvda.lastSpokenPhrase();
-    }
+    /**
+     * Wait for speech to stabilize by polling the phrase log until it stops changing.
+     * Returns the phrases that were spoken.
+     */
+    private async waitForSpeechStable(): Promise<string[]> {
+        const startTime = Date.now();
+        let lastLogLength = -1;
+        let stableCount = 0;
 
-    itemText(): Promise<string> {
-        return nvda.itemText();
-    }
+        while (Date.now() - startTime < this.timeoutMs) {
+            const log = await nvda.spokenPhraseLog();
 
-    spokenPhraseLog(): Promise<string[]> {
+            if (log.length === lastLogLength) {
+                stableCount++;
+                if (stableCount >= this.stableThreshold) {
+                    return log; // Speech has stabilized, return what was spoken
+                }
+            } else {
+                stableCount = 0;
+                lastLogLength = log.length;
+            }
+
+            await delay(this.pollIntervalMs);
+        }
+        
+        // Timeout reached, return whatever we have
         return nvda.spokenPhraseLog();
-    }
-
-    clearSpokenPhraseLog(): Promise<void> {
-        return nvda.clearSpokenPhraseLog();
-    }
-
-    itemTextLog(): Promise<string[]> {
-        return nvda.itemTextLog();
-    }
-
-    clearItemTextLog(): Promise<void> {
-        return nvda.clearItemTextLog();
     }
 }

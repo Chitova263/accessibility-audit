@@ -8,10 +8,15 @@ import type {
 } from '../browse-mode-strategies/navigation-strategy';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 import { NavigationStrategyResult } from '../browse-mode-strategies/navigation-strategy-result';
+import type { EndDetectionStrategy, EndDetector } from '../../navigators/types';
+import { createEndDetector } from '../../navigators/end-detector';
 
 function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+/** Default end detection: document boundary detection */
+const DEFAULT_END_DETECTION: EndDetectionStrategy = { type: 'document-boundary' };
 
 export class TabNavigationStrategy implements INavigationStrategy {
     public readonly meta: StrategyMetadata = {
@@ -20,13 +25,20 @@ export class TabNavigationStrategy implements INavigationStrategy {
         description: 'Navigates through focusable elements using Tab key (focus mode navigation)',
         mode: 'focus',
     };
-    public constructor(public readonly config: NavigationStrategyConfig) {}
+
+    private readonly endDetector: EndDetector;
+
+    public constructor(
+        public readonly config: NavigationStrategyConfig,
+        endDetection: EndDetectionStrategy = DEFAULT_END_DETECTION
+    ) {
+        this.endDetector = createEndDetector(endDetection);
+    }
 
     public async execute(ctx: NavigationContext): Promise<StrategyResult> {
         await ctx.navigator.navigateToDocumentStart();
         await ctx.navigator.navigateToDocumentStart();
         await delay(2000);
-        await ctx.reader.clearSpokenPhraseLog();
 
         const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
@@ -34,8 +46,19 @@ export class TabNavigationStrategy implements INavigationStrategy {
         let lastBackendNodeId: number | null = null;
         let consecutiveSameCount = 0;
 
+        this.endDetector.reset();
+
         for await (const { phrase, itemText } of ctx.navigator.focusableElements()) {
             const backendNodeId = await ctx.ax.getFocusedHtmlElementBackendNodeId();
+
+            // Check if focus has left the document (e.g., moved to browser UI)
+            if (this.endDetector.check({ phrase, itemText, backendNodeId })) {
+                return NavigationStrategyResult.exhausted(
+                    'tab focus exited document - end of page content',
+                    this.meta,
+                    navigationSteps
+                );
+            }
 
             if (backendNodeId == null && lastBackendNodeId != null) {
                 return NavigationStrategyResult.cycleComplete(

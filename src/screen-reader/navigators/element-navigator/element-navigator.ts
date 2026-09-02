@@ -18,9 +18,12 @@ export class ElementNavigator implements IElementNavigator {
         this.config.endDetector.reset();
 
         while (true) {
-            await this.sr.press(this.config.advanceKey);
-            const phrase = await this.sr.lastSpokenPhrase();
-            const itemText = await this.sr.itemText();
+            const { spokenPhrases, itemText } = await this.sr.press(this.config.advanceKey);
+
+            // Use the last phrase (most complete announcement)
+            const phrase = spokenPhrases.length > 0 
+                ? spokenPhrases[spokenPhrases.length - 1]! 
+                : '';
 
             if (this.config.endDetector.check({ phrase, itemText })) {
                 return;

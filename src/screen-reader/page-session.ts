@@ -38,6 +38,7 @@ export class PageSession {
         this.log.info(`Starting session for ${this.pageUrl.href}`);
         this.cdpSession = await this.page.context().newCDPSession(this.page);
         await this.page.bringToFront();
+        await delay(2000);
         await this.reader.start();
         this.log.debug('Session started, screen reader initialized');
     }

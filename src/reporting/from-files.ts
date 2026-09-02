@@ -26,12 +26,6 @@ export interface ReportFromFilesOptions {
     /** Path to strategy results / transcript JSON file (optional) */
     transcriptPath?: string;
 
-    /** Page URL (for report metadata) */
-    pageUrl?: string;
-
-    /** Page title (for report metadata) */
-    pageTitle?: string;
-
     /** Output format: 'html' | 'json' */
     format?: 'html' | 'json';
 
@@ -98,10 +92,6 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
 
     // Build report data
     const reportData: ReportData = {
-        page: {
-            url: options.pageUrl ?? 'Unknown',
-            title: options.pageTitle ?? 'Accessibility Audit Report',
-        },
         analysis,
         violations,
         transcript,
@@ -162,12 +152,6 @@ export async function generateReport(options: {
     /** Strategy results / transcript data */
     transcript?: StrategyResult[];
 
-    /** Page URL */
-    pageUrl?: string;
-
-    /** Page title */
-    pageTitle?: string;
-
     /** Output format */
     format?: 'html' | 'json';
 
@@ -178,10 +162,6 @@ export async function generateReport(options: {
     const analysis = isLlmCompleteResponse(options.analysis) ? options.analysis : parseLlmResponse(options.analysis);
 
     const reportData: ReportData = {
-        page: {
-            url: options.pageUrl ?? 'Unknown',
-            title: options.pageTitle ?? 'Accessibility Audit Report',
-        },
         analysis,
         violations: options.violations ?? [],
         transcript: options.transcript,
