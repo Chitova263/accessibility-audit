@@ -233,7 +233,6 @@ function transformStep(step: NavigationStep, config: ResolvedTranscriptConfig): 
 function transformStrategy(result: StrategyResult, config: ResolvedTranscriptConfig): PromptStrategySection {
     return {
         strategyName: result.meta.name,
-        strategyType: result.meta.type ?? 'unknown',
         description: result.meta.description,
         mode: result.meta.mode,
         completionReason: result.completionReason,
@@ -354,7 +353,6 @@ function addStepXml(
 function addSectionXml(parent: XMLBuilder, section: PromptStrategySection, config: ResolvedTranscriptConfig): void {
     const strategyEle = parent.ele('strategy', {
         name: section.strategyName,
-        type: section.strategyType,
         mode: section.mode,
     });
 

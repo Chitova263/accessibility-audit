@@ -11,7 +11,6 @@ import { NavigationStrategyResult } from './navigation-strategy-result';
 
 export class HeadingNavigationStrategy implements INavigationStrategy {
     public readonly meta: StrategyMetadata = {
-        type: 'heading',
         name: 'heading',
         description: 'Heading description',
         mode: 'browse',

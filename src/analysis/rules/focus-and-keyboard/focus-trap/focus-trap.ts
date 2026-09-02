@@ -35,7 +35,7 @@ export class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> 
         let tabStrategiesChecked = 0;
 
         for (const result of transcript) {
-            const strategyType = result.meta.type ?? result.meta.name;
+            const strategyType = result.meta.name;
 
             if (strategyType !== 'tab') continue;
 

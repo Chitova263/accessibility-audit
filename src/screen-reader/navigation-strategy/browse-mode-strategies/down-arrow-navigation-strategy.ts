@@ -14,7 +14,6 @@ export class DownArrowNavigationStrategy implements INavigationStrategy {
         name: 'arrow',
         description: 'Linear reading through page content using Down Arrow (browse mode)',
         mode: 'browse',
-        type: 'arrow',
     };
 
     public constructor(public readonly config: NavigationStrategyConfig) {}

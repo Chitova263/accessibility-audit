@@ -30,7 +30,12 @@ export { PageSession } from './screen-reader/page-session';
 export { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-connection';
 
 // New screen reader architecture
-export { Nvda, type ScreenReader } from './screen-reader/drivers/nvda';
+export {
+    Nvda,
+    type ScreenReader,
+    type ScreenReaderName,
+    getScreenReaderDisplayName,
+} from './screen-reader/drivers/nvda';
 export { VirtualScreenReader } from './screen-reader/drivers/virtual';
 export {
     createDriver,

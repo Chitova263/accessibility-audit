@@ -68,7 +68,7 @@ export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSki
         const firstFewTabStops: string[] = [];
 
         for (const result of transcript) {
-            const strategyType = result.meta.type ?? result.meta.name;
+            const strategyType = result.meta.name;
 
             if (strategyType !== 'tab') continue;
 

@@ -13,6 +13,7 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
 
 export interface AriaHiddenFocusableStats {
     totalFocusableElements: number;
@@ -38,7 +39,7 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
         const seen = new Set<string>();
 
         for (const result of transcript) {
-            const strategyType = result.meta.type ?? result.meta.name;
+            const strategyType = result.meta.name;
 
             if (strategyType !== 'tab') continue;
 
@@ -67,7 +68,7 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
                             { label: `${this.id}: ${this.meta.summary}` }
                         );
                     }
-                    violations.push(this.createViolation(step, context));
+                    violations.push(this.createViolation(step, context, ctx.screenReader));
                 }
             }
         }
@@ -93,9 +94,11 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
             timestamp: number;
             htmlSnippet: string | null;
         },
-        context: ScreenReaderContext
+        context: ScreenReaderContext,
+        screenReader: AuditContext['screenReader']
     ): ScreenReaderViolation {
         const spokenText = step.spokenPhrases.length > 0 ? step.spokenPhrases.join(', ') : '(nothing announced)';
+        const screenReaderDisplayName = getScreenReaderDisplayName(screenReader);
 
         return {
             id: `aria-hidden-focusable-${step.identifier}`,
@@ -105,7 +108,7 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
                 wcag: this.meta.wcag,
                 impact: this.meta.impact,
             },
-            message: `Focusable element has aria-hidden="true". Focus landed on this element but screen readers are instructed to ignore it, creating a confusing silent focus. NVDA announced: "${spokenText}"`,
+            message: `Focusable element has aria-hidden="true". Focus landed on this element but screen readers are instructed to ignore it, creating a confusing silent focus. ${screenReaderDisplayName} announced: "${spokenText}"`,
             element: step.htmlSnippet != null ? { htmlSnippet: step.htmlSnippet } : {},
             tool: 'screen-reader-audit',
             timestamp: step.timestamp,

@@ -55,7 +55,6 @@ export type PromptCompletionReason = z.infer<typeof completionReasonSchema>;
 
 export const promptStrategySectionSchema = z.object({
     strategyName: z.string(),
-    strategyType: z.string(),
     description: z.string(),
     mode: navigationModeSchema,
     completionReason: completionReasonSchema,

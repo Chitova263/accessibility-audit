@@ -88,7 +88,7 @@ export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveT
         const focusableElements: FocusableElement[] = [];
 
         for (const result of transcript) {
-            const strategyType = result.meta.type ?? result.meta.name;
+            const strategyType = result.meta.name;
             if (strategyType !== 'tab') continue;
 
             for (let tabIndex = 0; tabIndex < result.navigationSteps.length; tabIndex++) {

@@ -25,7 +25,7 @@ export function collectHeadings(ctx: AuditContext): HeadingInfo[] {
     const raw: HeadingInfo[] = [];
 
     for (const result of transcript) {
-        const strategyType = result.meta.type ?? result.meta.name;
+        const strategyType = result.meta.name;
 
         if (!strategyType.startsWith('heading')) continue;
 

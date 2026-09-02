@@ -20,7 +20,7 @@ export function collectLandmarks(transcript: StrategyResult[]): LandmarkInfo[] {
     const landmarks: LandmarkInfo[] = [];
 
     for (const result of transcript) {
-        const strategyType = result.meta.type ?? result.meta.name;
+        const strategyType = result.meta.name;
         if (strategyType !== 'landmark') continue;
 
         for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {

@@ -1,0 +1,54 @@
+{
+    // Strategy metadata
+    "meta": {
+        "name": "heading", // Strategy identifier
+        "description": "Navigates through all headings using NVDA's heading navigation (H)",
+        "mode": "browse", // browse = virtual cursor, focus = keyboard focus
+    },
+    // What the screen reader announced at each step
+    "navigationSteps": [
+        {
+            "index": 0, // Step number in sequence
+            "identifier": "50775caf-fcf2-4530-9d94-56f4c61be85d", // Unique step ID (UUID)
+            "spokenPhrases": [
+                // Exactly what the screen reader spoke
+                "main landmark, Summer Collection, heading, level 1",
+            ],
+            "itemText": "main landmark, Summer Collection, heading, level 1", // Combined spoken text
+            "itemTextLog": [
+                // History of itemText values
+                "main landmark, Summer Collection, heading, level 1",
+            ],
+            "timestamp": 1788361022587, // Unix timestamp when step was recorded
+            "axNode": {
+                // Accessibility tree node from Chrome DevTools Protocol
+                "nodeId": "58",
+                "ignored": false,
+                "role": {
+                    "type": "role",
+                    "value": "heading",
+                },
+                "name": {
+                    "type": "computedString",
+                    "value": "Summer Collection",
+                },
+                "properties": [
+                    {
+                        "name": "level",
+                        "value": {
+                            "type": "integer",
+                            "value": 1,
+                        },
+                    },
+                ],
+                "backendDOMNodeId": 58, // DOM node ID for element lookup
+            },
+            "htmlSnippet": "<h1 class=\"collection-title\">Summer Collection</h1>", // Source HTML element
+        },
+    ],
+    // Why navigation stopped
+    "completionReason": {
+        "kind": "exhausted", // exhausted | limit-reached | cycle-complete | trapped
+        "detail": "no more headings found on page",
+    },
+}

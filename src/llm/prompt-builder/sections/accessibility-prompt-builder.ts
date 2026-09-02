@@ -2,6 +2,8 @@ import type { Page } from 'playwright';
 import type { StrategyResult } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import type { Violation } from '../../../analysis/core/violation';
 import type { TranscriptSectionConfig, ViolationsSectionConfig, PromptTranscript } from '../schemas';
+import type { ScreenReaderName } from '../../../screen-reader/drivers/types';
+import { getScreenReaderDisplayName } from '../../../screen-reader/drivers/types';
 import { buildTranscriptData, buildTranscriptSection } from './transcript-section';
 import { buildViolationsSection } from './violations-section';
 import { getLlmOutputJsonSchema } from '../schemas';
@@ -28,6 +30,9 @@ export interface BuiltPrompt {
 }
 
 export interface AccessibilityPromptConfig {
+    /** Screen reader used for the audit. */
+    screenReader: ScreenReaderName;
+
     /** Configuration for transcript section */
     transcript?: TranscriptSectionConfig;
 
@@ -162,7 +167,7 @@ Rules flag the *where* (large gaps, dense landmarks). You judge the *whether* (d
 - Your job is to ADD insights, not to excuse violations
 `;
 
-const DEFAULT_CONFIG: Required<AccessibilityPromptConfig> = {
+const DEFAULT_CONFIG: Omit<Required<AccessibilityPromptConfig>, 'screenReader'> = {
     transcript: {
         includeHtmlSnippets: true,
         includeAxNodes: true,
@@ -187,7 +192,7 @@ export class AccessibilityPromptBuilder {
     private config: Required<AccessibilityPromptConfig>;
     private transcriptData: PromptTranscript | null = null;
 
-    constructor(config: AccessibilityPromptConfig = {}) {
+    constructor(config: AccessibilityPromptConfig) {
         this.config = {
             ...DEFAULT_CONFIG,
             ...config,
@@ -204,6 +209,11 @@ export class AccessibilityPromptBuilder {
 
     withViolations(violations: Violation[]): this {
         this.violations = violations;
+        return this;
+    }
+
+    withScreenReader(name: ScreenReaderName): this {
+        this.config.screenReader = name;
         return this;
     }
 
@@ -296,13 +306,14 @@ ${userPrompt}`;
 
     buildSystemPrompt(): string {
         const parts: string[] = [];
+        const screenReaderDisplayName = getScreenReaderDisplayName(this.config.screenReader);
 
         parts.push(`You are an expert accessibility auditor analyzing screen reader navigation transcripts.
 Your role is to identify accessibility issues that deterministic rules cannot catch.
 
 You will receive:
-1. A transcript of NVDA screen reader navigation through a web page
-2. Violations already found by static analyzers (axe-core and NVDA rules)
+1. A transcript of ${screenReaderDisplayName} screen reader navigation through a web page
+2. Violations already found by static analyzers (axe-core and ${screenReaderDisplayName} rules)
 
 Your task is to:
 1. Analyze the transcript for issues rules cannot detect (reading order, cognitive load, consistency, context, semantic)
@@ -466,7 +477,7 @@ Remember: Your job is to ADD insights. Do not dismiss rule findings without stro
     }
 }
 
-export function createPromptBuilder(config?: AccessibilityPromptConfig): AccessibilityPromptBuilder {
+export function createPromptBuilder(config: AccessibilityPromptConfig): AccessibilityPromptBuilder {
     return new AccessibilityPromptBuilder(config);
 }
 
@@ -474,7 +485,7 @@ export async function buildAccessibilityPrompt(
     transcript: StrategyResult[],
     violations: Violation[],
     page: Page,
-    config?: AccessibilityPromptConfig
+    config: AccessibilityPromptConfig
 ): Promise<BuiltPrompt> {
     const builder = new AccessibilityPromptBuilder(config);
     await builder.withPage(page);

@@ -17,7 +17,6 @@ const DEFAULT_END_DETECTION: EndDetectionStrategy = { type: 'document-boundary' 
 
 export class TabNavigationStrategy implements INavigationStrategy {
     public readonly meta: StrategyMetadata = {
-        type: 'tab',
         name: 'tab',
         description: 'Navigates through focusable elements using Tab key (focus mode navigation)',
         mode: 'focus',

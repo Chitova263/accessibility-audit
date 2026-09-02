@@ -77,7 +77,7 @@ export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrd
     private buildReadingOrderIndex(transcript: StrategyResult[]): Map<number, number> {
         const readingOrder = new Map<number, number>();
 
-        const arrowResult = transcript.find((r) => r.meta.type === 'arrow');
+        const arrowResult = transcript.find((r) => r.meta.name === 'arrow');
         if (!arrowResult) return readingOrder;
 
         for (let i = 0; i < arrowResult.navigationSteps.length; i++) {
@@ -97,7 +97,7 @@ export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrd
         const focusableElements: FocusableElement[] = [];
 
         for (const result of transcript) {
-            const strategyType = result.meta.type ?? result.meta.name;
+            const strategyType = result.meta.name;
             if (strategyType !== 'tab') continue;
 
             for (let tabIndex = 0; tabIndex < result.navigationSteps.length; tabIndex++) {

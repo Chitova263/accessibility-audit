@@ -35,7 +35,7 @@ const createStep = (
 const strategies = (linkSteps: NavigationStep[], arrowSteps?: NavigationStep[]) => {
     const results: StrategyResult[] = [
         {
-            meta: { name: 'link', description: 'Links', type: 'link', mode: 'browse' },
+            meta: { name: 'link', description: 'Links', mode: 'browse' },
             navigationSteps: linkSteps,
             completionReason: { kind: 'exhausted', detail: 'no more links found' },
         },
@@ -43,7 +43,7 @@ const strategies = (linkSteps: NavigationStep[], arrowSteps?: NavigationStep[]) 
 
     if (arrowSteps) {
         results.push({
-            meta: { name: 'arrow', description: 'Linear reading', type: 'arrow', mode: 'browse' },
+            meta: { name: 'arrow', description: 'Linear reading', mode: 'browse' },
             navigationSteps: arrowSteps,
             completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         });

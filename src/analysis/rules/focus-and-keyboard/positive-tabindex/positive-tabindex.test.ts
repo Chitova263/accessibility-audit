@@ -32,7 +32,7 @@ const createStep = (
 const tabStrategy = (tabSteps: NavigationStep[]) => {
     const results: StrategyResult[] = [
         {
-            meta: { name: 'tab', description: 'Tab order', type: 'tab', mode: 'focus' },
+            meta: { name: 'tab', description: 'Tab order', mode: 'focus' },
             navigationSteps: tabSteps,
             completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
         },

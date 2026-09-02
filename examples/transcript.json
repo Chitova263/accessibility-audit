@@ -1,0 +1,184 @@
+[
+    {
+        "meta": {
+            "name": "heading",
+            "description": "Navigates through all headings using NVDA's heading navigation (H)",
+            "mode": "browse"
+        },
+        "navigationSteps": [
+            {
+                "index": 0,
+                "identifier": "50775caf-fcf2-4530-9d94-56f4c61be85d",
+                "spokenPhrases": ["main landmark, Summer Collection, heading, level 1"],
+                "itemText": "main landmark, Summer Collection, heading, level 1",
+                "itemTextLog": ["main landmark, Summer Collection, heading, level 1"],
+                "timestamp": 1788361022587,
+                "axNode": {
+                    "nodeId": "58",
+                    "ignored": false,
+                    "role": {
+                        "type": "role",
+                        "value": "heading"
+                    },
+                    "name": {
+                        "type": "computedString",
+                        "value": "Summer Collection"
+                    },
+                    "properties": [
+                        {
+                            "name": "level",
+                            "value": {
+                                "type": "integer",
+                                "value": 1
+                            }
+                        }
+                    ],
+                    "backendDOMNodeId": 58
+                },
+                "htmlSnippet": "<h1 class=\"collection-title\">Summer Collection</h1>"
+            },
+            {
+                "index": 1,
+                "identifier": "0b296fe4-1295-4a5a-8b77-051353eae8dd",
+                "spokenPhrases": ["Women's Dresses, heading, level 2"],
+                "itemText": "Women's Dresses, heading, level 2",
+                "itemTextLog": ["Women's Dresses, heading, level 2"],
+                "timestamp": 1788361023770,
+                "axNode": {
+                    "nodeId": "74",
+                    "ignored": false,
+                    "role": {
+                        "type": "role",
+                        "value": "heading"
+                    },
+                    "name": {
+                        "type": "computedString",
+                        "value": "Women's Dresses"
+                    },
+                    "properties": [
+                        {
+                            "name": "level",
+                            "value": {
+                                "type": "integer",
+                                "value": 2
+                            }
+                        }
+                    ],
+                    "backendDOMNodeId": 74
+                },
+                "htmlSnippet": "<h2 class=\"category-title\">Women's Dresses</h2>"
+            },
+            {
+                "index": 2,
+                "identifier": "705b0637-5241-48cb-9407-9f7c30bcf137",
+                "spokenPhrases": ["Men's Shirts, heading, level 2"],
+                "itemText": "Men's Shirts, heading, level 2",
+                "itemTextLog": ["Men's Shirts, heading, level 2"],
+                "timestamp": 1788361024367,
+                "axNode": {
+                    "nodeId": "83",
+                    "ignored": false,
+                    "role": {
+                        "type": "role",
+                        "value": "heading"
+                    },
+                    "name": {
+                        "type": "computedString",
+                        "value": "Men's Shirts"
+                    },
+                    "properties": [
+                        {
+                            "name": "level",
+                            "value": {
+                                "type": "integer",
+                                "value": 2
+                            }
+                        }
+                    ],
+                    "backendDOMNodeId": 83
+                },
+                "htmlSnippet": "<h2 class=\"category-title\">Men's Shirts</h2>"
+            }
+        ],
+        "completionReason": {
+            "kind": "exhausted",
+            "detail": "no more headings found on page"
+        }
+    },
+    {
+        "meta": {
+            "name": "landmark",
+            "description": "Navigates through ARIA landmarks using NVDA's landmark navigation (D)",
+            "mode": "browse"
+        },
+        "navigationSteps": [
+            {
+                "index": 0,
+                "identifier": "2ad497b1-2f81-4186-9f75-b52071d0f295",
+                "spokenPhrases": ["banner landmark, Fashion Store, link"],
+                "itemText": "banner landmark, Fashion Store, link",
+                "itemTextLog": ["banner landmark, Fashion Store, link"],
+                "timestamp": 1788361030000,
+                "axNode": {
+                    "nodeId": "5",
+                    "role": {
+                        "type": "role",
+                        "value": "banner"
+                    },
+                    "name": {
+                        "type": "computedString",
+                        "value": ""
+                    },
+                    "backendDOMNodeId": 12
+                },
+                "htmlSnippet": "<header role=\"banner\">...</header>"
+            },
+            {
+                "index": 1,
+                "identifier": "dacdb9b2-3454-46f7-8d1a-1c7dc1c98610",
+                "spokenPhrases": ["navigation landmark, Main Menu"],
+                "itemText": "navigation landmark, Main Menu",
+                "itemTextLog": ["navigation landmark, Main Menu"],
+                "timestamp": 1788361031000,
+                "axNode": {
+                    "nodeId": "18",
+                    "role": {
+                        "type": "role",
+                        "value": "navigation"
+                    },
+                    "name": {
+                        "type": "computedString",
+                        "value": "Main Menu"
+                    },
+                    "backendDOMNodeId": 45
+                },
+                "htmlSnippet": "<nav aria-label=\"Main Menu\">...</nav>"
+            },
+            {
+                "index": 2,
+                "identifier": "7e2ba4eb-5ae1-4af0-850c-ea0d355e2dfc",
+                "spokenPhrases": ["main landmark"],
+                "itemText": "main landmark",
+                "itemTextLog": ["main landmark"],
+                "timestamp": 1788361032000,
+                "axNode": {
+                    "nodeId": "25",
+                    "role": {
+                        "type": "role",
+                        "value": "main"
+                    },
+                    "name": {
+                        "type": "computedString",
+                        "value": ""
+                    },
+                    "backendDOMNodeId": 78
+                },
+                "htmlSnippet": "<main>...</main>"
+            }
+        ],
+        "completionReason": {
+            "kind": "exhausted",
+            "detail": "no more landmarks found on page"
+        }
+    }
+]

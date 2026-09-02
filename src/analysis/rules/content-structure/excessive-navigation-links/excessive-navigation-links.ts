@@ -43,7 +43,7 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
 
         let totalLinks = 0;
         for (const result of transcript) {
-            if ((result.meta.type ?? result.meta.name) === 'link') {
+            if (result.meta.name === 'link') {
                 totalLinks = result.navigationSteps.length;
                 break;
             }
@@ -51,7 +51,7 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
 
         const navigationLandmarkNames: string[] = [];
         for (const result of transcript) {
-            if ((result.meta.type ?? result.meta.name) !== 'landmark') continue;
+            if (result.meta.name !== 'landmark') continue;
 
             for (const step of result.navigationSteps) {
                 const role = step.axNode?.role?.value;
@@ -91,7 +91,7 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
 
     private findFirstLinkStep(transcript: AuditContext['transcript']) {
         for (const result of transcript) {
-            if ((result.meta.type ?? result.meta.name) === 'link' && result.navigationSteps.length > 0) {
+            if (result.meta.name === 'link' && result.navigationSteps.length > 0) {
                 return result.navigationSteps[0]!;
             }
         }

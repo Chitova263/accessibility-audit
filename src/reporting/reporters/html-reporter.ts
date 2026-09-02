@@ -102,12 +102,15 @@ function renderViolationRefsOnly(html: string): string {
     //           [focus-trap:focus-trap-7f958390-ff16-4903-93c6-a58e6db7723f]
     // ViolationId format: {ruleId}-{uuid} where uuid is 8-4-4-4-12 hex chars
     // Note: This must NOT match step refs which have format [strategy:number:uuid]
-    const TOKEN = /\[([a-z][a-z0-9_-]*):([a-z][a-z0-9_-]+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
-    
+    const TOKEN =
+        /\[([a-z][a-z0-9_-]*):([a-z][a-z0-9_-]+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
+
     return html.replace(TOKEN, (_match, ruleId: string, violationId: string) => {
-        return `<a href="#violation-${escapeHtml(violationId)}" class="violation-ref" title="Jump to ${escapeHtml(ruleId)} violation">` +
+        return (
+            `<a href="#violation-${escapeHtml(violationId)}" class="violation-ref" title="Jump to ${escapeHtml(ruleId)} violation">` +
             `<span class="violation-ref__rule">${escapeHtml(ruleId)}</span>` +
-            `</a>`;
+            `</a>`
+        );
     });
 }
 

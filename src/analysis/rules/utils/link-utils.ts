@@ -47,7 +47,7 @@ export function collectLinks(transcript: StrategyResult[]): LinkInfo[] {
     const links: LinkInfo[] = [];
 
     for (const result of transcript) {
-        const strategyType = result.meta.type ?? result.meta.name;
+        const strategyType = result.meta.name;
 
         if (strategyType !== 'link') continue;
 
@@ -80,7 +80,7 @@ export function collectLinks(transcript: StrategyResult[]): LinkInfo[] {
  * the linear reading order used to build surrounding context.
  */
 export function getReadingSteps(transcript: StrategyResult[]): NavigationStep[] {
-    return transcript.find((r) => r.meta.type === 'arrow')?.navigationSteps ?? [];
+    return transcript.find((r) => r.meta.name === 'arrow')?.navigationSteps ?? [];
 }
 
 /**

@@ -8,15 +8,21 @@ import type {
 } from './navigation-strategy';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 import { NavigationStrategyResult } from './navigation-strategy-result';
+import { getScreenReaderDisplayName } from '../../drivers/types';
+import { getKeyBindings } from '../../navigators/config';
 
 export class LinkNavigationStrategy implements INavigationStrategy {
-    public readonly meta: StrategyMetadata = {
-        type: 'link',
-        name: 'link',
-        description: "Navigates through links as a blind user would, using NVDA's link navigation (K key)",
-        mode: 'browse',
-    };
-    public constructor(public readonly config: NavigationStrategyConfig) {}
+    public readonly meta: StrategyMetadata;
+
+    public constructor(public readonly config: NavigationStrategyConfig) {
+        const screenReaderName = getScreenReaderDisplayName(config.screenReader);
+        const keyBindings = getKeyBindings(config.screenReader);
+        this.meta = {
+            name: 'link',
+            description: `Navigates through links as a blind user would, using ${screenReaderName}'s link navigation (${keyBindings.nextLink})`,
+            mode: 'browse',
+        };
+    }
 
     public async execute(ctx: NavigationContext): Promise<StrategyResult> {
         const cursor = new AxTreeCursor(ctx.ax.tree.nodes);

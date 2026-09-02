@@ -8,6 +8,8 @@ import type {
 } from './navigation-strategy';
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 import { NavigationStrategyResult } from './navigation-strategy-result';
+import { getScreenReaderDisplayName } from '../../drivers/types';
+import { getKeyBindings } from '../../navigators/config';
 
 export interface HeadingHierarchyConfig extends NavigationStrategyConfig {
     level: 1 | 2 | 3 | 4 | 5 | 6;
@@ -19,18 +21,12 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
 
     public constructor(public readonly config: HeadingHierarchyConfig) {
         this.level = config.level;
-        const typeMap = {
-            1: 'heading1',
-            2: 'heading2',
-            3: 'heading3',
-            4: 'heading4',
-            5: 'heading5',
-            6: 'heading6',
-        } as const;
+        const screenReaderName = getScreenReaderDisplayName(config.screenReader);
+        const keyBindings = getKeyBindings(config.screenReader);
+        const keyForLevel = keyBindings.nextHeadingLevel(this.level);
         this.meta = {
-            type: typeMap[this.level],
             name: `heading-level-${this.level}`,
-            description: `Navigates through h${this.level} headings using NVDA's heading level navigation (${this.level} key)`,
+            description: `Navigates through h${this.level} headings using ${screenReaderName}'s heading level navigation (${keyForLevel})`,
             mode: 'browse',
         };
     }

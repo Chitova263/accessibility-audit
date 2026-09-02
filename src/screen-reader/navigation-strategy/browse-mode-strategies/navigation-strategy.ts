@@ -1,19 +1,5 @@
 import type { Navigator } from '../../navigators/navigator';
-import type { ScreenReader } from '../../drivers/nvda';
-
-export type StrategyType =
-    | 'tab'
-    | 'arrow'
-    | 'heading'
-    | 'landmark'
-    | 'button'
-    | 'link'
-    | 'heading1'
-    | 'heading2'
-    | 'heading3'
-    | 'heading4'
-    | 'heading5'
-    | 'heading6';
+import type { ScreenReader, ScreenReaderName } from '../../drivers/types';
 
 export type StrategyName =
     | 'tab'
@@ -33,11 +19,12 @@ export interface StrategyMetadata {
     name: StrategyName;
     description: string;
     mode: 'browse' | 'focus';
-    type?: StrategyType;
 }
 
 export interface NavigationStrategyConfig {
     maxSteps: number;
+    /** Screen reader being used. Used for description text. */
+    screenReader: ScreenReaderName;
 }
 
 export interface NavigationStep {

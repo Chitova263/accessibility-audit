@@ -3,7 +3,8 @@ import { execSync } from 'node:child_process';
 import { delay } from '@guidepup/guidepup/lib/delay';
 import type { ScreenReader, PressResult } from './types';
 
-export type { ScreenReader, PressResult } from './types';
+export type { ScreenReader, PressResult, ScreenReaderName } from './types';
+export { getScreenReaderDisplayName } from './types';
 
 export class Nvda implements ScreenReader {
     readonly name = 'nvda' as const;

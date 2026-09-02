@@ -44,16 +44,15 @@ const createStrategyResult = (
         completionReason?: CompletionReason;
     } = {}
 ): StrategyResult => {
-    const type = overrides.meta?.type ?? 'tab';
-    const mode = overrides.meta?.mode ?? (type === 'tab' ? 'focus' : 'browse');
+    const name = overrides.meta?.name ?? 'tab';
+    const mode = overrides.meta?.mode ?? (name === 'tab' ? 'focus' : 'browse');
     const defaultReason: CompletionReason =
-        type === 'tab'
+        name === 'tab'
             ? { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' }
-            : { kind: 'exhausted', detail: `no more ${type}s found` };
+            : { kind: 'exhausted', detail: `no more ${name}s found` };
     return {
         meta: {
-            name: overrides.meta?.name ?? 'tab',
-            type,
+            name,
             description: overrides.meta?.description ?? 'Tab navigation through focusable elements',
             mode,
         },
@@ -631,7 +630,7 @@ describe('buildTranscriptData', () => {
     it('should transform strategy results into transcript data', () => {
         const transcript: StrategyResult[] = [
             createStrategyResult({
-                meta: { name: 'heading', type: 'heading', description: 'Heading navigation' },
+                meta: { name: 'heading', description: 'Heading navigation' },
                 completionReason: { kind: 'exhausted', detail: 'no more headings found on page' },
                 navigationSteps: [
                     makeStep({
@@ -655,7 +654,7 @@ describe('buildTranscriptData', () => {
     it('should handle strategy results with complex axNodes', () => {
         const transcript: StrategyResult[] = [
             createStrategyResult({
-                meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
+                meta: { name: 'tab', description: 'Tab navigation' },
                 navigationSteps: [
                     makeStep({
                         index: 0,
@@ -680,15 +679,15 @@ describe('buildTranscriptData', () => {
     it('should filter strategies based on includeStrategies config', () => {
         const transcript: StrategyResult[] = [
             createStrategyResult({
-                meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
+                meta: { name: 'tab', description: 'Tab navigation' },
                 navigationSteps: [createNavigationStep(0, { spokenPhrases: ['Tab step'] })],
             }),
             createStrategyResult({
-                meta: { name: 'heading', type: 'heading', description: 'Heading navigation' },
+                meta: { name: 'heading', description: 'Heading navigation' },
                 navigationSteps: [createNavigationStep(0, { spokenPhrases: ['Heading step'] })],
             }),
             createStrategyResult({
-                meta: { name: 'landmark', type: 'landmark', description: 'Landmark navigation' },
+                meta: { name: 'landmark', description: 'Landmark navigation' },
                 navigationSteps: [createNavigationStep(0, { spokenPhrases: ['Landmark step'] })],
             }),
         ];
@@ -700,15 +699,15 @@ describe('buildTranscriptData', () => {
     it('should filter strategies based on excludeStrategies config', () => {
         const transcript: StrategyResult[] = [
             createStrategyResult({
-                meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
+                meta: { name: 'tab', description: 'Tab navigation' },
                 navigationSteps: [createNavigationStep(0, { spokenPhrases: ['Tab step'] })],
             }),
             createStrategyResult({
-                meta: { name: 'heading', type: 'heading', description: 'Heading navigation' },
+                meta: { name: 'heading', description: 'Heading navigation' },
                 navigationSteps: [createNavigationStep(0, { spokenPhrases: ['Heading step'] })],
             }),
             createStrategyResult({
-                meta: { name: 'landmark', type: 'landmark', description: 'Landmark navigation' },
+                meta: { name: 'landmark', description: 'Landmark navigation' },
                 navigationSteps: [createNavigationStep(0, { spokenPhrases: ['Landmark step'] })],
             }),
         ];
@@ -784,7 +783,7 @@ describe('buildTranscriptSection', () => {
     it('should build complete XML section from strategy results', () => {
         const transcript: StrategyResult[] = [
             createStrategyResult({
-                meta: { name: 'tab', type: 'tab', description: 'Tab navigation through focusable elements' },
+                meta: { name: 'tab', description: 'Tab navigation through focusable elements' },
                 completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
                 navigationSteps: [
                     makeStep({
@@ -808,7 +807,7 @@ describe('buildTranscriptSection', () => {
                 ],
             }),
             createStrategyResult({
-                meta: { name: 'heading', type: 'heading', description: 'Navigate through headings' },
+                meta: { name: 'heading', description: 'Navigate through headings' },
                 completionReason: { kind: 'exhausted', detail: 'no more headings found on page' },
                 navigationSteps: [
                     makeStep({
@@ -831,7 +830,7 @@ describe('buildTranscriptSection', () => {
     it('should build section with all config options', () => {
         const transcript: StrategyResult[] = [
             createStrategyResult({
-                meta: { name: 'tab', type: 'tab', description: 'Tab navigation' },
+                meta: { name: 'tab', description: 'Tab navigation' },
                 navigationSteps: [
                     makeStep({
                         index: 0,
@@ -844,7 +843,7 @@ describe('buildTranscriptSection', () => {
                 ],
             }),
             createStrategyResult({
-                meta: { name: 'heading', type: 'heading', description: 'Heading navigation' },
+                meta: { name: 'heading', description: 'Heading navigation' },
                 navigationSteps: [
                     makeStep({
                         index: 0,
@@ -873,7 +872,6 @@ describe('buildTranscriptSection', () => {
             createStrategyResult({
                 meta: {
                     name: 'landmark',
-                    type: 'landmark',
                     description: "Navigates through ARIA landmarks using NVDA's landmark navigation (D key)",
                 },
                 completionReason: { kind: 'exhausted', detail: 'no more landmarks found on page' },
@@ -915,7 +913,6 @@ describe('buildTranscriptSection', () => {
             createStrategyResult({
                 meta: {
                     name: 'arrow',
-                    type: 'arrow',
                     description: 'Linear reading through page content using Down Arrow (browse mode)',
                 },
                 completionReason: { kind: 'exhausted', detail: 'reached end of document' },
@@ -960,7 +957,7 @@ describe('buildTranscriptSection', () => {
     it('should handle strategy with empty navigation steps', () => {
         const transcript: StrategyResult[] = [
             createStrategyResult({
-                meta: { name: 'heading-level-6', type: 'heading6', description: 'Navigate through H6 headings' },
+                meta: { name: 'heading-level-6', description: 'Navigate through H6 headings' },
                 completionReason: { kind: 'exhausted', detail: 'no more h6 headings found' },
                 navigationSteps: [],
             }),

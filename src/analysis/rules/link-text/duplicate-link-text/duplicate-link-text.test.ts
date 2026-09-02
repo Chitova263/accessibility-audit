@@ -35,7 +35,7 @@ const createStep = (
 const linkStrategy = (linkSteps: NavigationStep[]) => {
     const results: StrategyResult[] = [
         {
-            meta: { name: 'link', description: 'Links', type: 'link', mode: 'browse' },
+            meta: { name: 'link', description: 'Links', mode: 'browse' },
             navigationSteps: linkSteps,
             completionReason: { kind: 'exhausted', detail: 'no more links found' },
         },

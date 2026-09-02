@@ -97,7 +97,7 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
         const elements: ElementInfo[] = [];
 
         for (const result of transcript) {
-            const strategyType = result.meta.type ?? result.meta.name;
+            const strategyType = result.meta.name;
 
             for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {
                 const step = result.navigationSteps[stepIndex]!;

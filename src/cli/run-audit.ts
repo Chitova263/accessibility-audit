@@ -54,18 +54,18 @@ try {
     Logger.debug('Chrome DevTools Protocol connection established');
 
     const strategies: INavigationStrategy[] = [
-        new HeadingNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
-        new LandmarkNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
-        new ButtonNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
-        new LinkNavigationStrategy({ maxSteps: options.maxSteps }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 1 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 2 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 3 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 4 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 5 }),
-        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 6 }),
-        new DownArrowNavigationStrategy({ maxSteps: 1000 }),
-        new TabNavigationStrategy({ maxSteps: options.maxSteps }),
+        new HeadingNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps), screenReader: options.reader }),
+        new LandmarkNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps), screenReader: options.reader }),
+        new ButtonNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps), screenReader: options.reader }),
+        new LinkNavigationStrategy({ maxSteps: options.maxSteps, screenReader: options.reader }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 1, screenReader: options.reader }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 2, screenReader: options.reader }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 3, screenReader: options.reader }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 4, screenReader: options.reader }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 5, screenReader: options.reader }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 6, screenReader: options.reader }),
+        new DownArrowNavigationStrategy({ maxSteps: 1000, screenReader: options.reader }),
+        new TabNavigationStrategy({ maxSteps: options.maxSteps, screenReader: options.reader }),
     ];
 
     const pageUrl = new URL(url);
@@ -114,6 +114,7 @@ try {
     Logger.info(`  - ${transcriptPath}`);
 
     const promptBuilder = createPromptBuilder({
+        screenReader: options.reader,
         transcript: {
             includeHtmlSnippets: true,
             includeAxNodes: true,

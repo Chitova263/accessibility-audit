@@ -1,0 +1,164 @@
+Analyze this accessibility audit data:
+
+<page_context>
+  <url>https://example-fashion.com/collections/summer</url>
+  <title>Summer Collection | Fashion Store</title>
+</page_context>
+
+<transcript strategies="7" total_steps="48">
+    <strategy name="heading" mode="browse">
+        <description>Navigates through all headings using NVDA's heading navigation (H)</description>
+        <completion_reason kind="exhausted">no more headings found on page</completion_reason>
+        <steps total="5">
+            <step index="0" id="50775caf-fcf2-4530-9d94-56f4c61be85d">
+                <spoken>main landmark, Summer Collection, heading, level 1</spoken>
+                <ax_node>
+                    <role>heading</role>
+                    <name>Summer Collection</name>
+                    <properties level="1"/>
+                </ax_node>
+                <html_snippet><![CDATA[<h1 class="collection-title">Summer Collection</h1>]]></html_snippet>
+            </step>
+            <step index="1" id="0b296fe4-1295-4a5a-8b77-051353eae8dd">
+                <spoken>Women's Dresses, heading, level 2</spoken>
+                <ax_node>
+                    <role>heading</role>
+                    <name>Women's Dresses</name>
+                    <properties level="2"/>
+                </ax_node>
+                <html_snippet><![CDATA[<h2 class="category-title">Women's Dresses</h2>]]></html_snippet>
+            </step>
+            <step index="2" id="705b0637-5241-48cb-9407-9f7c30bcf137">
+                <spoken>Men's Shirts, heading, level 2</spoken>
+                <ax_node>
+                    <role>heading</role>
+                    <name>Men's Shirts</name>
+                    <properties level="2"/>
+                </ax_node>
+                <html_snippet><![CDATA[<h2 class="category-title">Men's Shirts</h2>]]></html_snippet>
+            </step>
+            <step index="3" id="a1b2c3d4-e5f6-7890-abcd-ef1234567890">
+                <spoken>Floral Summer Dress, heading, level 3</spoken>
+                <ax_node>
+                    <role>heading</role>
+                    <name>Floral Summer Dress</name>
+                    <properties level="3"/>
+                </ax_node>
+                <html_snippet><![CDATA[<h3 class="product-name">Floral Summer Dress</h3>]]></html_snippet>
+            </step>
+            <step index="4" id="bebb05a7-4c86-4869-9394-faaa796a961f">
+                <spoken>Customer Reviews, heading, level 2</spoken>
+                <ax_node>
+                    <role>heading</role>
+                    <name>Customer Reviews</name>
+                    <properties level="2"/>
+                </ax_node>
+                <html_snippet><![CDATA[<h2>Customer Reviews</h2>]]></html_snippet>
+            </step>
+        </steps>
+    </strategy>
+    <strategy name="landmark" mode="browse">
+        <description>Navigates through ARIA landmarks using NVDA's landmark navigation (D)</description>
+        <completion_reason kind="exhausted">no more landmarks found on page</completion_reason>
+        <steps total="4">
+            <step index="0" id="2ad497b1-2f81-4186-9f75-b52071d0f295">
+                <spoken>banner landmark, Fashion Store, link</spoken>
+                <ax_node>
+                    <role>banner</role>
+                    <name></name>
+                </ax_node>
+            </step>
+            <step index="1" id="dacdb9b2-3454-46f7-8d1a-1c7dc1c98610">
+                <spoken>navigation landmark, Main Menu</spoken>
+                <ax_node>
+                    <role>navigation</role>
+                    <name>Main Menu</name>
+                </ax_node>
+            </step>
+            <step index="2" id="7e2ba4eb-5ae1-4af0-850c-ea0d355e2dfc">
+                <spoken>main landmark</spoken>
+                <ax_node>
+                    <role>main</role>
+                    <name></name>
+                </ax_node>
+            </step>
+            <step index="3" id="8f3ba5fb-6bf1-5bf1-961d-fb1e466f3gfd">
+                <spoken>content info landmark, Footer</spoken>
+                <ax_node>
+                    <role>contentinfo</role>
+                    <name>Footer</name>
+                </ax_node>
+            </step>
+        </steps>
+    </strategy>
+    <!-- Additional strategies (link, button, tab, arrow) truncated for brevity -->
+</transcript>
+
+<violations count="3">
+    <violation id="heading-level-skipped-a1b2c3d4" rule="heading-level-skipped" impact="moderate" tool="screen-reader-audit">
+        <message>Heading level skipped from H1 to H3. Expected H2 before H3.</message>
+        <element><![CDATA[<h3 class="product-name">Floral Summer Dress</h3>]]></element>
+        <wcag criterion="1.3.1" level="A"/>
+        <source strategy="heading" step_index="3" step_id="a1b2c3d4-e5f6-7890-abcd-ef1234567890"/>
+    </violation>
+    <violation id="generic-link-text-b2c3d4e5" rule="generic-link-text" impact="serious" tool="screen-reader-audit">
+        <message>Link text "Click here" is generic and does not describe the destination.</message>
+        <element><![CDATA[<a href="/sale">Click here</a>]]></element>
+        <wcag criterion="2.4.4" level="A"/>
+        <source strategy="link" step_index="12" step_id="b2c3d4e5-f6a7-8901-bcde-f12345678901"/>
+    </violation>
+    <violation id="color-contrast-c3d4e5f6" rule="color-contrast" impact="serious" tool="axe-core">
+        <message>Element has insufficient color contrast of 2.8:1 (expected 4.5:1 for normal text)</message>
+        <element><![CDATA[<span class="sale-price">$29.99</span>]]></element>
+        <wcag criterion="1.4.3" level="AA"/>
+    </violation>
+</violations>
+
+<analysis_instructions>
+## Analyze the transcript for these issue categories:
+
+1. READING ORDER ANOMALIES
+   - Content announced in illogical sequence
+   - Footer/sidebar before main content
+   - Related items announced far apart
+   - Price before product name, error before field label
+
+2. COGNITIVE LOAD
+   - Excessive items before main content (count them)
+   - Many similar-sounding items in sequence
+   - Deeply nested announcements (menus within menus)
+   - Information density that would overwhelm
+
+3. SEMANTIC MISMATCH
+   - Accessible name doesn't match likely function
+   - Context suggests different meaning than announced
+   - Visual metaphors that don't translate ("see below")
+
+4. CONSISTENCY PROBLEMS
+   - Same action with different names (Save/Submit/Confirm)
+   - Pattern breaks (most cards have headings, one doesn't)
+   - Inconsistent landmark usage
+
+5. MISSING CONTEXT
+   - Links/buttons that only make sense visually
+   - Ambiguous references ("View details" - of what?)
+   - Status communicated only by position/color
+
+## For each existing violation, provide:
+- Confidence: confirmed, likely, or uncertain
+- Severity rationale based on user impact
+- Specific remediation suggestion
+- False positive risk (low/medium/high)
+
+## Look for NEW semantic issues rules missed:
+- Reading order that's technically valid but confusing
+- Repetition that's problematic for this specific page type
+- Missing context that makes elements ambiguous
+- Cross-section inconsistencies
+
+Remember: Your job is to ADD insights. Do not dismiss rule findings without strong, cited evidence.
+</analysis_instructions>
+
+<output_format>
+Respond with JSON matching the schema provided in the system prompt.
+</output_format>

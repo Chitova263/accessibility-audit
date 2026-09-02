@@ -68,12 +68,7 @@ export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyA
 
                 byRole[role] = (byRole[role] ?? 0) + 1;
 
-                const context = createScreenReaderContext(
-                    step,
-                    result.meta.type ?? result.meta.name,
-                    stepIndex,
-                    ctx.screenReader
-                );
+                const context = createScreenReaderContext(step, result.meta.name, stepIndex, ctx.screenReader);
 
                 const backendNodeId = node.backendDOMNodeId;
                 if (typeof backendNodeId === 'number') {

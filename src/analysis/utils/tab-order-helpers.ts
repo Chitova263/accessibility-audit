@@ -50,7 +50,7 @@ export function isLikelyInTabOrder(element: ElementSignature, tabOrderSignatures
 export function countByRole(transcript: StrategyResult[], strategyType: string, role: string): number {
     let count = 0;
     for (const result of transcript) {
-        if ((result.meta.type ?? result.meta.name) !== strategyType) continue;
+        if (result.meta.name !== strategyType) continue;
         for (const step of result.navigationSteps) {
             if (step.axNode?.role?.value === role) count++;
         }
@@ -72,7 +72,7 @@ export function collectElementsByStrategy(
     const tabOrderSignatures = new Set<string>();
 
     for (const result of transcript) {
-        const currentStrategyType = result.meta.type ?? result.meta.name;
+        const currentStrategyType = result.meta.name;
 
         for (const step of result.navigationSteps) {
             const node = step.axNode;

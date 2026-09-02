@@ -1,0 +1,113 @@
+[
+    {
+        "id": "heading-level-skipped-a1b2c3d4",
+        "rule": {
+            "id": "heading-level-skipped",
+            "summary": "Heading level skipped",
+            "wcag": {
+                "primary": {
+                    "criterion": "1.3.1",
+                    "level": "A"
+                }
+            },
+            "impact": "moderate"
+        },
+        "message": "Heading level skipped from H1 to H3. Expected H2 before H3.",
+        "element": {
+            "htmlSnippet": "<h3 class=\"product-name\">Floral Summer Dress</h3>"
+        },
+        "tool": "screen-reader-audit",
+        "timestamp": 1788361023770,
+        "context": {
+            "source": {
+                "screenReader": "nvda",
+                "strategy": "heading",
+                "stepIndex": 3,
+                "stepId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "spokenPhrase": "Floral Summer Dress, heading, level 3"
+            },
+            "axNode": {
+                "nodeId": "92",
+                "role": "heading",
+                "name": "Floral Summer Dress",
+                "properties": [
+                    {
+                        "name": "level",
+                        "value": {
+                            "type": "integer",
+                            "value": 3
+                        }
+                    }
+                ]
+            },
+            "screenshot": {
+                "path": "screenshots/heading-level-skipped-a1b2c3d4.png",
+                "width": 1920,
+                "height": 1080,
+                "elementBounds": {
+                    "x": 320,
+                    "y": 450,
+                    "width": 280,
+                    "height": 24
+                }
+            }
+        }
+    },
+    {
+        "id": "generic-link-text-b2c3d4e5",
+        "rule": {
+            "id": "generic-link-text",
+            "summary": "Link text is generic",
+            "wcag": {
+                "primary": {
+                    "criterion": "2.4.4",
+                    "level": "A"
+                }
+            },
+            "impact": "serious"
+        },
+        "message": "Link text \"Click here\" is generic and does not describe the destination.",
+        "element": {
+            "selector": ".promo-banner a",
+            "htmlSnippet": "<a href=\"/sale\">Click here</a>"
+        },
+        "tool": "screen-reader-audit",
+        "timestamp": 1788361040000,
+        "context": {
+            "source": {
+                "screenReader": "nvda",
+                "strategy": "link",
+                "stepIndex": 12,
+                "stepId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+                "spokenPhrase": "Click here, link"
+            },
+            "linkText": "Click here"
+        }
+    },
+    {
+        "id": "color-contrast-c3d4e5f6",
+        "rule": {
+            "id": "color-contrast",
+            "summary": "Elements must have sufficient color contrast",
+            "wcag": {
+                "primary": {
+                    "criterion": "1.4.3",
+                    "level": "AA"
+                }
+            },
+            "impact": "serious"
+        },
+        "element": {
+            "selector": ".sale-price",
+            "htmlSnippet": "<span class=\"sale-price\">$29.99</span>"
+        },
+        "message": "Element has insufficient color contrast of 2.8:1 (expected 4.5:1 for normal text)",
+        "tool": "axe-core",
+        "timestamp": 1788361050000,
+        "context": {
+            "foreground": "#ff6b6b",
+            "background": "#ffffff",
+            "contrastRatio": 2.8
+        }
+    }
+]

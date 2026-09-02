@@ -2,7 +2,12 @@ export * from './analysis';
 export * from './reporting';
 export * from './llm/prompt-builder';
 export * from './chrome-dev-tools-protocol-connection';
-export { Nvda, type ScreenReader } from './screen-reader/drivers/nvda';
+export {
+    Nvda,
+    type ScreenReader,
+    type ScreenReaderName,
+    getScreenReaderDisplayName,
+} from './screen-reader/drivers/nvda';
 export { ElementNavigator } from './screen-reader/navigators/element-navigator/element-navigator';
 export { TabNavigator } from './screen-reader/navigators/tab-navigator/tab-navigator';
 export { DownArrowNavigator } from './screen-reader/navigators/down-arrow-navigator/down-arrow-navigator';

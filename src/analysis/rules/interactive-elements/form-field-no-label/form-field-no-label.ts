@@ -13,6 +13,7 @@ import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
+import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
 
 /** Form field roles that require labels */
 const FORM_FIELD_ROLES = [
@@ -70,7 +71,7 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
         const formFields: FormFieldInfo[] = [];
 
         for (const result of transcript) {
-            const strategyType = result.meta.type ?? result.meta.name;
+            const strategyType = result.meta.name;
 
             for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {
                 const step = result.navigationSteps[stepIndex]!;
@@ -134,7 +135,7 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
                         { label: `${this.id}: ${this.meta.summary}` }
                     );
                 }
-                violations.push(this.createViolation(field, context));
+                violations.push(this.createViolation(field, context, ctx.screenReader));
             }
         }
 
@@ -178,8 +179,13 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
         return descriptions[role] ?? role;
     }
 
-    private createViolation(field: FormFieldInfo, context: ScreenReaderContext): ScreenReaderViolation {
+    private createViolation(
+        field: FormFieldInfo,
+        context: ScreenReaderContext,
+        screenReader: AuditContext['screenReader']
+    ): ScreenReaderViolation {
         const roleDesc = this.getRoleDescription(field.role);
+        const screenReaderDisplayName = getScreenReaderDisplayName(screenReader);
 
         return {
             id: `unlabeled-form-field-${field.identifier}`,
@@ -189,7 +195,7 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
                 wcag: this.meta.wcag,
                 impact: this.meta.impact,
             },
-            message: `${capitalize(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. NVDA announced: "${field.itemText || '(nothing)'}"`,
+            message: `${capitalize(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. ${screenReaderDisplayName} announced: "${field.itemText || '(nothing)'}"`,
             ...(field.htmlSnippet != null && { element: { htmlSnippet: field.htmlSnippet } }),
             tool: 'screen-reader-audit',
             timestamp: field.timestamp,
