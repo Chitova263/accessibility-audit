@@ -110,6 +110,7 @@ export class PageSession {
                 getNodeOuterHtml: (nodeId: number) => AxTreeUtil.getNodeOuterHtml(session, nodeId),
                 getFocusedHtmlElementBackendNodeId: () => AxTreeUtil.getFocusedHtmlElementBackendNodeId(session),
                 getFocusedNodeHtml: () => AxTreeUtil.getFocusedNodeHtml(this.page),
+                getDocumentHasFocus: () => this.page.evaluate(() => document.hasFocus()),
             },
         };
     }
