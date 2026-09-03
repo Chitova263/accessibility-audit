@@ -3,10 +3,7 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type {
-    NavigationStep,
-    StrategyResult,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { NavigationStep, StrategyResult } from '../../../../screen-reader/strategies/navigation-strategy';
 
 export interface NestedPattern {
     step: number;
@@ -19,7 +16,6 @@ export interface NestedInteractiveElementsStats {
     totalPatterns: number;
 }
 
-// Patterns that indicate nested interactive elements
 const NESTED_PATTERNS = [
     /link,\s*link/i, // "link, link" - nested links
     /button,\s*link/i, // "button, link" - button containing link
@@ -67,13 +63,11 @@ export class NestedInteractiveElementsRule implements Rule<ScreenReaderContext, 
         const patterns: NestedPattern[] = [];
         const seen = new Set<string>();
 
-        // Check arrow navigation for nested patterns
         const arrowResult = getArrowStrategyResult(transcript);
         if (arrowResult) {
             this.analyzeSteps(arrowResult.navigationSteps, patterns, seen);
         }
 
-        // Also check link navigation
         const linkResult = getLinkStrategyResult(transcript);
         if (linkResult) {
             this.analyzeSteps(linkResult.navigationSteps, patterns, seen);

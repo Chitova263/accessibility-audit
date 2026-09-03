@@ -20,9 +20,6 @@ export interface ContextLogger {
     error(message: string, data?: unknown): void;
 }
 
-/**
- * Static logger with configurable levels and contextual prefixes.
- */
 export const Logger = {
     _level: 'info' as LogLevel,
     _options: {

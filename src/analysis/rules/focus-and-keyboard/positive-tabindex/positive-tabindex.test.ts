@@ -1,10 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { rule } from './positive-tabindex';
 import { mockContext } from '../../test-fixtures';
-import type {
-    StrategyResult,
-    NavigationStep,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult, NavigationStep } from '../../../../screen-reader/strategies/navigation-strategy';
 
 const createStep = (
     index: number,
@@ -32,7 +29,7 @@ const createStep = (
 const tabStrategy = (tabSteps: NavigationStep[]) => {
     const results: StrategyResult[] = [
         {
-            meta: { name: 'tab', description: 'Tab order', mode: 'focus' },
+            meta: { name: 'tab', description: 'Tab order' },
             navigationSteps: tabSteps,
             completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
         },

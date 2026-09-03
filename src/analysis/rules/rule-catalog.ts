@@ -14,7 +14,7 @@
  */
 
 import type { WcagCriterion, ScreenReaderContext, ScreenReaderViolation } from '../core/violation';
-import type { ScreenReaderName } from '../../screen-reader/drivers/types';
+import type { ScreenReaderType } from '../../screen-reader/screen-reader-type';
 
 export type Impact = 'critical' | 'serious' | 'moderate' | 'minor';
 
@@ -332,7 +332,7 @@ export interface BuildViolationOptions {
     /** HTML snippet of the element, if available */
     htmlSnippet?: string | null;
     /** Which screen reader found this (used for tool field) */
-    screenReader: ScreenReaderName;
+    screenReader: ScreenReaderType;
 }
 
 /**

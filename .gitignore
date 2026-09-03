@@ -6,6 +6,8 @@ dist/
 
 # IDE
 .idea/
+.kiro/
+.claude/
 
 # Playwright
 playwright-report/

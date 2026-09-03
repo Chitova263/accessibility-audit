@@ -73,6 +73,23 @@ google-chrome --remote-debugging-port=9222
 
 > **Tip:** Create a shortcut or alias for convenience. Make sure to close all existing Chrome instances before starting with the debug flag, or use a separate user data directory with `--user-data-dir=/tmp/chrome-debug`.
 
+Use `--port <number>` if you started Chrome on a port other than 9222. If nothing is
+listening, the audit fails immediately with the command to run rather than hanging.
+
+#### Skipping the setup: `--launch`
+
+Passing `--launch` makes the tool start its own throwaway browser instead of attaching
+to yours. No debugging port, no profile, no setup:
+
+```bash
+a11y audit https://example.com --reader virtual --launch
+```
+
+The trade-off is that a launched browser has no cookies or logins, so it cannot reach
+pages behind authentication - that is what attaching to your own Chrome is for. It is
+the right choice for CI and for one-shot audits of public pages. `--launch` and
+`--port` are mutually exclusive.
+
 ### Global CLI Installation
 
 To install the CLI tools globally:

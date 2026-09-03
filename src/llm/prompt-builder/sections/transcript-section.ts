@@ -1,10 +1,7 @@
 import { parse, HTMLElement } from 'node-html-parser';
 import { create } from 'xmlbuilder2';
 import type { XMLBuilder } from 'xmlbuilder2/lib/interfaces';
-import type {
-    StrategyResult,
-    NavigationStep,
-} from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult, NavigationStep } from '../../../screen-reader/strategies/navigation-strategy';
 import type {
     PromptTranscript,
     PromptStrategySection,
@@ -15,23 +12,14 @@ import type {
 } from '../schemas';
 import { mergeTranscriptConfig } from '../schemas';
 
-/**
- * Cleans and truncates HTML snippet using node-html-parser.
- * - Removes script, style, and noscript elements
- * - Removes event handler attributes (onclick, onload, etc.)
- * - Truncates intelligently at element boundaries
- * - Falls back to text content if HTML is too complex
- */
 function cleanAndTruncateHtml(html: string, maxLength: number): string {
     try {
         const root = parse(html, {
             comment: false, // Remove comments
         });
 
-        // Remove noise elements
         root.querySelectorAll('script, style, noscript, svg').forEach((el) => el.remove());
 
-        // Remove event handler attributes from all elements
         const removeEventHandlers = (element: HTMLElement) => {
             const attrs = element.attributes;
             for (const attr of Object.keys(attrs)) {
@@ -47,7 +35,6 @@ function cleanAndTruncateHtml(html: string, maxLength: number): string {
         };
         removeEventHandlers(root);
 
-        // Get cleaned HTML
         let cleaned = root.outerHTML.trim();
 
         // If root is just a text wrapper, get the inner content
@@ -62,17 +49,14 @@ function cleanAndTruncateHtml(html: string, maxLength: number): string {
             return cleaned;
         }
 
-        // Try to truncate at element boundary
-        // Find the last complete element within maxLength
+        // Truncate at the last complete element that fits
         const truncated = cleaned.slice(0, maxLength);
         const lastTagClose = truncated.lastIndexOf('>');
 
         if (lastTagClose > 0) {
-            // Parse the truncated portion to check if it's valid
             const partial = truncated.slice(0, lastTagClose + 1);
             try {
                 const partialRoot = parse(partial);
-                // If we got valid HTML, use it
                 const partialHtml = partialRoot.outerHTML.trim();
                 if (partialHtml.length > 0) {
                     return partialHtml + (cleaned.length > maxLength ? '...' : '');
@@ -97,7 +81,6 @@ function cleanAndTruncateHtml(html: string, maxLength: number): string {
 
         return truncatedText + '...';
     } catch {
-        // If parsing fails, return original truncated
         if (html.length <= maxLength) {
             return html;
         }
@@ -125,7 +108,6 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
         name = node.name;
     }
 
-    // Extract role
     let role = '';
     if (node.role && typeof node.role === 'object') {
         const roleObj = node.role as Record<string, unknown>;
@@ -135,7 +117,6 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
         role = node.role;
     }
 
-    // Extract description
     let description: string | undefined;
     if (node.description && typeof node.description === 'object') {
         const descObj = node.description as Record<string, unknown>;
@@ -144,7 +125,6 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
             typeof rawValue === 'string' ? rawValue : typeof rawValue === 'number' ? String(rawValue) : undefined;
     }
 
-    // Extract value
     let value: string | undefined;
     if (node.value && typeof node.value === 'object') {
         const valObj = node.value as Record<string, unknown>;
@@ -152,7 +132,6 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
         value = typeof rawValue === 'string' ? rawValue : typeof rawValue === 'number' ? String(rawValue) : undefined;
     }
 
-    // Extract properties from the properties array
     const properties: PromptAxNode['properties'] = {};
     if (Array.isArray(node.properties)) {
         for (const prop of node.properties) {
@@ -194,7 +173,6 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
         }
     }
 
-    // Only include properties object if it has values
     const hasProperties = Object.keys(properties).length > 0;
 
     return {
@@ -239,7 +217,6 @@ function transformStrategy(result: StrategyResult, config: ResolvedTranscriptCon
     return {
         strategyName: result.meta.name,
         description: result.meta.description,
-        mode: result.meta.mode,
         completionReason: result.completionReason,
         totalSteps: result.navigationSteps.length,
         steps: result.navigationSteps.map((step) => transformStep(step, config)),
@@ -358,7 +335,6 @@ function addStepXml(
 function addSectionXml(parent: XMLBuilder, section: PromptStrategySection, config: ResolvedTranscriptConfig): void {
     const strategyEle = parent.ele('strategy', {
         name: section.strategyName,
-        mode: section.mode,
     });
 
     strategyEle.ele('description').txt(section.description);

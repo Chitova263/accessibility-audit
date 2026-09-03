@@ -132,9 +132,6 @@ export namespace CDP {
             value: AXValue;
         }
 
-        /**
-         * A node in the accessibility tree.
-         */
         export interface AXNode {
             nodeId: AXNodeId;
             ignored: boolean;
@@ -157,10 +154,7 @@ export namespace CDP {
     }
 }
 
-// Convenience exports at module level
 export type AXNode = CDP.Accessibility.AXNode;
-export type AXNodeId = CDP.Accessibility.AXNodeId;
 export type AXValue = CDP.Accessibility.AXValue;
 export type AXProperty = CDP.Accessibility.AXProperty;
-export type AXPropertyName = CDP.Accessibility.AXPropertyName;
 export type GetFullAXTreeResult = CDP.Accessibility.GetFullAXTreeResult;

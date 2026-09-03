@@ -23,15 +23,6 @@ export function getRole(node: AXNode | null | undefined): string | undefined {
 export function getName(node: AXNode | null | undefined): string | undefined {
     return getStringValue(node?.name);
 }
-
-/**
- * Extract the accessible description string from an AXNode.
- * Returns undefined if the node has no description or the description value is not a string.
- */
-export function getDescription(node: AXNode | null | undefined): string | undefined {
-    return getStringValue(node?.description);
-}
-
 /**
  * Extract the string value from an AXValue.
  * Returns undefined if the value is not present or not a string.
@@ -53,15 +44,6 @@ export function getNumberValue(axValue: AXValue | undefined): number | undefined
     }
     return axValue.value;
 }
-
-/**
- * Find a property by name and extract its string value.
- */
-export function getPropertyString(node: AXNode | null | undefined, propertyName: string): string | undefined {
-    const prop = node?.properties?.find((p) => p.name === propertyName);
-    return getStringValue(prop?.value);
-}
-
 /**
  * Find a property by name and extract its number value.
  * Commonly used for 'level' property on headings.
@@ -78,55 +60,4 @@ export function getPropertyNumber(node: AXNode | null | undefined, propertyName:
 export function getHeadingLevel(node: AXNode | null | undefined): number | undefined {
     return getPropertyNumber(node, 'level');
 }
-
-/**
- * Check if an AXNode has a specific role.
- */
-export function hasRole(node: AXNode | null | undefined, role: string): boolean {
-    return getRole(node) === role;
-}
-
-/**
- * Check if an AXNode is a landmark with the specified type.
- */
-export function isLandmark(node: AXNode | null | undefined, landmarkType?: string): boolean {
-    const role = getRole(node);
-    if (!role) return false;
-
-    const landmarkRoles = ['banner', 'navigation', 'main', 'complementary', 'contentinfo', 'form', 'region', 'search'];
-    if (!landmarkRoles.includes(role)) return false;
-
-    return landmarkType === undefined || role === landmarkType;
-}
-
-/**
- * Check if an AXNode is interactive (button, link, textbox, etc.).
- */
-export function isInteractive(node: AXNode | null | undefined): boolean {
-    const role = getRole(node);
-    if (!role) return false;
-
-    const interactiveRoles = [
-        'button',
-        'link',
-        'textbox',
-        'checkbox',
-        'radio',
-        'combobox',
-        'listbox',
-        'menuitem',
-        'menuitemcheckbox',
-        'menuitemradio',
-        'option',
-        'searchbox',
-        'slider',
-        'spinbutton',
-        'switch',
-        'tab',
-        'treeitem',
-    ];
-    return interactiveRoles.includes(role);
-}
-
-// Re-export AXNode for convenience
 export type { AXNode, AXValue, AXProperty };

@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { buildTranscriptData, renderTranscriptXml, buildTranscriptSection } from './transcript-section';
 import type {
     StrategyResult,
-    StrategyMetadata,
+    NavigationStrategyMetadata,
     NavigationStep,
     CompletionReason,
-} from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+} from '../../../screen-reader/strategies/navigation-strategy';
 import type { PromptTranscript } from '../schemas';
 import type { AXNode } from '../../../types/cdp';
 
@@ -41,12 +41,11 @@ const makeStep = (step: Omit<NavigationStep, 'focusedElementTextLog' | 'timestam
 
 const createStrategyResult = (
     overrides: Partial<Omit<StrategyResult, 'meta' | 'completionReason'>> & {
-        meta?: Partial<StrategyMetadata>;
+        meta?: Partial<NavigationStrategyMetadata>;
         completionReason?: CompletionReason;
     } = {}
 ): StrategyResult => {
     const name = overrides.meta?.name ?? 'tab';
-    const mode = overrides.meta?.mode ?? (name === 'tab' ? 'focus' : 'browse');
     const defaultReason: CompletionReason =
         name === 'tab'
             ? { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' }
@@ -55,7 +54,6 @@ const createStrategyResult = (
         meta: {
             name,
             description: overrides.meta?.description ?? 'Tab navigation through focusable elements',
-            mode,
         },
         completionReason: overrides.completionReason ?? defaultReason,
         navigationSteps: overrides.navigationSteps ?? [createNavigationStep(0), createNavigationStep(1)],
@@ -92,7 +90,6 @@ describe('renderTranscriptXml', () => {
                     {
                         strategyName: 'tab',
                         description: 'Tab navigation',
-                        mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
                         totalSteps: 1,
                         steps: [
@@ -138,7 +135,6 @@ describe('renderTranscriptXml', () => {
                     {
                         strategyName: 'tab',
                         description: 'Tab navigation',
-                        mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
                         totalSteps: 1,
                         steps: [
@@ -169,7 +165,6 @@ describe('renderTranscriptXml', () => {
                     {
                         strategyName: 'landmark',
                         description: 'Landmark navigation',
-                        mode: 'browse',
                         completionReason: { kind: 'exhausted', detail: 'no more landmarks found on page' },
                         totalSteps: 2,
                         steps: [
@@ -194,7 +189,6 @@ describe('renderTranscriptXml', () => {
                     {
                         strategyName: 'heading',
                         description: 'Heading navigation',
-                        mode: 'browse',
                         completionReason: { kind: 'exhausted', detail: 'no more headings found on page' },
                         totalSteps: 3,
                         steps: [
@@ -227,7 +221,6 @@ describe('renderTranscriptXml', () => {
                     {
                         strategyName: 'tab',
                         description: 'Tab navigation',
-                        mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
                         totalSteps: 1,
                         steps: [
@@ -257,7 +250,6 @@ describe('renderTranscriptXml', () => {
                     {
                         strategyName: 'tab',
                         description: 'Tab navigation',
-                        mode: 'focus',
                         completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
                         totalSteps: 1,
                         steps: [
@@ -557,7 +549,6 @@ describe('edge cases', () => {
                 {
                     strategyName: 'tab',
                     description: 'Tab navigation',
-                    mode: 'focus',
                     completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
                     totalSteps: 1,
                     steps: [
@@ -589,7 +580,6 @@ describe('edge cases', () => {
                 {
                     strategyName: 'tab',
                     description: 'Tab navigation',
-                    mode: 'focus',
                     completionReason: { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' },
                     totalSteps: 1,
                     steps: [

@@ -13,7 +13,7 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
+import { getScreenReaderDisplayName } from '../../../../screen-reader/screen-reader-type';
 
 export interface AriaHiddenFocusableStats {
     totalFocusableElements: number;

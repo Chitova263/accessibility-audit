@@ -13,7 +13,7 @@ import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { capitalize } from '../../../utils/string-utils';
-import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
+import { getScreenReaderDisplayName } from '../../../../screen-reader/screen-reader-type';
 import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
 

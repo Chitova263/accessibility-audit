@@ -1,9 +1,9 @@
 import type { Page } from 'playwright';
-import type { StrategyResult } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult } from '../../../screen-reader/strategies/navigation-strategy';
 import type { Violation } from '../../../analysis/core/violation';
 import type { TranscriptSectionConfig, ViolationsSectionConfig, PromptTranscript } from '../schemas';
-import type { ScreenReaderName } from '../../../screen-reader/drivers/types';
-import { getScreenReaderDisplayName } from '../../../screen-reader/drivers/types';
+import type { ScreenReaderType } from '../../../screen-reader/screen-reader-type';
+import { getScreenReaderDisplayName } from '../../../screen-reader/screen-reader-type';
 import { buildTranscriptData, buildTranscriptSection } from './transcript-section';
 import { buildViolationsSection } from './violations-section';
 import { getLlmOutputJsonSchema } from '../schemas';
@@ -29,7 +29,7 @@ export interface BuiltPrompt {
 }
 
 export interface AccessibilityPromptConfig {
-    screenReader: ScreenReaderName;
+    screenReader: ScreenReaderType;
     transcript?: TranscriptSectionConfig;
     violations?: ViolationsSectionConfig;
     /** Default: true */
@@ -200,7 +200,7 @@ export class AccessibilityPromptBuilder {
         return this;
     }
 
-    withScreenReader(name: ScreenReaderName): this {
+    withScreenReader(name: ScreenReaderType): this {
         this.config.screenReader = name;
         return this;
     }

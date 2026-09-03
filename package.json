@@ -20,7 +20,7 @@
         "test:update": "vitest run -u",
         "lint": "eslint --fix src",
         "prepublishOnly": "npm run build",
-        "sample": "npx tsx src/cli/run-audit.ts https://www.example.com --reader virtual"
+        "sample": "npx tsx src/cli/audit-command.ts https://www.example.com --reader virtual"
     },
     "private": true,
     "devDependencies": {

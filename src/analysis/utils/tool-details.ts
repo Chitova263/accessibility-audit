@@ -1,5 +1,5 @@
 import type { ScreenReaderContext } from '../core/violation';
-import type { ScreenReaderName } from '../../screen-reader/drivers/types';
+import type { ScreenReaderType } from '../../screen-reader/screen-reader-type';
 
 export interface ContextSource {
     identifier: string;
@@ -12,7 +12,7 @@ export function createScreenReaderContext(
     source: ContextSource,
     strategy: string,
     stepIndex: number,
-    screenReader: ScreenReaderName
+    screenReader: ScreenReaderType
 ): ScreenReaderContext {
     const axNode = projectAxNode(source.axNode);
     return {

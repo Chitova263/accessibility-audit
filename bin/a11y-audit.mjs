@@ -5,7 +5,7 @@ import { spawn } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const tsx = resolve(__dirname, '../node_modules/.bin/tsx');
-const script = resolve(__dirname, '../src/run-audit.ts');
+const script = resolve(__dirname, '../src/cli/audit-command.ts');
 
 const child = spawn(tsx, [script, ...process.argv.slice(2)], {
     stdio: 'inherit',

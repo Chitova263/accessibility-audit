@@ -10,10 +10,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import type {
-    StrategyResult,
-    NavigationStep,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult, NavigationStep } from '../../../../screen-reader/strategies/navigation-strategy';
 import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRole, getName } from '../../../../types/ax-utils';

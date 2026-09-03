@@ -73,10 +73,10 @@ function deduplicateHeadings(headings: HeadingInfo[]): HeadingInfo[] {
     return unique;
 }
 
-import type { ScreenReaderName } from '../../../screen-reader/drivers/types';
+import type { ScreenReaderType } from '../../../screen-reader/screen-reader-type';
 
 /** Build a ScreenReaderContext from a HeadingInfo entry. */
-export function createHeadingContext(heading: HeadingInfo, screenReader: ScreenReaderName): ScreenReaderContext {
+export function createHeadingContext(heading: HeadingInfo, screenReader: ScreenReaderType): ScreenReaderContext {
     return createScreenReaderContext(
         {
             identifier: heading.identifier,

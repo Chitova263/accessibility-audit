@@ -3,10 +3,7 @@
  * (B / K keys) against focus-mode Tab order.
  */
 
-import type {
-    StrategyResult,
-    NavigationStep,
-} from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult, NavigationStep } from '../../screen-reader/strategies/navigation-strategy';
 import { getRole, getName } from '../../types/ax-utils';
 
 export interface ElementSignature {

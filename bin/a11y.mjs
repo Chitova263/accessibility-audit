@@ -9,8 +9,8 @@ const tsx = resolve(__dirname, '../node_modules/.bin/tsx');
 const subcommand = process.argv[2];
 
 const scripts = {
-    audit: resolve(__dirname, '../src/cli/run-audit.ts'),
-    report: resolve(__dirname, '../src/cli/generate-report.ts'),
+    audit: resolve(__dirname, '../src/cli/audit-command.ts'),
+    report: resolve(__dirname, '../src/cli/report-command.ts'),
 };
 
 if (!subcommand || !scripts[subcommand]) {

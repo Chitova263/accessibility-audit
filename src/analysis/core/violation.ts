@@ -1,4 +1,4 @@
-import type { ScreenReaderName } from '../../screen-reader/drivers/types';
+import type { ScreenReaderType } from '../../screen-reader/screen-reader-type';
 
 export interface WcagCriterion {
     criterion: string;
@@ -61,7 +61,7 @@ export function isScreenshotSuccess(screenshot: Screenshot): screenshot is Scree
 
 export interface ScreenReaderContext {
     source: {
-        screenReader: ScreenReaderName;
+        screenReader: ScreenReaderType;
         strategy: string;
         stepIndex: number;
         stepId: string;

@@ -1,4 +1,4 @@
-import type { StrategyResult } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult } from '../../../screen-reader/strategies/navigation-strategy';
 import type { AXNode } from '../../../types/cdp';
 import { getRole, getName } from '../../../types/ax-utils';
 

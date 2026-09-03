@@ -30,7 +30,7 @@ flowchart TB
     subgraph SCREENREADER["3️⃣ SCREEN READER SETUP"]
         DRIVER["Create Driver<br/>(NVDA or Virtual)"]
         NAVIGATOR["Initialize Navigator<br/>with Key Bindings"]
-        SESSION["Create PageSession"]
+        SESSION["Create AuditSession"]
     end
 
     subgraph NAVIGATION["4️⃣ NAVIGATION STRATEGIES"]
@@ -156,9 +156,9 @@ flowchart LR
     end
 
     subgraph Process
-        CDP["ChromeDevToolsProtocolConnection"]
-        CONNECT["connect()"]
-        GOTO["goToPage(url)"]
+        CDP["BrowserTarget"]
+        CONNECT["BrowserTarget.connect()"]
+        GOTO["resolve page for url"]
     end
 
     subgraph Output
@@ -197,7 +197,7 @@ flowchart TB
     subgraph Output
         READER["ScreenReader Interface"]
         KEYS["Key Bindings"]
-        END["End Detection Config"]
+        END["Boundary Strategy Config"]
         NAV["Navigator"]
     end
 
@@ -226,7 +226,7 @@ flowchart TB
 ```mermaid
 flowchart TB
     subgraph Input
-        SESSION["PageSession"]
+        SESSION["AuditSession"]
         AXTREE["Accessibility Tree"]
     end
 

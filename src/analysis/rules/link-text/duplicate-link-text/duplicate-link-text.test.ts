@@ -1,10 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { rule } from './duplicate-link-text';
 import { mockContext } from '../../test-fixtures';
-import type {
-    StrategyResult,
-    NavigationStep,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult, NavigationStep } from '../../../../screen-reader/strategies/navigation-strategy';
 
 const createStep = (
     index: number,
@@ -41,7 +38,7 @@ const createStep = (
 const linkStrategy = (linkSteps: NavigationStep[]) => {
     const results: StrategyResult[] = [
         {
-            meta: { name: 'link', description: 'Links', mode: 'browse' },
+            meta: { name: 'link', description: 'Links' },
             navigationSteps: linkSteps,
             completionReason: { kind: 'exhausted', detail: 'no more links found' },
         },

@@ -3,7 +3,7 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type { StrategyResult } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult } from '../../../../screen-reader/strategies/navigation-strategy';
 
 export interface FragmentedSequence {
     startStep: number;
@@ -26,7 +26,6 @@ function extractLinkText(focusedElementText: string): string | null {
     const lower = focusedElementText.toLowerCase();
     if (!lower.includes('link')) return null;
 
-    // Extract text after "link," pattern
     const match = focusedElementText.match(/link,?\s*(.*)$/i);
     if (match && match[1]) {
         return match[1].trim();
@@ -38,7 +37,6 @@ function isSingleCharLink(focusedElementText: string): { isLink: boolean; char: 
     const linkText = extractLinkText(focusedElementText);
     if (linkText === null) return { isLink: false, char: null };
 
-    // Single character or single digit
     if (linkText.length === 1) {
         return { isLink: true, char: linkText };
     }

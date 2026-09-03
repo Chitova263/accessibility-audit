@@ -119,28 +119,27 @@ export async function attachScreenshots<T extends Violation>(
     cdp: CDPSession,
     outputDir: string
 ): Promise<T[]> {
+    // Resolving violations back to nodes needs the DOM domain; enabling it is this
+    // function's own precondition, not the caller's.
+    await cdp.send('DOM.enable');
     const screenshotsDir = await ensureScreenshotsDir(outputDir);
     const result: T[] = [];
 
     for (const violation of violations) {
-        // Check if this is a ScreenReaderViolation with a backendDOMNodeId
         const context = violation.context as ScreenReaderContext | undefined;
         const backendNodeId = context?.axNode?.backendDOMNodeId;
 
         if (typeof backendNodeId !== 'number' || !context) {
-            // No backend node ID — return violation unchanged
             result.push(violation);
             continue;
         }
 
-        // Capture screenshot
         const label = `${violation.rule.id}: ${violation.rule.summary}`;
         const filename = `${violation.rule.id}-${violation.id}`;
         const screenshot = await captureViewportWithHighlight(page, cdp, backendNodeId, screenshotsDir, filename, {
             label,
         });
 
-        // Create new violation with screenshot attached
         const newContext: ScreenReaderContext = {
             ...context,
             screenshot,
@@ -158,9 +157,7 @@ export async function attachScreenshots<T extends Violation>(
 export type { Screenshot, ScreenshotSuccess, ScreenshotFailure, BoundingBox } from '../core/violation';
 export { isScreenshotSuccess } from '../core/violation';
 
-// ============================================================================
 // Internal helpers
-// ============================================================================
 
 async function scrollElementToCenter(cdp: CDPSession, backendNodeId: number): Promise<void> {
     await cdp.send('DOM.scrollIntoViewIfNeeded', { backendNodeId });

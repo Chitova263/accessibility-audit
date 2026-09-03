@@ -7,7 +7,7 @@
 
 import type { LlmCompleteResponse } from '../llm/prompt-builder';
 import type { Violation } from '../analysis/core/violation';
-import type { StrategyResult } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult } from '../screen-reader/strategies/navigation-strategy';
 
 export interface ReportMeta {
     timestamp: number;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ExcessiveBlankAnnouncementsRule } from './excessive-blank-announcements';
 import { mockContext } from '../../test-fixtures';
-import type { NavigationStep } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { NavigationStep } from '../../../../screen-reader/strategies/navigation-strategy';
 
 const rule = new ExcessiveBlankAnnouncementsRule();
 
@@ -19,7 +19,7 @@ const createStep = (index: number, focusedElementText: string): NavigationStep =
 const arrowResult = (navigationSteps: NavigationStep[]) =>
     mockContext([
         {
-            meta: { name: 'arrow', description: 'Linear reading', mode: 'browse' },
+            meta: { name: 'arrow', description: 'Linear reading' },
             navigationSteps,
             completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         },

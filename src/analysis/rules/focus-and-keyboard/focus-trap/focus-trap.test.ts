@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { rule } from './focus-trap';
 import { createSteps, strategyResult, mockContext } from '../../test-fixtures';
-import type { CompletionReason } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { CompletionReason } from '../../../../screen-reader/strategies/navigation-strategy';
 
 const trapped: CompletionReason = { kind: 'trapped', detail: 'keyboard focus could not escape' };
 const cycleComplete: CompletionReason = { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' };

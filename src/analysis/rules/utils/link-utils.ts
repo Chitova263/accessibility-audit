@@ -5,10 +5,7 @@
  * extraction used by both GenericLinkTextRule and DuplicateLinkTextRule.
  */
 
-import type {
-    StrategyResult,
-    NavigationStep,
-} from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult, NavigationStep } from '../../../screen-reader/strategies/navigation-strategy';
 import { createScreenReaderContext } from '../../utils/tool-details';
 import type { ScreenReaderContext } from '../../core/violation';
 import type { AXNode } from '../../../types/cdp';
@@ -121,10 +118,10 @@ export function formatSurroundingContext(context: SurroundingContext): string {
     return parts.join(', ');
 }
 
-import type { ScreenReaderName } from '../../../screen-reader/drivers/types';
+import type { ScreenReaderType } from '../../../screen-reader/screen-reader-type';
 
 /** Builds a `ScreenReaderContext` from a collected `LinkInfo`. */
-export function createScreenReaderContextFromLink(link: LinkInfo, screenReader: ScreenReaderName): ScreenReaderContext {
+export function createScreenReaderContextFromLink(link: LinkInfo, screenReader: ScreenReaderType): ScreenReaderContext {
     return createScreenReaderContext(
         {
             identifier: link.identifier,

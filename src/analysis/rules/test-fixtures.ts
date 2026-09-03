@@ -1,16 +1,8 @@
-/**
- * Shared fixtures for rule tests.
- *
- * Rules all consume the same `StrategyResult[]` shape, so the builders
- * here cover the fields they read: the AX node role/name/level, the HTML
- * snippet, and what NVDA spoke.
- */
-
 import type {
     NavigationStep,
-    StrategyName,
+    NavigationStrategyName,
     StrategyResult,
-} from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+} from '../../screen-reader/strategies/navigation-strategy';
 
 export interface StepOverrides {
     identifier?: string;
@@ -59,14 +51,13 @@ export const createSteps = (overrides: StepOverrides[]): NavigationStep[] =>
     overrides.map((override, index) => createStep(index, override));
 
 export const strategyResult = (
-    name: StrategyName,
+    name: NavigationStrategyName,
     navigationSteps: NavigationStep[],
     completionReason: StrategyResult['completionReason'] = { kind: 'exhausted', detail: `no more ${name}s found` }
 ): StrategyResult => ({
     meta: {
         name,
         description: `${name} navigation`,
-        mode: name === 'tab' ? 'focus' : 'browse',
     },
     navigationSteps,
     completionReason,
@@ -126,10 +117,6 @@ export const broadTranscript = (): StrategyResult[] => [
     ),
 ];
 
-/**
- * Create a mock AuditContext for tests.
- * Now that rules don't access page/cdp/screenshotsDir, this is just transcript + screenReader.
- */
 export const mockContext = (transcript: StrategyResult[]): import('../core/context').AuditContext => ({
     transcript,
     screenReader: 'nvda',

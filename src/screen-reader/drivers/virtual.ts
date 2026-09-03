@@ -1,6 +1,7 @@
 import type { Page } from 'playwright';
 import { createRequire } from 'node:module';
 import type { ScreenReader, KeyPressResult } from './types';
+import type { BrowserTarget } from '../browser-target';
 import { Logger } from '../../utils/logger';
 
 const _require = createRequire(import.meta.url);
@@ -41,13 +42,16 @@ const VSR_COMMAND_MAP: Record<string, string> = {
 
 /**
  * Virtual screen reader driver using @guidepup/virtual-screen-reader.
- * Runs headless in the browser - no OS-level screen reader required.
+ * Runs inside the page - no OS-level screen reader and no window focus required.
  */
 export class VirtualScreenReader implements ScreenReader {
     readonly name = 'virtual' as const;
     private readonly log = Logger.context('VirtualDriver');
+    private readonly page: Page;
 
-    constructor(private readonly page: Page) {}
+    constructor(target: BrowserTarget) {
+        this.page = target.page;
+    }
 
     async start(): Promise<void> {
         this.log.debug('Injecting virtual screen reader bundle');

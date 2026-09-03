@@ -13,7 +13,7 @@ import { dirname, resolve } from 'path';
 import { parseLlmResponse, type LlmCompleteResponse } from '../llm/prompt-builder/schemas';
 import type { Violation } from '../analysis/core/violation';
 import type { ReportData, ReportOutput } from './reporter';
-import type { StrategyResult } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult } from '../screen-reader/strategies/navigation-strategy';
 import { getReporter } from './reporter-registry';
 
 export interface ReportFromFilesOptions {
@@ -49,34 +49,28 @@ export interface ReportFromFilesResult {
  *     llmResponsePath: './llm-response.json',
  *     violationsPath: './violations.json',
  *     transcriptPath: './transcript.json',
- *     pageUrl: 'https://example.com',
- *     pageTitle: 'Example Page',
  *     format: 'html',
  *     outputPath: './report.html',
  * });
  * ```
  */
 export async function generateReportFromFiles(options: ReportFromFilesOptions): Promise<ReportFromFilesResult> {
-    // Read and parse LLM response
     const llmJson = await readFile(options.llmResponsePath, 'utf-8');
     const llmData = JSON.parse(llmJson) as unknown;
     const analysis = parseLlmResponse(llmData);
 
-    // Read violations if provided (screenshots are now embedded in NVDA violations)
     let violations: Violation[] = [];
     if (options.violationsPath) {
         const violationsJson = await readFile(options.violationsPath, 'utf-8');
         violations = JSON.parse(violationsJson) as Violation[];
     }
 
-    // Read transcript/strategy results if provided
     let transcript: StrategyResult[] | undefined;
     if (options.transcriptPath) {
         const transcriptJson = await readFile(options.transcriptPath, 'utf-8');
         transcript = JSON.parse(transcriptJson) as StrategyResult[];
     }
 
-    // Build report data
     const reportData: ReportData = {
         analysis,
         violations,
@@ -86,21 +80,15 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
         },
     };
 
-    // Generate report
     const format = options.format ?? 'html';
     const reporter = getReporter(format);
 
-    // Determine base path for screenshots:
-    // 1. Explicitly provided screenshotsBasePath
-    // 2. Directory containing violations file
-    // 3. Current working directory
     const screenshotsBasePath =
         options.screenshotsBasePath ??
         (options.violationsPath ? dirname(resolve(options.violationsPath)) : process.cwd());
 
     const report = await reporter.generate(reportData, { screenshotsBasePath });
 
-    // Write to file if outputPath provided
     let writtenTo: string | undefined;
     if (options.outputPath) {
         await writeFile(options.outputPath, report.content, 'utf-8');
@@ -121,7 +109,6 @@ export async function generateReport(options: {
     format?: 'html' | 'json';
     screenshotsBasePath?: string;
 }): Promise<ReportOutput> {
-    // Parse if needed
     const analysis = isLlmCompleteResponse(options.analysis) ? options.analysis : parseLlmResponse(options.analysis);
 
     const reportData: ReportData = {

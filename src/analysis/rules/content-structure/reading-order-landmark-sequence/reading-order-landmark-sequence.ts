@@ -3,10 +3,7 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type {
-    NavigationStep,
-    StrategyResult,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { NavigationStep, StrategyResult } from '../../../../screen-reader/strategies/navigation-strategy';
 import { getRole as getAxRole } from '../../../../types/ax-utils';
 
 export interface LandmarkSequenceInfo {

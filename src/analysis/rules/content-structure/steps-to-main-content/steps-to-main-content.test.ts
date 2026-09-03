@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { StepsToMainContentRule } from './steps-to-main-content';
 import { mockContext } from '../../test-fixtures';
-import type { NavigationStep } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { NavigationStep } from '../../../../screen-reader/strategies/navigation-strategy';
 
 const rule = new StepsToMainContentRule();
 
@@ -22,7 +22,7 @@ const createStep = (
 const arrowResult = (navigationSteps: NavigationStep[]) =>
     mockContext([
         {
-            meta: { name: 'arrow', description: 'Linear reading', mode: 'browse' },
+            meta: { name: 'arrow', description: 'Linear reading' },
             navigationSteps,
             completionReason: { kind: 'exhausted', detail: 'reached end of document' },
         },

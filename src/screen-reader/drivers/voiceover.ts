@@ -1,14 +1,26 @@
 import { voiceOver } from '@guidepup/guidepup';
 import { delay } from '@guidepup/guidepup/lib/delay';
 import type { ScreenReader, KeyPressResult } from './types';
+import type { BrowserTarget } from '../browser-target';
 
+/** VoiceOver reads the foreground window; give macOS time to settle after raising it. */
+const WINDOW_FOCUS_SETTLE_MS = 2000;
+
+/**
+ * VoiceOver driver. Like NVDA it reads the foreground window, so it raises the
+ * target's window itself before starting.
+ */
 export class VoiceOverDriver implements ScreenReader {
     readonly name = 'voiceover' as const;
     private readonly pollIntervalMs = 100;
     private readonly stableThreshold = 3;
     private readonly timeoutMs = 3000;
 
+    constructor(private readonly target: BrowserTarget) {}
+
     async start(): Promise<void> {
+        await this.target.bringToFront();
+        await delay(WINDOW_FOCUS_SETTLE_MS);
         await voiceOver.start({ capture: false });
     }
 

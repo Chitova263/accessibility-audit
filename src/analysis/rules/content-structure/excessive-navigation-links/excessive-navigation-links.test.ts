@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { rule } from './excessive-navigation-links';
 import { createStep, createSteps, strategyResult, mockContext } from '../../test-fixtures';
-import type { NavigationStep } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { NavigationStep } from '../../../../screen-reader/strategies/navigation-strategy';
 
 const links = (count: number): NavigationStep[] =>
     Array.from({ length: count }, (_, i) => createStep(i, { role: 'link', focusedElementText: `Link ${i}` }));

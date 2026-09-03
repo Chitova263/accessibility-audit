@@ -1,7 +1,7 @@
-import type { StrategyResult } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import type { ScreenReaderName } from '../../screen-reader/drivers/types';
+import type { StrategyResult } from '../../screen-reader/strategies/navigation-strategy';
+import type { ScreenReaderType } from '../../screen-reader/screen-reader-type';
 
 export interface AuditContext {
     transcript: StrategyResult[];
-    screenReader: ScreenReaderName;
+    screenReader: ScreenReaderType;
 }

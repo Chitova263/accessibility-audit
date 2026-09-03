@@ -1,19 +1,29 @@
 import { z } from 'zod';
+import type { ScreenReaderType } from '../screen-reader/screen-reader-type';
+export type { ScreenReaderType } from '../screen-reader/screen-reader-type';
 
-export const screenReaderTypeSchema = z.enum(['nvda', 'virtual', 'voiceover']);
-export type ScreenReaderType = z.infer<typeof screenReaderTypeSchema>;
+export const screenReaderTypeSchema = z.enum([
+    'nvda',
+    'virtual',
+    'voiceover',
+] as const satisfies readonly ScreenReaderType[]);
 
 export const reportFormatSchema = z.enum(['html', 'json']);
-export type ReportFormat = z.infer<typeof reportFormatSchema>;
-
 export const urlSchema = z.string().url('Must be a valid URL');
 
-export const auditOptionsSchema = z.object({
-    outputDir: z.string().optional(),
-    maxSteps: z.coerce.number().int().positive().default(500),
-    reader: screenReaderTypeSchema,
-    verbose: z.boolean().default(false),
-});
+export const auditOptionsSchema = z
+    .object({
+        outputDir: z.string().optional(),
+        maxSteps: z.coerce.number().int().positive().default(500),
+        reader: screenReaderTypeSchema,
+        launch: z.boolean().default(false),
+        port: z.coerce.number().int().min(1).max(65535).optional(),
+        verbose: z.boolean().default(false),
+    })
+    .refine((o) => !(o.launch && o.port !== undefined), {
+        message: '--port cannot be combined with --launch (a launched browser needs no debugging port)',
+        path: ['port'],
+    });
 export type AuditOptions = z.infer<typeof auditOptionsSchema>;
 
 export const auditInputSchema = z.object({
@@ -33,10 +43,6 @@ export const reportOptionsSchema = z.object({
 });
 export type ReportOptions = z.infer<typeof reportOptionsSchema>;
 
-/**
- * Parse and validate CLI options with Zod.
- * Exits with error message on validation failure.
- */
 export function parseOptions<T>(schema: z.ZodSchema<T>, rawOptions: unknown, commandName: string): T {
     const result = schema.safeParse(rawOptions);
 
@@ -55,10 +61,6 @@ export function parseOptions<T>(schema: z.ZodSchema<T>, rawOptions: unknown, com
     return result.data;
 }
 
-/**
- * Parse and validate audit command input (URL + options).
- * Exits with error message on validation failure.
- */
 export function parseAuditInput(url: string | undefined, rawOptions: unknown): AuditInput {
     const result = auditInputSchema.safeParse({ url, options: rawOptions });
 

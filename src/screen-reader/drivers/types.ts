@@ -2,26 +2,9 @@
  * Shared types for screen reader drivers.
  */
 
-export type ScreenReaderName = 'nvda' | 'voiceover' | 'virtual';
-
-/**
- * Human-readable display names for screen readers.
- * Used in prompts, violation messages, and strategy descriptions.
- */
-const SCREEN_READER_DISPLAY_NAMES: Record<ScreenReaderName, string> = {
-    nvda: 'NVDA',
-    voiceover: 'VoiceOver',
-    virtual: 'Virtual Screen Reader',
-};
-
-/**
- * Get the human-readable display name for a screen reader.
- * @param name - The screen reader identifier
- * @returns Display name (e.g., 'nvda' → 'NVDA', 'voiceover' → 'VoiceOver')
- */
-export function getScreenReaderDisplayName(name: ScreenReaderName): string {
-    return SCREEN_READER_DISPLAY_NAMES[name];
-}
+export type { ScreenReaderType } from '../screen-reader-type';
+export { getScreenReaderDisplayName } from '../screen-reader-type';
+import type { ScreenReaderType } from '../screen-reader-type';
 
 export interface KeyPressResult {
     /** Phrases spoken in response to this action (empty if screen reader didn't speak) */
@@ -31,7 +14,7 @@ export interface KeyPressResult {
 }
 
 export interface ScreenReader {
-    readonly name: ScreenReaderName;
+    readonly name: ScreenReaderType;
     start(): Promise<void>;
     stop(): Promise<void>;
     press(key: string): Promise<KeyPressResult>;

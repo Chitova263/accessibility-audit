@@ -27,7 +27,6 @@ function cleanHtmlSnippet(html: string, maxLength: number): string {
             return cleaned;
         }
 
-        // Fall back to text if too long
         const text = root.textContent.trim();
         if (text.length <= maxLength) {
             return text;
@@ -72,12 +71,10 @@ function findCorrelation(
         return undefined;
     }
 
-    // Search through transcript steps for potential matches
     for (const section of strategySections) {
         for (const step of section.steps) {
             // Try to match by HTML content similarity
             if (htmlSnippet && step.htmlSnippet) {
-                // Simple heuristic: check if accessible name appears in both
                 const violationText = extractTextFromHtml(htmlSnippet);
                 if (
                     violationText &&
@@ -211,13 +208,11 @@ export function buildViolationsData(
     const filtered = filterViolations(violations, mergedConfig);
     const transformed = filtered.map((v) => transformViolation(v, strategySections, mergedConfig));
 
-    // Count by impact
     const byImpact: Record<string, number> = {};
     for (const v of transformed) {
         byImpact[v.impact] = (byImpact[v.impact] ?? 0) + 1;
     }
 
-    // Group if configured
     const groups = mergedConfig.groupByRule
         ? groupViolations(transformed, mergedConfig)
         : transformed.map((v) => ({
@@ -245,7 +240,6 @@ export function renderViolationsXml(data: PromptViolationsData): string {
         return `<violations total="0" rules="0" />\n<!-- No violations found by static analyzers -->`;
     }
 
-    // Build attributes including impact counts
     const attrs: Record<string, string | number> = {
         total: data.totalViolations,
         rules: data.totalRules,
@@ -257,7 +251,6 @@ export function renderViolationsXml(data: PromptViolationsData): string {
 
     const root = create().ele('violations', attrs);
 
-    // Add each group
     for (const group of data.groups) {
         const groupAttrs: Record<string, string | number> = {
             id: group.ruleId,
