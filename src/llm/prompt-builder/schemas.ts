@@ -32,7 +32,7 @@ export const promptNavigationStepSchema = z.object({
     index: z.number().int().nonnegative(),
     identifier: z.string(),
     spoken: z.string(),
-    itemText: z.string(),
+    focusedElementText: z.string(),
     axNode: promptAxNodeSchema.nullable(),
     htmlSnippet: z.string().nullable(),
 });

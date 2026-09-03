@@ -4,6 +4,7 @@ import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
+import { getRole, getName } from '../../../../types/ax-utils';
 
 const ROLES_REQUIRING_NAME = [
     'button',
@@ -57,13 +58,13 @@ export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyA
 
                 if (!node) continue;
 
-                const role = node.role?.value;
+                const role = getRole(node);
                 if (!role || !ROLES_REQUIRING_NAME.includes(role as (typeof ROLES_REQUIRING_NAME)[number])) {
                     continue;
                 }
 
                 totalChecked++;
-                const name = node.name?.value ?? '';
+                const name = getName(node) ?? '';
                 if (name.trim() !== '') continue;
 
                 byRole[role] = (byRole[role] ?? 0) + 1;

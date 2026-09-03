@@ -8,18 +8,17 @@
 
 import type {
     NavigationStep,
-    StrategyMetadata,
     StrategyName,
     StrategyResult,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 export interface StepOverrides {
     identifier?: string;
-    itemText?: string;
-    /** Defaults to `[itemText]`, matching how NVDA announces a single item. */
+    focusedElementText?: string;
+    /** Defaults to `[focusedElementText]`, matching how NVDA announces a single item. */
     spokenPhrases?: string[];
     role?: string;
-    /** Accessible name. Defaults to `itemText`; pass '' for an unnamed element. */
+    /** Accessible name. Defaults to `focusedElementText`; pass '' for an unnamed element. */
     name?: string;
     /** Adds a `level` AX property, as headings carry. */
     level?: number;
@@ -30,16 +29,16 @@ export interface StepOverrides {
 }
 
 export const createStep = (index: number, overrides: StepOverrides = {}): NavigationStep => {
-    const itemText = overrides.itemText ?? `Item ${index}`;
+    const focusedElementText = overrides.focusedElementText ?? `Item ${index}`;
     const properties =
         overrides.level === undefined ? undefined : [{ name: 'level', value: { value: overrides.level } }];
 
     return {
         index,
         identifier: overrides.identifier ?? `step-${index}`,
-        spokenPhrases: overrides.spokenPhrases ?? [itemText],
-        itemText,
-        itemTextLog: [],
+        spokenPhrases: overrides.spokenPhrases ?? [focusedElementText],
+        focusedElementText,
+        focusedElementTextLog: [],
         timestamp: 1_700_000_000_000 + index,
         axNode:
             overrides.axNode === false
@@ -47,7 +46,7 @@ export const createStep = (index: number, overrides: StepOverrides = {}): Naviga
                 : ({
                       nodeId: `${index}`,
                       role: { value: overrides.role ?? 'link' },
-                      name: { value: overrides.name ?? itemText },
+                      name: { value: overrides.name ?? focusedElementText },
                       backendDOMNodeId: overrides.backendDOMNodeId,
                       properties,
                   } as never),

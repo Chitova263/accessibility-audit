@@ -1,5 +1,5 @@
 import type {
-    INavigationStrategy,
+    NavigationStrategy,
     NavigationContext,
     NavigationStrategyConfig,
     NavigationStep,
@@ -9,7 +9,7 @@ import type {
 import { AxTreeCursor } from '../../accessibility-tree/ax-tree-cursor';
 import { NavigationStrategyResult } from './navigation-strategy-result';
 
-export class DownArrowNavigationStrategy implements INavigationStrategy {
+export class DownArrowNavigationStrategy implements NavigationStrategy {
     public readonly meta: StrategyMetadata = {
         name: 'arrow',
         description: 'Linear reading through page content using Down Arrow (browse mode)',
@@ -19,25 +19,27 @@ export class DownArrowNavigationStrategy implements INavigationStrategy {
     public constructor(public readonly config: NavigationStrategyConfig) {}
 
     public async execute(ctx: NavigationContext): Promise<StrategyResult> {
-        const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
+        const cursor = new AxTreeCursor(ctx.accessibility.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        for await (const { phrase, itemText } of ctx.navigator.linearElements()) {
-            let matchResult = cursor.matchNextAny(itemText);
+        for await (const { phrase, focusedElementText } of ctx.navigator.linearElements()) {
+            let matchResult = cursor.matchNextAny(focusedElementText);
             if (!matchResult && phrase) {
                 matchResult = cursor.matchNextAny(phrase);
             }
 
             const axNode = matchResult?.node;
             const htmlSnippet =
-                axNode?.backendDOMNodeId != null ? await ctx.ax.getNodeOuterHtml(axNode.backendDOMNodeId) : null;
+                axNode?.backendDOMNodeId != null
+                    ? await ctx.accessibility.getNodeOuterHtml(axNode.backendDOMNodeId)
+                    : null;
 
             navigationSteps.push({
                 index: navigationSteps.length,
                 identifier: crypto.randomUUID(),
                 spokenPhrases: [phrase],
-                itemText,
-                itemTextLog: [itemText],
+                focusedElementText,
+                focusedElementTextLog: [focusedElementText],
                 timestamp: Date.now(),
                 axNode,
                 htmlSnippet,

@@ -4,7 +4,7 @@ import type { ScreenReaderName } from '../../screen-reader/drivers/types';
 export interface ContextSource {
     identifier: string;
     spokenPhrases: string[];
-    itemText: string;
+    focusedElementText: string;
     axNode?: unknown;
 }
 
@@ -21,7 +21,7 @@ export function createScreenReaderContext(
             strategy,
             stepIndex,
             stepId: source.identifier,
-            spokenPhrase: source.spokenPhrases.join(' ').trim() || source.itemText,
+            spokenPhrase: source.spokenPhrases.join(' ').trim() || source.focusedElementText,
         },
         ...(axNode && { axNode }),
     };
@@ -41,7 +41,12 @@ function projectAxNode(node: unknown): ScreenReaderContext['axNode'] | undefined
     const name = typeof axNode.name?.value === 'string' ? axNode.name.value : undefined;
 
     const result: ScreenReaderContext['axNode'] = {
-        nodeId: typeof axNode.nodeId === 'string' ? axNode.nodeId : String(axNode.nodeId ?? ''),
+        nodeId:
+            typeof axNode.nodeId === 'string'
+                ? axNode.nodeId
+                : typeof axNode.nodeId === 'number'
+                  ? String(axNode.nodeId)
+                  : '',
     };
 
     if (role) result.role = role;

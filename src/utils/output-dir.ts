@@ -1,7 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-/** Converts a URL into a filesystem-safe slug. */
 export function slugifyUrl(url: string): string {
     let parsed: URL;
     try {
@@ -22,7 +21,6 @@ export function slugifyUrl(url: string): string {
         .slice(0, 80);
 }
 
-/** Formats a Date as a folder-safe timestamp, e.g. 2026-09-01T13-09 */
 export function formatTimestamp(date: Date = new Date()): string {
     const pad = (n: number) => String(n).padStart(2, '0');
     const year = date.getFullYear();

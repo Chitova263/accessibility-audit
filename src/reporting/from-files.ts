@@ -14,36 +14,22 @@ import { parseLlmResponse, type LlmCompleteResponse } from '../llm/prompt-builde
 import type { Violation } from '../analysis/core/violation';
 import type { ReportData, ReportOutput } from './reporter';
 import type { StrategyResult } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import { getReporter } from './index';
+import { getReporter } from './reporter-registry';
 
 export interface ReportFromFilesOptions {
-    /** Path to LLM response JSON file (required) */
     llmResponsePath: string;
-
-    /** Path to violations JSON file (screenshots embedded in NVDA violations) */
+    /** Screenshots embedded in violations */
     violationsPath?: string;
-
-    /** Path to strategy results / transcript JSON file (optional) */
     transcriptPath?: string;
-
-    /** Output format: 'html' | 'json' */
     format?: 'html' | 'json';
-
-    /** Output file path (optional - if not provided, returns content only) */
     outputPath?: string;
-
-    /** Base path for resolving screenshot file paths (defaults to violations file directory) */
+    /** Defaults to violations file directory */
     screenshotsBasePath?: string;
 }
 
 export interface ReportFromFilesResult {
-    /** Generated report */
     report: ReportOutput;
-
-    /** Parsed LLM analysis */
     analysis: LlmCompleteResponse;
-
-    /** Path where report was written (if outputPath was provided) */
     writtenTo: string | undefined;
 }
 
@@ -129,19 +115,10 @@ export async function generateReportFromFiles(options: ReportFromFilesOptions): 
 }
 
 export async function generateReport(options: {
-    /** LLM analysis (already parsed or raw JSON) */
-    analysis: LlmCompleteResponse | unknown;
-
-    /** Violations array (screenshots referenced by path in NVDA violations) */
+    analysis: unknown;
     violations?: Violation[];
-
-    /** Strategy results / transcript data */
     transcript?: StrategyResult[];
-
-    /** Output format */
     format?: 'html' | 'json';
-
-    /** Base path for resolving screenshot file paths */
     screenshotsBasePath?: string;
 }): Promise<ReportOutput> {
     // Parse if needed

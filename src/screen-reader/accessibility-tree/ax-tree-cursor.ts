@@ -1,9 +1,7 @@
 /**
  * Utilities for tracking screen reader virtual cursor position against a flattened AX tree.
  */
-
-// @ts-ignore - Protocol is a global namespace from playwright-core/types/protocol.d.ts
-type AXNode = Protocol.Accessibility.AXNode;
+import type { AXNode } from '../../types/cdp';
 
 export interface MatchResult {
     node: AXNode;
@@ -28,7 +26,7 @@ export function flattenAxTree(nodes: AXNode[]): AXNode[] {
         if (!node.ignored) {
             order.push(node);
         }
-        (node.childIds ?? []).forEach(visit);
+        node.childIds?.forEach(visit);
     }
 
     visit(root.nodeId);
@@ -50,32 +48,28 @@ export class AxTreeCursor {
         }
     }
 
-    /** Reset the cursor (e.g. after a page navigation or when tree is refreshed). */
     reset(nodes: AXNode[]): void {
         this.flat = flattenAxTree(nodes);
         this.cursorIndex = -1;
     }
 
-    /** Get the flattened tree for inspection/debugging. */
     get flattenedTree(): AXNode[] {
         return this.flat;
     }
 
-    /** Get current cursor position index. */
     get currentIndex(): number {
         return this.cursorIndex;
     }
 
-    /** Get the node at the current cursor position. */
     get current(): AXNode | null {
-        return this.cursorIndex >= 0 ? this.flat[this.cursorIndex] : null;
+        return this.cursorIndex >= 0 ? (this.flat[this.cursorIndex] ?? null) : null;
     }
 
     /**
      * Given the phrase the screen reader just spoke, find the next matching node after
      * the current cursor position and advance the cursor to it.
      *
-     * @param spokenPhrase - The phrase spoken (from lastSpokenPhrase or itemText)
+     * @param spokenPhrase - The phrase spoken (from lastSpokenPhrase or focusedElementText)
      * @param role - Optional role to filter by (e.g. 'heading', 'link', 'button')
      * @returns The matched node and its index, or null if no match found
      */
@@ -84,9 +78,7 @@ export class AxTreeCursor {
 
         const index = this.flat.findIndex((n, i) => {
             if (i <= this.cursorIndex) return false;
-            // @ts-ignore
             if (role && n.role?.value !== role) return false;
-            // @ts-ignore
             const name = n.name?.value as string | undefined;
             if (!name) return false;
             return normalizedPhrase.includes(name.toLowerCase());
@@ -95,7 +87,9 @@ export class AxTreeCursor {
         if (index === -1) return null;
 
         this.cursorIndex = index;
-        return { node: this.flat[index]!, index };
+        const node = this.flat[index];
+        if (!node) return null;
+        return { node, index };
     }
 
     /**
@@ -110,7 +104,6 @@ export class AxTreeCursor {
 
         const index = this.flat.findIndex((n, i) => {
             if (i <= this.cursorIndex) return false;
-            // @ts-ignore
             const name = n.name?.value as string | undefined;
             if (!name) return false;
             return normalizedPhrase.includes(name.toLowerCase());
@@ -119,7 +112,9 @@ export class AxTreeCursor {
         if (index === -1) return null;
 
         this.cursorIndex = index;
-        return { node: this.flat[index]!, index };
+        const node = this.flat[index];
+        if (!node) return null;
+        return { node, index };
     }
 
     /**
@@ -135,10 +130,8 @@ export class AxTreeCursor {
 
         const index = this.flat.findIndex((n, i) => {
             if (i <= this.cursorIndex) return false;
-            // @ts-ignore
             const nodeRole = n.role?.value as string | undefined;
             if (!nodeRole || !roles.includes(nodeRole)) return false;
-            // @ts-ignore
             const name = n.name?.value as string | undefined;
             if (!name) return false;
             return normalizedPhrase.includes(name.toLowerCase());
@@ -147,7 +140,9 @@ export class AxTreeCursor {
         if (index === -1) return null;
 
         this.cursorIndex = index;
-        return { node: this.flat[index]!, index };
+        const node = this.flat[index];
+        if (!node) return null;
+        return { node, index };
     }
 
     /**
@@ -160,7 +155,6 @@ export class AxTreeCursor {
     matchNextByRole(role: string): MatchResult | null {
         const index = this.flat.findIndex((n, i) => {
             if (i <= this.cursorIndex) return false;
-            // @ts-ignore
             const nodeRole = n.role?.value as string | undefined;
             return nodeRole === role;
         });
@@ -168,7 +162,9 @@ export class AxTreeCursor {
         if (index === -1) return null;
 
         this.cursorIndex = index;
-        return { node: this.flat[index]!, index };
+        const node = this.flat[index];
+        if (!node) return null;
+        return { node, index };
     }
 
     /**

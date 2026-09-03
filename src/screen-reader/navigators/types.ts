@@ -1,10 +1,8 @@
 import type { ScreenReader } from '../drivers/types';
 
 export interface NavigationItem {
-    /** The spoken phrase */
     phrase: string;
-    /** The item text (focused element text) */
-    itemText: string;
+    focusedElementText: string;
 }
 
 export interface NavigatorConfig {
@@ -12,7 +10,7 @@ export interface NavigatorConfig {
     readonly isComplete: (ctx: EndDetectionContext) => boolean;
 }
 
-export interface IElementNavigator extends AsyncIterable<NavigationItem> {
+export interface ElementNavigator extends AsyncIterable<NavigationItem> {
     readonly type: NavigatorType;
 }
 
@@ -43,10 +41,10 @@ export interface ScreenReaderKeyBindings {
 
 export interface EndDetectionContext {
     phrase: string;
-    itemText: string;
-    /** Backend DOM node ID of focused element. Null if focus is outside the document. */
+    focusedElementText: string;
+    /** Null if focus is outside the document */
     backendNodeId?: number | null;
-    /** Whether the document currently has focus. False when focus is on browser chrome. */
+    /** False when focus is on browser chrome */
     documentHasFocus?: boolean;
 }
 
@@ -62,7 +60,6 @@ export type EndDetectionStrategy =
     | EndDetectionDocumentBoundary
     | EndDetectionAny;
 
-/** Stop when phrase contains the specified text */
 export interface EndDetectionPhraseContains {
     readonly type: 'phrase-contains';
     readonly text: string;
@@ -80,7 +77,7 @@ export interface EndDetectionPhraseRegex {
 export interface EndDetectionLoopDetection {
     readonly type: 'loop-detection';
     /** Which field to use for detecting duplicates. Defaults to 'phrase'. */
-    readonly key?: 'phrase' | 'itemText';
+    readonly key?: 'phrase' | 'focusedElementText';
 }
 
 /**

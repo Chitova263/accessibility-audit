@@ -1,22 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { StepsToMainContentRule } from './steps-to-main-content';
 import { mockContext } from '../../test-fixtures';
-import type {
-    StrategyResult,
-    NavigationStep,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { NavigationStep } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 const rule = new StepsToMainContentRule();
 
 const createStep = (
     index: number,
-    overrides: Partial<{ itemText: string; spokenPhrases: string[]; role: string }> = {}
+    overrides: Partial<{ focusedElementText: string; spokenPhrases: string[]; role: string }> = {}
 ): NavigationStep => ({
     index,
     identifier: `step-${index}`,
-    spokenPhrases: overrides.spokenPhrases ?? [overrides.itemText ?? `Item ${index}`],
-    itemText: overrides.itemText ?? `Item ${index}`,
-    itemTextLog: [],
+    spokenPhrases: overrides.spokenPhrases ?? [overrides.focusedElementText ?? `Item ${index}`],
+    focusedElementText: overrides.focusedElementText ?? `Item ${index}`,
+    focusedElementTextLog: [],
     timestamp: 1_700_000_000_000 + index,
     axNode: overrides.role ? ({ nodeId: `${index}`, role: { value: overrides.role } } as never) : undefined,
     htmlSnippet: null,
@@ -52,7 +49,7 @@ describe('steps-to-main-content rule', () => {
     });
 
     it('stays silent when main is reached within the threshold', async () => {
-        const steps = [...Array(5)].map((_, i) => createStep(i));
+        const steps = Array.from({ length: 5 }, (_, i) => createStep(i));
         steps.push(createStep(5, { role: 'main' }));
         const customRule = new StepsToMainContentRule({ threshold: 30 });
 
@@ -64,7 +61,7 @@ describe('steps-to-main-content rule', () => {
     });
 
     it('reports excessive steps when main is reached beyond the threshold', async () => {
-        const steps = [...Array(10)].map((_, i) => createStep(i));
+        const steps = Array.from({ length: 10 }, (_, i) => createStep(i));
         steps.push(createStep(10, { role: 'main' }));
         const customRule = new StepsToMainContentRule({ threshold: 3 });
 

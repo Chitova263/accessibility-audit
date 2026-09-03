@@ -16,6 +16,7 @@ import type {
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { getRole, getName } from '../../../../types/ax-utils';
 
 export interface PositiveTabindexStats {
     totalFocusableElements: number;
@@ -95,9 +96,9 @@ export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveT
                 const step = result.navigationSteps[tabIndex]!;
                 const node = step.axNode;
 
-                const name = node?.name?.value ?? step.itemText ?? '';
-                const role = node?.role?.value ?? '';
-                const backendNodeId = step.axNode?.backendDOMNodeId ?? null;
+                const name = getName(node) ?? step.focusedElementText ?? '';
+                const role = getRole(node) ?? '';
+                const backendNodeId = node?.backendDOMNodeId;
 
                 focusableElements.push({
                     name,
@@ -105,7 +106,7 @@ export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveT
                     htmlSnippet: step.htmlSnippet,
                     tabIndex,
                     step,
-                    backendNodeId: backendNodeId ?? undefined,
+                    backendNodeId,
                 });
             }
         }

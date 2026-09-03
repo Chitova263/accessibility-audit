@@ -9,12 +9,12 @@ const rule = new LandmarkWithoutHeadingRule();
 const plain = (count: number): StepOverrides[] => Array.from({ length: count }, () => ({}));
 
 const headingStep = (name: string, level = 2): StepOverrides => ({
-    itemText: name,
+    focusedElementText: name,
     spokenPhrases: [`${name} heading, level ${level}`],
 });
 
 const landmarkStep = (role: string): StepOverrides => ({
-    itemText: role,
+    focusedElementText: role,
     spokenPhrases: [`${role} landmark`],
 });
 

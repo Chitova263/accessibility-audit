@@ -33,7 +33,6 @@ interface ContentGap {
     startStep: NavigationStep;
     endStep: NavigationStep;
     stepCount: number;
-    /** Index within the main content region (0-based from main landmark start) */
     startStepIndex: number;
     endStepIndex: number;
     /** Original index in the full arrow navigation */
@@ -58,7 +57,6 @@ export class LargeContentGapRule implements Rule<ScreenReaderContext, LargeConte
         summary: 'Long run of main content with no heading between items',
     };
 
-    /** Minimum steps between headings to flag as a gap. */
     private readonly threshold: number;
 
     constructor(threshold = GAP_THRESHOLD_DEFAULT) {

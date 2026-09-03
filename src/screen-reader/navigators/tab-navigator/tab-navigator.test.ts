@@ -1,29 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TabNavigator } from './tab-navigator';
-import type { ScreenReader, PressResult } from '../../drivers/nvda';
+import type { ScreenReader, KeyPressResult } from '../../drivers/nvda';
 
 function createMockScreenReader(): ScreenReader {
     return {
         name: 'nvda',
         start: vi.fn().mockResolvedValue(undefined),
         stop: vi.fn().mockResolvedValue(undefined),
-        press: vi.fn().mockResolvedValue({ spokenPhrases: [], itemText: '' } satisfies PressResult),
+        press: vi.fn().mockResolvedValue({ spokenPhrases: [], focusedElementText: '' } satisfies KeyPressResult),
     };
 }
 
 /**
  * Helper to create a mock press function that returns different results on each call.
  */
-function createPressMock(results: Array<{ phrase: string; itemText?: string }>) {
+function createPressMock(results: Array<{ phrase: string; focusedElementText?: string }>) {
     let callIndex = 0;
-    return vi.fn().mockImplementation((): Promise<PressResult> => {
+    return vi.fn().mockImplementation((): Promise<KeyPressResult> => {
         const result = results[callIndex++];
         if (!result) {
-            return Promise.resolve({ spokenPhrases: [''], itemText: '' });
+            return Promise.resolve({ spokenPhrases: [''], focusedElementText: '' });
         }
         return Promise.resolve({
             spokenPhrases: [result.phrase],
-            itemText: result.itemText ?? '',
+            focusedElementText: result.focusedElementText ?? '',
         });
     });
 }
@@ -37,10 +37,10 @@ describe('TabNavigator', () => {
 
     it('yields items when pressing Tab produces speech', async () => {
         mockSR.press = createPressMock([
-            { phrase: 'link, Skip to content', itemText: 'Skip to content' },
-            { phrase: 'link, Home', itemText: 'Home' },
-            { phrase: 'button, Menu', itemText: 'Menu' },
-            { phrase: 'link, Skip to content', itemText: 'Skip to content' }, // Cycle detected
+            { phrase: 'link, Skip to content', focusedElementText: 'Skip to content' },
+            { phrase: 'link, Home', focusedElementText: 'Home' },
+            { phrase: 'button, Menu', focusedElementText: 'Menu' },
+            { phrase: 'link, Skip to content', focusedElementText: 'Skip to content' }, // Cycle detected
         ]);
 
         const navigator = new TabNavigator(mockSR, 'Tab');
@@ -83,16 +83,16 @@ describe('TabNavigator', () => {
         ]);
 
         const navigator = new TabNavigator(mockSR, 'Tab');
-        for await (const _ of navigator) {
+        for await (const _item of navigator) {
             // consume
         }
 
         expect(mockSR.press).toHaveBeenCalledWith('Tab');
     });
 
-    it('returns itemText from PressResult', async () => {
+    it('returns focusedElementText from KeyPressResult', async () => {
         mockSR.press = createPressMock([
-            { phrase: 'link, Skip to content', itemText: 'Skip to content' },
+            { phrase: 'link, Skip to content', focusedElementText: 'Skip to content' },
             { phrase: 'link, Skip to content' }, // Cycle
         ]);
 
@@ -102,6 +102,6 @@ describe('TabNavigator', () => {
             items.push(item);
         }
 
-        expect(items[0]!.itemText).toBe('Skip to content');
+        expect(items[0]!.focusedElementText).toBe('Skip to content');
     });
 });

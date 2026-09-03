@@ -15,6 +15,8 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
+import type { AXNode } from '../../../../types/cdp';
+import { getRole, getName } from '../../../../types/ax-utils';
 
 /** How many tab stops to check for skip link */
 const MAX_TAB_STOPS_TO_CHECK = 5;
@@ -60,7 +62,7 @@ export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSki
         summary: 'No skip link found in the first tab stops',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, MissingSkipLinkStats>> {
+    run(ctx: AuditContext): RuleResult<ScreenReaderContext, MissingSkipLinkStats> {
         const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
         let skipLinkFound = false;
@@ -77,10 +79,10 @@ export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSki
             for (let i = 0; i < stepsToCheck; i++) {
                 const step = result.navigationSteps[i]!;
                 const node = step.axNode;
-                const name = node?.name?.value ?? step.itemText ?? '';
+                const name = getName(node) ?? step.focusedElementText ?? '';
                 const htmlSnippet = step.htmlSnippet ?? '';
 
-                firstFewTabStops.push(name || `(${node?.role?.value ?? 'unknown'})`);
+                firstFewTabStops.push(name || `(${getRole(node) ?? 'unknown'})`);
 
                 if (this.isSkipLink(name, htmlSnippet)) {
                     skipLinkFound = true;
@@ -117,10 +119,10 @@ export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSki
         firstStep: {
             identifier: string;
             spokenPhrases: string[];
-            itemText: string;
+            focusedElementText: string;
             timestamp: number;
             htmlSnippet: string | null;
-            axNode: unknown;
+            axNode: AXNode | undefined;
         },
         firstFewTabStops: string[],
         screenReader: ScreenReaderName

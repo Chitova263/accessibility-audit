@@ -72,7 +72,7 @@ const createStrategySection = (overrides: Partial<PromptStrategySection> = {}): 
             index: 0,
             identifier: 'step-0',
             spoken: 'Skip to main content, link',
-            itemText: 'Skip to main content',
+            focusedElementText: 'Skip to main content',
             axNode: {
                 role: 'link',
                 name: 'Skip to main content',
@@ -83,7 +83,7 @@ const createStrategySection = (overrides: Partial<PromptStrategySection> = {}): 
             index: 5,
             identifier: 'step-5',
             spoken: 'button',
-            itemText: 'button',
+            focusedElementText: 'button',
             axNode: {
                 role: 'button',
                 name: '',

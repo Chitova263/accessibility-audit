@@ -7,7 +7,7 @@ const heading = (level: number, name: string): StepOverrides => ({
     role: 'heading',
     level,
     name,
-    itemText: name,
+    focusedElementText: name,
     identifier: `heading-${level}-${name}`,
     htmlSnippet: `<h${level}>${name}</h${level}>`,
 });

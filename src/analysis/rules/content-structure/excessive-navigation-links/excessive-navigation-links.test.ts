@@ -4,7 +4,7 @@ import { createStep, createSteps, strategyResult, mockContext } from '../../test
 import type { NavigationStep } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 const links = (count: number): NavigationStep[] =>
-    [...Array(count)].map((_, i) => createStep(i, { role: 'link', itemText: `Link ${i}` }));
+    Array.from({ length: count }, (_, i) => createStep(i, { role: 'link', focusedElementText: `Link ${i}` }));
 
 describe('excessive-navigation-links rule', () => {
     it('has correct metadata', () => {

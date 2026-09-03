@@ -8,7 +8,7 @@ describe('createScreenReaderContext', () => {
     const source = {
         identifier: 'step-0',
         spokenPhrases: ['button', 'Submit'],
-        itemText: 'Submit',
+        focusedElementText: 'Submit',
         axNode: undefined as unknown,
     };
 

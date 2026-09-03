@@ -1,11 +1,13 @@
+/// <reference lib="dom" />
 import type { CDPSession, Page } from 'playwright';
 import type { ScreenReader } from './drivers/nvda';
 import type { Navigator } from './navigators/navigator';
 import type {
-    INavigationStrategy,
+    NavigationStrategy,
     NavigationContext,
     StrategyResult,
 } from './navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { GetFullAXTreeResult } from '../types/cdp';
 import { AxTreeUtil } from './accessibility-tree/ax-tree-util';
 import { Logger } from '../utils/logger';
 import { delay } from '../utils/delay';
@@ -15,8 +17,7 @@ export interface PageSessionResult {
     html: string;
     results: StrategyResult[];
     url: string;
-    // @ts-ignore
-    axTree: Protocol.Accessibility.getFullAXTreeReturnValue;
+    axTree: GetFullAXTreeResult;
 }
 
 export class PageSession {
@@ -27,7 +28,7 @@ export class PageSession {
         private readonly pageUrl: URL,
         private readonly reader: ScreenReader,
         private readonly navigator: Navigator,
-        private readonly strategies: INavigationStrategy[],
+        private readonly strategies: NavigationStrategy[],
         private readonly page: Page
     ) {}
 
@@ -42,7 +43,7 @@ export class PageSession {
 
     public async endSession(): Promise<void> {
         this.log.debug('Ending session');
-        this.cdpSession?.detach();
+        await this.cdpSession?.detach();
         await this.reader.stop();
         this.log.info('Session ended');
     }
@@ -94,10 +95,7 @@ export class PageSession {
         };
     }
 
-    private buildContext(
-        // @ts-ignore
-        axTree: Protocol.Accessibility.getFullAXTreeReturnValue
-    ): NavigationContext {
+    private buildContext(axTree: GetFullAXTreeResult): NavigationContext {
         if (!this.cdpSession) {
             throw new Error('CDPSession not created');
         }
@@ -105,7 +103,7 @@ export class PageSession {
         return {
             navigator: this.navigator,
             reader: this.reader,
-            ax: {
+            accessibility: {
                 tree: axTree,
                 getNodeOuterHtml: (nodeId: number) => AxTreeUtil.getNodeOuterHtml(session, nodeId),
                 getFocusedHtmlElementBackendNodeId: () => AxTreeUtil.getFocusedHtmlElementBackendNodeId(session),

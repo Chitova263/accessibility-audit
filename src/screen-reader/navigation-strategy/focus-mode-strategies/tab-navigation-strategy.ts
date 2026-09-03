@@ -1,5 +1,5 @@
 import type {
-    INavigationStrategy,
+    NavigationStrategy,
     NavigationContext,
     NavigationStep,
     NavigationStrategyConfig,
@@ -12,10 +12,9 @@ import type { EndDetectionStrategy, EndDetector } from '../../navigators/types';
 import { createEndDetector } from '../../navigators/end-detector';
 import { delay } from '../../../utils/delay';
 
-/** Default end detection: document boundary detection */
 const DEFAULT_END_DETECTION: EndDetectionStrategy = { type: 'document-boundary' };
 
-export class TabNavigationStrategy implements INavigationStrategy {
+export class TabNavigationStrategy implements NavigationStrategy {
     public readonly meta: StrategyMetadata = {
         name: 'tab',
         description: 'Navigates through focusable elements using Tab key (focus mode navigation)',
@@ -35,7 +34,7 @@ export class TabNavigationStrategy implements INavigationStrategy {
         await ctx.navigator.navigateToDocumentStart();
         await delay(2000);
 
-        const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
+        const cursor = new AxTreeCursor(ctx.accessibility.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
         let lastBackendNodeId: number | null = null;
@@ -43,12 +42,12 @@ export class TabNavigationStrategy implements INavigationStrategy {
 
         this.endDetector.reset();
 
-        for await (const { phrase, itemText } of ctx.navigator.focusableElements()) {
-            const backendNodeId = await ctx.ax.getFocusedHtmlElementBackendNodeId();
-            const documentHasFocus = await ctx.ax.getDocumentHasFocus();
+        for await (const { phrase, focusedElementText } of ctx.navigator.focusableElements()) {
+            const backendNodeId = await ctx.accessibility.getFocusedHtmlElementBackendNodeId();
+            const documentHasFocus = await ctx.accessibility.getDocumentHasFocus();
 
             // Check if focus has left the document (e.g., moved to browser UI)
-            if (this.endDetector.check({ phrase, itemText, backendNodeId, documentHasFocus })) {
+            if (this.endDetector.check({ phrase, focusedElementText, backendNodeId, documentHasFocus })) {
                 return NavigationStrategyResult.cycleComplete(
                     'tab focus exited document to browser chrome - cycle complete',
                     this.meta,
@@ -78,8 +77,9 @@ export class TabNavigationStrategy implements INavigationStrategy {
             }
             lastBackendNodeId = backendNodeId;
 
-            const axNode = backendNodeId != null ? cursor.findByBackendDOMNodeId(backendNodeId) : null;
-            const htmlSnippet = await ctx.ax.getFocusedNodeHtml();
+            const axNode =
+                backendNodeId != null ? (cursor.findByBackendDOMNodeId(backendNodeId) ?? undefined) : undefined;
+            const htmlSnippet = await ctx.accessibility.getFocusedNodeHtml();
 
             navigationSteps.push({
                 index: navigationSteps.length,
@@ -88,8 +88,8 @@ export class TabNavigationStrategy implements INavigationStrategy {
                 identifier: crypto.randomUUID(),
                 spokenPhrases: [phrase],
                 timestamp: Date.now(),
-                itemText,
-                itemTextLog: [itemText],
+                focusedElementText,
+                focusedElementTextLog: [focusedElementText],
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {

@@ -18,5 +18,5 @@ export interface RuleResult<TContext = ScreenReaderContext, TStats = undefined> 
 export interface Rule<TContext = ScreenReaderContext, TStats = undefined> {
     id: string;
     meta: RuleMeta;
-    run(ctx: AuditContext): Promise<RuleResult<TContext, TStats>>;
+    run(ctx: AuditContext): RuleResult<TContext, TStats> | Promise<RuleResult<TContext, TStats>>;
 }

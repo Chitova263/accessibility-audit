@@ -47,9 +47,6 @@ import { rule as nestedInteractiveElements } from './interactive-elements/nested
 import { rule as filenameAsAlt } from './semantic/filename-as-alt/filename-as-alt';
 import { rule as roleMismatch } from './semantic/role-mismatch/role-mismatch';
 
-// axe-core
-import { rule as axeCore } from './axe-core/axe-core';
-
 export const RULES: readonly Rule<unknown, unknown>[] = [
     // Heading Structure
     emptyHeading,

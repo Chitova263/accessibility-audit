@@ -27,8 +27,8 @@ function getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | 
     return transcript.find((r) => r.meta.name === 'arrow');
 }
 
-function isBlank(itemText: string): boolean {
-    const normalized = itemText.toLowerCase().trim();
+function isBlank(focusedElementText: string): boolean {
+    const normalized = focusedElementText.toLowerCase().trim();
     return normalized === 'blank' || normalized.endsWith(', blank') || normalized.endsWith(' blank');
 }
 
@@ -91,7 +91,7 @@ export class ExcessiveBlankAnnouncementsRule implements Rule<ScreenReaderContext
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i]!;
 
-            if (isBlank(step.itemText)) {
+            if (isBlank(step.focusedElementText)) {
                 if (runStart === null) {
                     runStart = i;
                     runCount = 1;
@@ -104,8 +104,8 @@ export class ExcessiveBlankAnnouncementsRule implements Rule<ScreenReaderContext
                         startStep: runStart,
                         endStep: i - 1,
                         count: runCount,
-                        beforeContext: runStart > 0 ? steps[runStart - 1]!.itemText : null,
-                        afterContext: steps[i]!.itemText,
+                        beforeContext: runStart > 0 ? steps[runStart - 1]!.focusedElementText : null,
+                        afterContext: steps[i]!.focusedElementText,
                     });
                 }
                 runStart = null;
@@ -118,7 +118,7 @@ export class ExcessiveBlankAnnouncementsRule implements Rule<ScreenReaderContext
                 startStep: runStart,
                 endStep: steps.length - 1,
                 count: runCount,
-                beforeContext: runStart > 0 ? steps[runStart - 1]!.itemText : null,
+                beforeContext: runStart > 0 ? steps[runStart - 1]!.focusedElementText : null,
                 afterContext: null,
             });
         }

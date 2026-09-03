@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Navigator } from './navigator';
-import { ElementNavigator } from './element-navigator/element-navigator';
+import { BrowseModeElementNavigator } from './element-navigator/element-navigator';
 import { TabNavigator } from './tab-navigator/tab-navigator';
 import { DownArrowNavigator } from './down-arrow-navigator/down-arrow-navigator';
-import type { ScreenReader, PressResult } from '../drivers/nvda';
+import type { ScreenReader, KeyPressResult } from '../drivers/nvda';
 import type { ScreenReaderKeyBindings, ScreenReaderEndDetection } from './types';
 
 function createMockScreenReader(): ScreenReader {
@@ -13,8 +13,8 @@ function createMockScreenReader(): ScreenReader {
         stop: vi.fn().mockResolvedValue(undefined),
         press: vi.fn().mockResolvedValue({
             spokenPhrases: ['no next heading'],
-            itemText: '',
-        } satisfies PressResult),
+            focusedElementText: '',
+        } satisfies KeyPressResult),
     };
 }
 
@@ -45,7 +45,7 @@ describe('Navigator', () => {
 
             const navigator = nav.headings();
 
-            expect(navigator).toBeInstanceOf(ElementNavigator);
+            expect(navigator).toBeInstanceOf(BrowseModeElementNavigator);
             expect(navigator.type).toBe('heading');
         });
 
@@ -67,7 +67,7 @@ describe('Navigator', () => {
 
             const navigator = nav.headingsLevel(3);
 
-            expect(navigator).toBeInstanceOf(ElementNavigator);
+            expect(navigator).toBeInstanceOf(BrowseModeElementNavigator);
             expect(navigator.type).toBe('heading3');
         });
 
@@ -77,7 +77,7 @@ describe('Navigator', () => {
 
             const navigator = nav.links();
 
-            expect(navigator).toBeInstanceOf(ElementNavigator);
+            expect(navigator).toBeInstanceOf(BrowseModeElementNavigator);
             expect(navigator.type).toBe('link');
         });
 
@@ -87,7 +87,7 @@ describe('Navigator', () => {
 
             const navigator = nav.landmarks();
 
-            expect(navigator).toBeInstanceOf(ElementNavigator);
+            expect(navigator).toBeInstanceOf(BrowseModeElementNavigator);
             expect(navigator.type).toBe('landmark');
         });
 
@@ -97,7 +97,7 @@ describe('Navigator', () => {
 
             const navigator = nav.buttons();
 
-            expect(navigator).toBeInstanceOf(ElementNavigator);
+            expect(navigator).toBeInstanceOf(BrowseModeElementNavigator);
             expect(navigator.type).toBe('button');
         });
 
@@ -144,7 +144,7 @@ describe('Navigator', () => {
 
             const navigator = Navigator.fromConfig(config);
 
-            expect(navigator.headings()).toBeInstanceOf(ElementNavigator);
+            expect(navigator.headings()).toBeInstanceOf(BrowseModeElementNavigator);
             expect(navigator.focusableElements()).toBeInstanceOf(TabNavigator);
         });
     });
@@ -155,7 +155,8 @@ describe('Navigator', () => {
             const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.headings();
-            for await (const _ of navigator) {
+            for await (const _item of navigator) {
+                // consume iterator
             }
 
             expect(mockSR.press).toHaveBeenCalledWith('h');
@@ -165,12 +166,13 @@ describe('Navigator', () => {
             const mockSR = createMockScreenReader();
             mockSR.press = vi.fn().mockResolvedValue({
                 spokenPhrases: ['no next'],
-                itemText: '',
+                focusedElementText: '',
             });
             const nav = new Navigator(mockSR, testKeyBindings, testEndDetection);
 
             const navigator = nav.headingsLevel(4);
-            for await (const _ of navigator) {
+            for await (const _item of navigator) {
+                // consume iterator
             }
 
             expect(mockSR.press).toHaveBeenCalledWith('4');

@@ -1,5 +1,5 @@
 import type {
-    INavigationStrategy,
+    NavigationStrategy,
     NavigationContext,
     NavigationStep,
     NavigationStrategyConfig,
@@ -15,7 +15,7 @@ export interface HeadingHierarchyConfig extends NavigationStrategyConfig {
     level: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
-export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
+export class HeadingHierarchyNavigationStrategy implements NavigationStrategy {
     public readonly meta: StrategyMetadata;
     private readonly level: 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -32,18 +32,20 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
     }
 
     public async execute(ctx: NavigationContext): Promise<StrategyResult> {
-        const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
+        const cursor = new AxTreeCursor(ctx.accessibility.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        for await (const { phrase, itemText } of ctx.navigator.headingsLevel(this.level)) {
-            let matchResult = cursor.matchNext(itemText, 'heading');
+        for await (const { phrase, focusedElementText } of ctx.navigator.headingsLevel(this.level)) {
+            let matchResult = cursor.matchNext(focusedElementText, 'heading');
             if (!matchResult) {
                 matchResult = cursor.matchNext(phrase, 'heading');
             }
 
             const axNode = matchResult?.node;
             const htmlSnippet =
-                axNode?.backendDOMNodeId != null ? await ctx.ax.getNodeOuterHtml(axNode.backendDOMNodeId) : null;
+                axNode?.backendDOMNodeId != null
+                    ? await ctx.accessibility.getNodeOuterHtml(axNode.backendDOMNodeId)
+                    : null;
 
             navigationSteps.push({
                 index: navigationSteps.length,
@@ -52,8 +54,8 @@ export class HeadingHierarchyNavigationStrategy implements INavigationStrategy {
                 identifier: crypto.randomUUID(),
                 spokenPhrases: [phrase],
                 timestamp: Date.now(),
-                itemText,
-                itemTextLog: [itemText],
+                focusedElementText,
+                focusedElementTextLog: [focusedElementText],
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {

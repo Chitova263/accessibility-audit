@@ -6,7 +6,7 @@ import type { StepOverrides } from '../../test-fixtures';
 const image = (name: string): StepOverrides => ({
     role: 'img',
     name,
-    itemText: name,
+    focusedElementText: name,
     identifier: `image-${name}`,
     htmlSnippet: `<img src="/media/${name}" alt="${name}">`,
 });
@@ -55,7 +55,7 @@ describe('filename-as-alt rule', () => {
             {
                 role: 'link',
                 name: 'IMG_9.png',
-                itemText: 'IMG_9.png',
+                focusedElementText: 'IMG_9.png',
                 htmlSnippet: '<img src="/a.png" alt="IMG_9.png">',
             },
         ]);
@@ -66,7 +66,7 @@ describe('filename-as-alt rule', () => {
     });
 
     it('ignores non-image elements', async () => {
-        const steps = createSteps([{ role: 'link', name: 'photo.jpg', itemText: 'photo.jpg' }]);
+        const steps = createSteps([{ role: 'link', name: 'photo.jpg', focusedElementText: 'photo.jpg' }]);
 
         const result = await rule.run(mockContext([strategyResult('link', steps)]));
 

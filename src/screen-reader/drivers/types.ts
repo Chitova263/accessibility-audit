@@ -23,17 +23,16 @@ export function getScreenReaderDisplayName(name: ScreenReaderName): string {
     return SCREEN_READER_DISPLAY_NAMES[name];
 }
 
-export interface PressResult {
+export interface KeyPressResult {
     /** Phrases spoken in response to this action (empty if screen reader didn't speak) */
     spokenPhrases: string[];
     /** The focused element's text */
-    itemText: string;
+    focusedElementText: string;
 }
 
 export interface ScreenReader {
-    /** The screen reader identifier */
     readonly name: ScreenReaderName;
     start(): Promise<void>;
     stop(): Promise<void>;
-    press(key: string): Promise<PressResult>;
+    press(key: string): Promise<KeyPressResult>;
 }

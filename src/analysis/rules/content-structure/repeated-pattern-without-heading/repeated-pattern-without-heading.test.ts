@@ -6,12 +6,12 @@ import type { StepOverrides } from '../../test-fixtures';
 const rule = new RepeatedPatternWithoutHeadingRule();
 
 const headingStep = (name: string, level = 2): StepOverrides => ({
-    itemText: name,
+    focusedElementText: name,
     spokenPhrases: [`${name} heading, level ${level}`],
 });
 
 const clickableStep = (name: string): StepOverrides => ({
-    itemText: name,
+    focusedElementText: name,
     spokenPhrases: [`${name} clickable`],
 });
 

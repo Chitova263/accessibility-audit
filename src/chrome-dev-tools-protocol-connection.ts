@@ -27,7 +27,7 @@ export class ChromeDevToolsProtocolConnection {
 
     public async disconnect(): Promise<void> {
         if (this.browser?.isConnected()) {
-            this.browser?.close();
+            await this.browser?.close();
             this.browser = undefined;
         }
     }

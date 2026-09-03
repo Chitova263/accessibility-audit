@@ -10,7 +10,7 @@ import type { ScreenReaderKeyBindings, ScreenReaderEndDetection } from '../types
 export const voiceOverKeyBindings: ScreenReaderKeyBindings = {
     // VO+Command+H = next heading
     nextHeading: 'Control+Option+Command+h',
-    nextHeadingLevel: (level: 1 | 2 | 3 | 4 | 5 | 6) => {
+    nextHeadingLevel: (_level: 1 | 2 | 3 | 4 | 5 | 6) => {
         // VoiceOver doesn't have direct heading level navigation keys like NVDA
         // Use the rotor for heading levels; fall back to general heading nav
         return 'Control+Option+Command+h';
@@ -43,23 +43,23 @@ export const voiceOverEndDetection: ScreenReaderEndDetection = {
     // VoiceOver wraps around - detect loops
     heading: {
         type: 'loop-detection',
-        key: 'itemText',
+        key: 'focusedElementText',
     },
     headingLevel: {
         type: 'loop-detection',
-        key: 'itemText',
+        key: 'focusedElementText',
     },
     link: {
         type: 'loop-detection',
-        key: 'itemText',
+        key: 'focusedElementText',
     },
     landmark: {
         type: 'loop-detection',
-        key: 'itemText',
+        key: 'focusedElementText',
     },
     button: {
         type: 'loop-detection',
-        key: 'itemText',
+        key: 'focusedElementText',
     },
     linear: {
         type: 'document-boundary',

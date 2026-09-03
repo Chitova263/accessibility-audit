@@ -1,9 +1,8 @@
 import { parse } from 'node-html-parser';
 import { create } from 'xmlbuilder2';
-import type { Violation, ScreenReaderViolation, ScreenReaderContext } from '../../../analysis/core/violation';
+import type { Violation, ScreenReaderViolation } from '../../../analysis/core/violation';
 import { isScreenReaderViolation } from '../../../analysis/core/violation';
 import type {
-    PromptNavigationStep,
     PromptStrategySection,
     TranscriptCorrelation,
     PromptViolation,
@@ -22,7 +21,7 @@ function cleanHtmlSnippet(html: string, maxLength: number): string {
         const root = parse(html, { comment: false });
         root.querySelectorAll('script, style, noscript, svg').forEach((el) => el.remove());
 
-        let cleaned = root.outerHTML.trim();
+        const cleaned = root.outerHTML.trim();
 
         if (cleaned.length <= maxLength) {
             return cleaned;
@@ -82,8 +81,8 @@ function findCorrelation(
                 const violationText = extractTextFromHtml(htmlSnippet);
                 if (
                     violationText &&
-                    step.itemText &&
-                    (step.itemText.includes(violationText) || violationText.includes(step.itemText))
+                    step.focusedElementText &&
+                    (step.focusedElementText.includes(violationText) || violationText.includes(step.focusedElementText))
                 ) {
                     return {
                         strategyName: section.strategyName,
@@ -286,15 +285,15 @@ export function renderViolationsXml(data: PromptViolationsData): string {
             }
 
             if (violation.correlation) {
-                const c = violation.correlation;
+                const correlation = violation.correlation;
                 violationEle
                     .ele('transcript_match', {
-                        strategy: c.strategyName,
-                        step: c.stepIndex,
-                        confidence: c.confidence,
+                        strategy: correlation.strategyName,
+                        step: correlation.stepIndex,
+                        confidence: correlation.confidence,
                     })
                     .ele('spoken')
-                    .txt(c.spoken);
+                    .txt(correlation.spoken);
             }
         }
     }

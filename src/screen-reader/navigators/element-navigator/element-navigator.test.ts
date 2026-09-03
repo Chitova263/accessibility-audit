@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ElementNavigator } from './element-navigator';
-import type { ScreenReader, PressResult } from '../../drivers/nvda';
+import { BrowseModeElementNavigator } from './element-navigator';
+import type { ScreenReader, KeyPressResult } from '../../drivers/nvda';
 import { createEndDetector } from '../end-detector';
 
 function createMockScreenReader(): ScreenReader {
@@ -8,28 +8,28 @@ function createMockScreenReader(): ScreenReader {
         name: 'nvda',
         start: vi.fn().mockResolvedValue(undefined),
         stop: vi.fn().mockResolvedValue(undefined),
-        press: vi.fn().mockResolvedValue({ spokenPhrases: [], itemText: '' } satisfies PressResult),
+        press: vi.fn().mockResolvedValue({ spokenPhrases: [], focusedElementText: '' } satisfies KeyPressResult),
     };
 }
 
 /**
  * Helper to create a mock press function that returns different results on each call.
  */
-function createPressMock(results: Array<{ phrase: string; itemText?: string }>) {
+function createPressMock(results: Array<{ phrase: string; focusedElementText?: string }>) {
     let callIndex = 0;
-    return vi.fn().mockImplementation((): Promise<PressResult> => {
+    return vi.fn().mockImplementation((): Promise<KeyPressResult> => {
         const result = results[callIndex++];
         if (!result) {
-            return Promise.resolve({ spokenPhrases: ['no next heading'], itemText: '' });
+            return Promise.resolve({ spokenPhrases: ['no next heading'], focusedElementText: '' });
         }
         return Promise.resolve({
             spokenPhrases: [result.phrase],
-            itemText: result.itemText ?? '',
+            focusedElementText: result.focusedElementText ?? '',
         });
     });
 }
 
-describe('ElementNavigator', () => {
+describe('BrowseModeElementNavigator', () => {
     let mockSR: ScreenReader;
 
     beforeEach(() => {
@@ -38,12 +38,12 @@ describe('ElementNavigator', () => {
 
     it('yields items when pressing key produces speech', async () => {
         mockSR.press = createPressMock([
-            { phrase: 'heading level 1, Welcome', itemText: 'Welcome' },
-            { phrase: 'heading level 2, About', itemText: 'About' },
+            { phrase: 'heading level 1, Welcome', focusedElementText: 'Welcome' },
+            { phrase: 'heading level 2, About', focusedElementText: 'About' },
             { phrase: 'no next heading' },
         ]);
 
-        const navigator = new ElementNavigator(
+        const navigator = new BrowseModeElementNavigator(
             mockSR,
             {
                 advanceKey: 'h',
@@ -65,7 +65,7 @@ describe('ElementNavigator', () => {
     it('stops when end phrase is detected', async () => {
         mockSR.press = createPressMock([{ phrase: 'link, Home' }, { phrase: 'no next link' }]);
 
-        const navigator = new ElementNavigator(
+        const navigator = new BrowseModeElementNavigator(
             mockSR,
             {
                 advanceKey: 'k',
@@ -84,7 +84,7 @@ describe('ElementNavigator', () => {
     });
 
     it('has correct type property', () => {
-        const navigator = new ElementNavigator(
+        const navigator = new BrowseModeElementNavigator(
             mockSR,
             {
                 advanceKey: 'd',
@@ -98,7 +98,7 @@ describe('ElementNavigator', () => {
     it('presses the correct key', async () => {
         mockSR.press = createPressMock([{ phrase: 'no next button' }]);
 
-        const navigator = new ElementNavigator(
+        const navigator = new BrowseModeElementNavigator(
             mockSR,
             {
                 advanceKey: 'b',
@@ -107,20 +107,20 @@ describe('ElementNavigator', () => {
             'button'
         );
 
-        for await (const _ of navigator) {
+        for await (const _item of navigator) {
             // consume
         }
 
         expect(mockSR.press).toHaveBeenCalledWith('b');
     });
 
-    it('returns itemText from PressResult', async () => {
+    it('returns focusedElementText from KeyPressResult', async () => {
         mockSR.press = createPressMock([
-            { phrase: 'heading level 1, Welcome', itemText: 'Welcome' },
+            { phrase: 'heading level 1, Welcome', focusedElementText: 'Welcome' },
             { phrase: 'no next heading' },
         ]);
 
-        const navigator = new ElementNavigator(
+        const navigator = new BrowseModeElementNavigator(
             mockSR,
             {
                 advanceKey: 'h',
@@ -134,6 +134,6 @@ describe('ElementNavigator', () => {
             items.push(item);
         }
 
-        expect(items[0]!.itemText).toBe('Welcome');
+        expect(items[0]!.focusedElementText).toBe('Welcome');
     });
 });

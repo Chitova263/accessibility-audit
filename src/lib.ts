@@ -15,16 +15,14 @@ export {
     // Rules runner
     runRules,
     getRuleById,
-    ALL_RULES,
+    RULES as ALL_RULES,
     type RunResult,
-    // Utilities
-    summarizeViolations,
-    // Core types
-    type Violation,
-    type Rule,
-    type RuleMeta,
-    type RuleResult,
-} from './analysis';
+} from './analysis/rules/runner';
+
+export { summarizeViolations } from './analysis/utils/summarize-violations';
+
+export type { Violation } from './analysis/core/violation';
+export type { Rule, RuleMeta, RuleResult } from './analysis/core/rule';
 
 export { PageSession } from './screen-reader/page-session';
 export { ChromeDevToolsProtocolConnection } from './chrome-dev-tools-protocol-connection';
@@ -43,7 +41,7 @@ export {
     type DriverConfig,
     type CreateDriverOptions,
 } from './screen-reader/drivers/factory';
-export { ElementNavigator } from './screen-reader/navigators/element-navigator/element-navigator';
+export { BrowseModeElementNavigator } from './screen-reader/navigators/element-navigator/element-navigator';
 export { TabNavigator } from './screen-reader/navigators/tab-navigator/tab-navigator';
 export { DownArrowNavigator } from './screen-reader/navigators/down-arrow-navigator/down-arrow-navigator';
 export { Navigator } from './screen-reader/navigators/navigator';
@@ -52,12 +50,12 @@ export { virtualKeyBindings, virtualEndDetection } from './screen-reader/navigat
 export type {
     NavigationItem,
     NavigatorConfig,
-    IElementNavigator,
+    ElementNavigator,
     ScreenReaderConfig,
 } from './screen-reader/navigators/types';
 
 export type {
-    INavigationStrategy,
+    NavigationStrategy,
     NavigationStep,
     StrategyResult,
     StrategyMetadata,
@@ -71,7 +69,7 @@ export { HeadingHierarchyNavigationStrategy } from './screen-reader/navigation-s
 export { DownArrowNavigationStrategy } from './screen-reader/navigation-strategy/browse-mode-strategies/down-arrow-navigation-strategy';
 export { TabNavigationStrategy } from './screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
 
-export { formatTranscriptAsText } from './reporting';
+export { formatTranscriptAsText } from './reporting/transcript-text-formatter';
 
 // Utilities
 export { Logger, type LogLevel, type LoggerOptions, type ContextLogger } from './utils/logger';

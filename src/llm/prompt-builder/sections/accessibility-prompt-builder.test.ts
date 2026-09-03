@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createPromptBuilder, AccessibilityPromptBuilder } from './accessibility-prompt-builder';
+import { createPromptBuilder } from './accessibility-prompt-builder';
 
 describe('AccessibilityPromptBuilder', () => {
     describe('screen reader name in prompts', () => {

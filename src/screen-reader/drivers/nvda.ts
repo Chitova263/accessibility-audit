@@ -2,13 +2,12 @@ import type { Page } from 'playwright';
 import { nvda } from '@guidepup/guidepup';
 import { execSync } from 'node:child_process';
 import { delay } from '@guidepup/guidepup/lib/delay';
-import type { ScreenReader, PressResult } from './types';
+import type { ScreenReader, KeyPressResult } from './types';
 
-export type { ScreenReader, PressResult, ScreenReaderName } from './types';
+export type { ScreenReader, KeyPressResult, ScreenReaderName } from './types';
 export { getScreenReaderDisplayName } from './types';
 
 export interface NvdaOptions {
-    /** Playwright page - used to get the correct Chrome window via CDP */
     page?: Page | undefined;
 }
 
@@ -32,17 +31,16 @@ export class Nvda implements ScreenReader {
         return nvda.stop();
     }
 
-    async press(key: string): Promise<PressResult> {
+    async press(key: string): Promise<KeyPressResult> {
         // Clear log to isolate speech from this action only
         await nvda.clearSpokenPhraseLog();
         await nvda.press(key);
         const spokenPhrases = await this.waitForSpeechStable();
-        const itemText = await nvda.itemText();
+        const focusedElementText = await nvda.itemText();
 
-        return { spokenPhrases, itemText };
+        return { spokenPhrases, focusedElementText };
     }
 
-    /** Wait for speech to stabilize by polling until the phrase log stops changing. */
     private async waitForSpeechStable(): Promise<string[]> {
         const startTime = Date.now();
         let lastLogLength = -1;

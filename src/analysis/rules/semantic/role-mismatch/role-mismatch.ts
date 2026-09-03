@@ -12,6 +12,8 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import type { AXNode } from '../../../../types/cdp';
+import { getRole, getName } from '../../../../types/ax-utils';
 
 type RoleMismatchIssue =
     'link-as-button' | 'button-as-link' | 'div-as-interactive' | 'span-as-interactive' | 'element-role-override';
@@ -64,12 +66,12 @@ interface ElementInfo {
     stepIndex: number;
     htmlSnippet: string | null;
     spokenPhrases: string[];
-    itemText: string;
+    focusedElementText: string;
     identifier: string;
     timestamp: number;
-    axNode: unknown;
+    axNode: AXNode | undefined;
     strategyType: string;
-    backendNodeId?: number;
+    backendNodeId?: number | undefined;
 }
 
 interface MismatchInfo {
@@ -105,17 +107,17 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
 
                 if (!node) continue;
 
-                const role = node.role?.value;
+                const role = getRole(node);
                 if (!role) continue;
 
                 elements.push({
                     role,
                     htmlTag: this.extractHtmlTag(step.htmlSnippet),
-                    name: node.name?.value ?? '',
+                    name: getName(node) ?? '',
                     stepIndex,
                     htmlSnippet: step.htmlSnippet,
                     spokenPhrases: step.spokenPhrases,
-                    itemText: step.itemText,
+                    focusedElementText: step.focusedElementText,
                     identifier: step.identifier,
                     timestamp: step.timestamp,
                     axNode: node,
@@ -139,7 +141,7 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
                     {
                         identifier: element.identifier,
                         spokenPhrases: element.spokenPhrases,
-                        itemText: element.itemText,
+                        focusedElementText: element.focusedElementText,
                         axNode: element.axNode,
                     },
                     element.strategyType,

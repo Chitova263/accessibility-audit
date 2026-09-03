@@ -7,6 +7,5 @@ export interface AuditContext {
     page: Page;
     cdp: CDPSession;
     screenshotsDir: string;
-    /** The screen reader used for this audit */
     screenReader: ScreenReaderName;
 }

@@ -1,7 +1,7 @@
 import type { ScreenReader } from '../../drivers/nvda';
-import type { IElementNavigator, NavigationItem, EndDetector } from '../types';
+import type { ElementNavigator, NavigationItem, EndDetector } from '../types';
 
-export class DownArrowNavigator implements IElementNavigator {
+export class DownArrowNavigator implements ElementNavigator {
     public readonly type = 'linear' as const;
 
     constructor(
@@ -19,7 +19,7 @@ export class DownArrowNavigator implements IElementNavigator {
         this.endDetector?.reset();
 
         while (true) {
-            const { spokenPhrases, itemText } = await this.sr.press(this.arrowKey);
+            const { spokenPhrases, focusedElementText } = await this.sr.press(this.arrowKey);
 
             if (spokenPhrases.length === 0) {
                 silentPressCount++;
@@ -33,7 +33,7 @@ export class DownArrowNavigator implements IElementNavigator {
 
             const phrase = spokenPhrases[spokenPhrases.length - 1] ?? '';
 
-            if (this.endDetector?.check({ phrase, itemText })) {
+            if (this.endDetector?.check({ phrase, focusedElementText })) {
                 return;
             }
 
@@ -50,11 +50,11 @@ export class DownArrowNavigator implements IElementNavigator {
             }
             previousPhrase = phrase;
 
-            if (!itemText && !phrase) {
+            if (!focusedElementText && !phrase) {
                 continue;
             }
 
-            yield { phrase, itemText };
+            yield { phrase, focusedElementText };
         }
     }
 

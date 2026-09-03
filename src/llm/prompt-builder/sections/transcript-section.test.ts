@@ -6,7 +6,8 @@ import type {
     NavigationStep,
     CompletionReason,
 } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import type { PromptTranscript, PromptStrategySection, PromptNavigationStep } from '../schemas';
+import type { PromptTranscript } from '../schemas';
+import type { AXNode } from '../../../types/cdp';
 
 // Creates a complete NavigationStep with all required fields
 const createNavigationStep = (
@@ -14,8 +15,8 @@ const createNavigationStep = (
     overrides: Partial<{
         identifier: string;
         spokenPhrases: string[];
-        itemText: string;
-        itemTextLog: string[];
+        focusedElementText: string;
+        focusedElementTextLog: string[];
         timestamp: number;
         axNode: unknown;
         htmlSnippet: string;
@@ -24,17 +25,17 @@ const createNavigationStep = (
     index,
     identifier: overrides.identifier ?? `step-${index}`,
     spokenPhrases: overrides.spokenPhrases ?? [`Item ${index}`],
-    itemText: overrides.itemText ?? `Item ${index}`,
-    itemTextLog: overrides.itemTextLog ?? [],
+    focusedElementText: overrides.focusedElementText ?? `Item ${index}`,
+    focusedElementTextLog: overrides.focusedElementTextLog ?? [],
     timestamp: overrides.timestamp ?? Date.now(),
     axNode: overrides.axNode as NavigationStep['axNode'],
     htmlSnippet: overrides.htmlSnippet ?? null,
 });
 
-// Helper to add missing itemTextLog and timestamp to inline step objects
-const makeStep = (step: Omit<NavigationStep, 'itemTextLog' | 'timestamp'>): NavigationStep => ({
+// Helper to add missing focusedElementTextLog and timestamp to inline step objects
+const makeStep = (step: Omit<NavigationStep, 'focusedElementTextLog' | 'timestamp'>): NavigationStep => ({
     ...step,
-    itemTextLog: [],
+    focusedElementTextLog: [],
     timestamp: Date.now(),
 });
 
@@ -61,9 +62,11 @@ const createStrategyResult = (
     };
 };
 
-const createAxNode = (role: string, name: string, extraProps: Record<string, unknown> = {}) => ({
-    role: { value: role },
-    name: { value: name },
+const createAxNode = (role: string, name: string, extraProps: Record<string, unknown> = {}): AXNode => ({
+    nodeId: `node-${Math.random().toString(36).slice(2, 8)}`,
+    ignored: false,
+    role: { type: 'role' as const, value: role },
+    name: { type: 'string' as const, value: name },
     properties: [],
     ...extraProps,
 });
@@ -72,11 +75,14 @@ const createAxNodeWithProperties = (
     role: string,
     name: string,
     properties: Array<{ name: string; value: { value: unknown } }>
-) => ({
-    role: { value: role },
-    name: { value: name },
-    properties,
-});
+): AXNode =>
+    ({
+        nodeId: `node-${Math.random().toString(36).slice(2, 8)}`,
+        ignored: false,
+        role: { type: 'role' as const, value: role },
+        name: { type: 'string' as const, value: name },
+        properties,
+    }) as AXNode;
 
 describe('renderTranscriptXml', () => {
     describe('empty transcript', () => {
@@ -106,7 +112,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'step-0',
                                 spoken: 'Skip to main content, link',
-                                itemText: 'Skip to main content',
+                                focusedElementText: 'Skip to main content',
                                 axNode: null,
                                 htmlSnippet: null,
                             },
@@ -114,7 +120,7 @@ describe('renderTranscriptXml', () => {
                                 index: 1,
                                 identifier: 'step-1',
                                 spoken: 'Search, edit',
-                                itemText: 'Search',
+                                focusedElementText: 'Search',
                                 axNode: null,
                                 htmlSnippet: null,
                             },
@@ -144,7 +150,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'heading-0',
                                 spoken: 'Main Content, heading, level 1',
-                                itemText: 'Main Content',
+                                focusedElementText: 'Main Content',
                                 axNode: {
                                     role: 'heading',
                                     name: 'Main Content',
@@ -175,7 +181,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'input-0',
                                 spoken: 'Email address, edit, required',
-                                itemText: 'Email address',
+                                focusedElementText: 'Email address',
                                 axNode: {
                                     role: 'textbox',
                                     name: 'Email address',
@@ -208,7 +214,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'checkbox-0',
                                 spoken: 'Accept terms, checkbox, not checked, required',
-                                itemText: 'Accept terms',
+                                focusedElementText: 'Accept terms',
                                 axNode: {
                                     role: 'checkbox',
                                     name: 'Accept terms',
@@ -244,7 +250,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'complex-0',
                                 spoken: 'Complex widget',
-                                itemText: 'Complex widget',
+                                focusedElementText: 'Complex widget',
                                 axNode: {
                                     role: 'treeitem',
                                     name: 'Documents',
@@ -290,7 +296,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'btn-0',
                                 spoken: 'Submit, button',
-                                itemText: 'Submit',
+                                focusedElementText: 'Submit',
                                 axNode: null,
                                 htmlSnippet: '<button type="submit" class="btn-primary">Submit</button>',
                             },
@@ -318,7 +324,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'complex-html-0',
                                 spoken: 'Product card',
-                                itemText: 'Product card',
+                                focusedElementText: 'Product card',
                                 axNode: null,
                                 htmlSnippet:
                                     '<div class="card" data-price="$19.99" data-attrs=\'{"sale": true}\'><img src="product.jpg" alt="Widget & Gadget"><span>Price: $19.99</span></div>',
@@ -349,7 +355,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'landmark-0',
                                 spoken: 'banner landmark',
-                                itemText: 'banner',
+                                focusedElementText: 'banner',
                                 axNode: { role: 'banner', name: '' },
                                 htmlSnippet: '<header role="banner">...</header>',
                             },
@@ -357,7 +363,7 @@ describe('renderTranscriptXml', () => {
                                 index: 1,
                                 identifier: 'landmark-1',
                                 spoken: 'main landmark',
-                                itemText: 'main',
+                                focusedElementText: 'main',
                                 axNode: { role: 'main', name: '' },
                                 htmlSnippet: '<main>...</main>',
                             },
@@ -374,7 +380,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'h1-0',
                                 spoken: 'Welcome, heading, level 1',
-                                itemText: 'Welcome',
+                                focusedElementText: 'Welcome',
                                 axNode: { role: 'heading', name: 'Welcome', properties: { level: 1 } },
                                 htmlSnippet: '<h1>Welcome</h1>',
                             },
@@ -382,7 +388,7 @@ describe('renderTranscriptXml', () => {
                                 index: 1,
                                 identifier: 'h2-0',
                                 spoken: 'Features, heading, level 2',
-                                itemText: 'Features',
+                                focusedElementText: 'Features',
                                 axNode: { role: 'heading', name: 'Features', properties: { level: 2 } },
                                 htmlSnippet: '<h2>Features</h2>',
                             },
@@ -390,7 +396,7 @@ describe('renderTranscriptXml', () => {
                                 index: 2,
                                 identifier: 'h2-1',
                                 spoken: 'Pricing, heading, level 2',
-                                itemText: 'Pricing',
+                                focusedElementText: 'Pricing',
                                 axNode: { role: 'heading', name: 'Pricing', properties: { level: 2 } },
                                 htmlSnippet: '<h2>Pricing</h2>',
                             },
@@ -407,7 +413,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'tab-0',
                                 spoken: 'Get Started, button',
-                                itemText: 'Get Started',
+                                focusedElementText: 'Get Started',
                                 axNode: { role: 'button', name: 'Get Started', properties: { focusable: true } },
                                 htmlSnippet: '<button>Get Started</button>',
                             },
@@ -437,7 +443,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'escape-test',
                                 spoken: 'Price: $10 < $20 & "best" deal\'s here',
-                                itemText: 'Price comparison <special>',
+                                focusedElementText: 'Price comparison <special>',
                                 axNode: null,
                                 htmlSnippet: null,
                             },
@@ -465,7 +471,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'ax-escape-test',
                                 spoken: 'Test',
-                                itemText: 'Test',
+                                focusedElementText: 'Test',
                                 axNode: {
                                     role: 'link',
                                     name: 'Terms & Conditions',
@@ -498,7 +504,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'id-with-"quotes"-&-<brackets>',
                                 spoken: 'Test',
-                                itemText: 'Test',
+                                focusedElementText: 'Test',
                                 axNode: null,
                                 htmlSnippet: null,
                             },
@@ -528,7 +534,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'step-0',
                                 spoken: 'Button, button',
-                                itemText: 'Button',
+                                focusedElementText: 'Button',
                                 axNode: { role: 'button', name: 'Submit' },
                                 htmlSnippet: '<button>Submit</button>',
                             },
@@ -556,7 +562,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'step-0',
                                 spoken: 'Button, button',
-                                itemText: 'Button',
+                                focusedElementText: 'Button',
                                 axNode: { role: 'button', name: 'Submit' },
                                 htmlSnippet: '<button>Submit</button>',
                             },
@@ -584,7 +590,7 @@ describe('renderTranscriptXml', () => {
                                 index: 0,
                                 identifier: 'step-0',
                                 spoken: 'Button, button',
-                                itemText: 'Button',
+                                focusedElementText: 'Button',
                                 axNode: { role: 'button', name: 'Submit' },
                                 htmlSnippet: '<button>Submit</button>',
                             },
@@ -592,7 +598,7 @@ describe('renderTranscriptXml', () => {
                                 index: 1,
                                 identifier: 'step-1',
                                 spoken: 'Link, link',
-                                itemText: 'Link',
+                                focusedElementText: 'Link',
                                 axNode: { role: 'link', name: 'More info' },
                                 htmlSnippet: '<a href="#">More info</a>',
                             },
@@ -621,7 +627,7 @@ describe('buildTranscriptData', () => {
                         index: 0,
                         identifier: 'h1-0',
                         spokenPhrases: ['Welcome', 'heading', 'level 1'],
-                        itemText: 'Welcome',
+                        focusedElementText: 'Welcome',
                         axNode: createAxNodeWithProperties('heading', 'Welcome', [
                             { name: 'level', value: { value: 1 } },
                         ]),
@@ -644,7 +650,7 @@ describe('buildTranscriptData', () => {
                         index: 0,
                         identifier: 'checkbox-0',
                         spokenPhrases: ['Accept terms', 'checkbox', 'not checked'],
-                        itemText: 'Accept terms',
+                        focusedElementText: 'Accept terms',
                         axNode: createAxNodeWithProperties('checkbox', 'Accept terms', [
                             { name: 'focusable', value: { value: true } },
                             { name: 'checked', value: { value: false } },
@@ -710,8 +716,8 @@ describe('buildTranscriptData', () => {
                         index: 0,
                         identifier: 'long-html',
                         spokenPhrases: ['Long content'],
-                        itemText: 'Long content',
-                        axNode: null,
+                        focusedElementText: 'Long content',
+                        axNode: undefined,
                         htmlSnippet: longHtml,
                     }),
                 ],
@@ -730,8 +736,8 @@ describe('buildTranscriptData', () => {
                         index: 0,
                         identifier: 'step-0',
                         spokenPhrases: ['Button'],
-                        itemText: 'Button',
-                        axNode: null,
+                        focusedElementText: 'Button',
+                        axNode: undefined,
                         htmlSnippet: '<button>Submit</button>',
                     }),
                 ],
@@ -750,7 +756,7 @@ describe('buildTranscriptData', () => {
                         index: 0,
                         identifier: 'step-0',
                         spokenPhrases: ['Button'],
-                        itemText: 'Button',
+                        focusedElementText: 'Button',
                         axNode: createAxNode('button', 'Submit'),
                         htmlSnippet: null,
                     }),
@@ -774,7 +780,7 @@ describe('buildTranscriptSection', () => {
                         index: 0,
                         identifier: 'skip-link',
                         spokenPhrases: ['Skip to main content', 'link'],
-                        itemText: 'Skip to main content',
+                        focusedElementText: 'Skip to main content',
                         axNode: createAxNode('link', 'Skip to main content'),
                         htmlSnippet: '<a href="#main">Skip to main content</a>',
                     }),
@@ -782,7 +788,7 @@ describe('buildTranscriptSection', () => {
                         index: 1,
                         identifier: 'search-input',
                         spokenPhrases: ['Search', 'edit', 'blank'],
-                        itemText: 'Search',
+                        focusedElementText: 'Search',
                         axNode: createAxNodeWithProperties('textbox', 'Search', [
                             { name: 'focusable', value: { value: true } },
                         ]),
@@ -798,7 +804,7 @@ describe('buildTranscriptSection', () => {
                         index: 0,
                         identifier: 'main-heading',
                         spokenPhrases: ['Welcome to Our Site', 'heading', 'level 1'],
-                        itemText: 'Welcome to Our Site',
+                        focusedElementText: 'Welcome to Our Site',
                         axNode: createAxNodeWithProperties('heading', 'Welcome to Our Site', [
                             { name: 'level', value: { value: 1 } },
                         ]),
@@ -820,7 +826,7 @@ describe('buildTranscriptSection', () => {
                         index: 0,
                         identifier: 'btn-0',
                         spokenPhrases: ['Submit', 'button'],
-                        itemText: 'Submit',
+                        focusedElementText: 'Submit',
                         axNode: createAxNode('button', 'Submit'),
                         htmlSnippet: '<button>Submit</button>',
                     }),
@@ -833,7 +839,7 @@ describe('buildTranscriptSection', () => {
                         index: 0,
                         identifier: 'h1-0',
                         spokenPhrases: ['Title', 'heading', 'level 1'],
-                        itemText: 'Title',
+                        focusedElementText: 'Title',
                         axNode: createAxNode('heading', 'Title'),
                         htmlSnippet: '<h1>Title</h1>',
                     }),
@@ -864,7 +870,7 @@ describe('buildTranscriptSection', () => {
                         index: 0,
                         identifier: 'banner-0',
                         spokenPhrases: ['banner landmark'],
-                        itemText: 'banner',
+                        focusedElementText: 'banner',
                         axNode: createAxNode('banner', ''),
                         htmlSnippet: '<header role="banner">...</header>',
                     }),
@@ -872,7 +878,7 @@ describe('buildTranscriptSection', () => {
                         index: 1,
                         identifier: 'nav-0',
                         spokenPhrases: ['navigation landmark', 'Main Navigation'],
-                        itemText: 'Main Navigation',
+                        focusedElementText: 'Main Navigation',
                         axNode: createAxNode('navigation', 'Main Navigation'),
                         htmlSnippet: '<nav aria-label="Main Navigation">...</nav>',
                     }),
@@ -880,7 +886,7 @@ describe('buildTranscriptSection', () => {
                         index: 2,
                         identifier: 'main-0',
                         spokenPhrases: ['main landmark'],
-                        itemText: 'main',
+                        focusedElementText: 'main',
                         axNode: createAxNode('main', ''),
                         htmlSnippet: '<main>...</main>',
                     }),
@@ -888,7 +894,7 @@ describe('buildTranscriptSection', () => {
                         index: 3,
                         identifier: 'contentinfo-0',
                         spokenPhrases: ['content info landmark'],
-                        itemText: 'contentinfo',
+                        focusedElementText: 'contentinfo',
                         axNode: createAxNode('contentinfo', ''),
                         htmlSnippet: '<footer>...</footer>',
                     }),
@@ -905,7 +911,7 @@ describe('buildTranscriptSection', () => {
                         index: 0,
                         identifier: 'arrow-0',
                         spokenPhrases: ['link', 'Homepage'],
-                        itemText: 'Homepage',
+                        focusedElementText: 'Homepage',
                         axNode: createAxNode('link', 'Homepage'),
                         htmlSnippet: '<a href="/">Homepage</a>',
                     }),
@@ -913,7 +919,7 @@ describe('buildTranscriptSection', () => {
                         index: 1,
                         identifier: 'arrow-1',
                         spokenPhrases: ['heading', 'level 1', 'Welcome'],
-                        itemText: 'Welcome',
+                        focusedElementText: 'Welcome',
                         axNode: createAxNodeWithProperties('heading', 'Welcome', [
                             { name: 'level', value: { value: 1 } },
                         ]),
@@ -923,7 +929,7 @@ describe('buildTranscriptSection', () => {
                         index: 2,
                         identifier: 'arrow-2',
                         spokenPhrases: ['This is the introduction paragraph.'],
-                        itemText: 'This is the introduction paragraph.',
+                        focusedElementText: 'This is the introduction paragraph.',
                         axNode: createAxNode('StaticText', 'This is the introduction paragraph.'),
                         htmlSnippet: '<p>This is the introduction paragraph.</p>',
                     }),
@@ -966,7 +972,7 @@ describe('edge cases', () => {
                             index: 0,
                             identifier: 'empty-spoken',
                             spoken: '',
-                            itemText: '',
+                            focusedElementText: '',
                             axNode: null,
                             htmlSnippet: null,
                         },
@@ -994,7 +1000,7 @@ describe('edge cases', () => {
                             index: 0,
                             identifier: 'empty-props',
                             spoken: 'Button',
-                            itemText: 'Button',
+                            focusedElementText: 'Button',
                             axNode: {
                                 role: 'button',
                                 name: 'Submit',
@@ -1026,7 +1032,7 @@ describe('edge cases', () => {
                             index: 0,
                             identifier: 'unicode-test',
                             spoken: '🔍 Search • Búsqueda • 搜索',
-                            itemText: '🔍 Search',
+                            focusedElementText: '🔍 Search',
                             axNode: {
                                 role: 'button',
                                 name: '🔍 Search • Búsqueda',
@@ -1058,7 +1064,7 @@ describe('edge cases', () => {
                             index: 0,
                             identifier: longId,
                             spoken: 'Test',
-                            itemText: 'Test',
+                            focusedElementText: 'Test',
                             axNode: null,
                             htmlSnippet: null,
                         },
@@ -1086,7 +1092,7 @@ describe('edge cases', () => {
                             index: 0,
                             identifier: 'cdata-edge',
                             spoken: 'Script content',
-                            itemText: 'Script',
+                            focusedElementText: 'Script',
                             axNode: null,
                             // This contains ]]> which would break CDATA if not handled
                             htmlSnippet: '<script>if (arr[i]]>0) {}</script>',

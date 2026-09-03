@@ -63,7 +63,7 @@ export class MissingMainLandmarkRule implements Rule<ScreenReaderContext, Missin
             {
                 identifier: landmark.identifier,
                 spokenPhrases: landmark.spokenPhrases,
-                itemText: landmark.itemText,
+                focusedElementText: landmark.focusedElementText,
                 axNode: landmark.axNode,
             },
             'landmark',

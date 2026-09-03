@@ -1,6 +1,8 @@
 import type { AuditContext } from '../../core/context';
 import type { ScreenReaderContext } from '../../core/violation';
 import { createScreenReaderContext } from '../../utils/tool-details';
+import type { AXNode } from '../../../types/cdp';
+import { getRole, getName, getHeadingLevel } from '../../../types/ax-utils';
 
 export interface HeadingInfo {
     level: number;
@@ -8,11 +10,11 @@ export interface HeadingInfo {
     stepIndex: number;
     htmlSnippet: string | null;
     spokenPhrases: string[];
-    itemText: string;
+    focusedElementText: string;
     identifier: string;
     timestamp: number;
-    axNode: unknown;
-    backendNodeId?: number;
+    axNode: AXNode | undefined;
+    backendNodeId?: number | undefined;
 }
 
 /**
@@ -33,18 +35,18 @@ export function collectHeadings(ctx: AuditContext): HeadingInfo[] {
             const step = result.navigationSteps[stepIndex]!;
             const node = step.axNode;
 
-            if (!node || node.role?.value !== 'heading') continue;
+            if (!node || getRole(node) !== 'heading') continue;
 
-            const levelProp = node.properties?.find((p: { name: string }) => p.name === 'level');
-            const level: number = levelProp?.value?.value ?? 0;
+            const level = getHeadingLevel(node) ?? 0;
+            const name = getName(node) ?? '';
 
             raw.push({
                 level,
-                name: node.name?.value ?? '',
+                name,
                 stepIndex,
                 htmlSnippet: step.htmlSnippet,
                 spokenPhrases: step.spokenPhrases,
-                itemText: step.itemText,
+                focusedElementText: step.focusedElementText,
                 identifier: step.identifier,
                 timestamp: step.timestamp,
                 axNode: node,
@@ -79,7 +81,7 @@ export function createHeadingContext(heading: HeadingInfo, screenReader: ScreenR
         {
             identifier: heading.identifier,
             spokenPhrases: heading.spokenPhrases,
-            itemText: heading.itemText,
+            focusedElementText: heading.focusedElementText,
             axNode: heading.axNode,
         },
         'heading',

@@ -10,13 +10,9 @@ import type {
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 export interface SubtreeRepetitionInfo {
-    /** The announced phrase that repeated */
     phrase: string;
-    /** How many consecutive times it was announced */
     count: number;
-    /** Index of the first repeated step */
     startStep: number;
-    /** Index of the last repeated step */
     endStep: number;
     /** Whether the run extended to (or near) the end of the arrow strategy */
     reachedStrategyEnd: boolean;
@@ -148,7 +144,7 @@ export class UnexitedSubtreeRepetitionRule implements Rule<ScreenReaderContext, 
         };
 
         for (let i = 0; i < steps.length; i++) {
-            const phrase = steps[i]!.itemText.toLowerCase().trim();
+            const phrase = steps[i]!.focusedElementText.toLowerCase().trim();
 
             if (phrase === runPhrase) {
                 runCount++;
@@ -196,19 +192,19 @@ export class UnexitedSubtreeRepetitionRule implements Rule<ScreenReaderContext, 
         const node = step.axNode as
             { role?: string | { value?: string }; name?: string | { value?: string } } | undefined;
         if (!node) return '';
-        const r = node.role;
-        if (typeof r === 'string') return r;
-        if (r && typeof r === 'object' && 'value' in r) return String(r.value ?? '');
+        const role = node.role;
+        if (typeof role === 'string') return role;
+        if (role && typeof role === 'object' && 'value' in role) return String(role.value ?? '');
         return '';
     }
 
     private getName(step: NavigationStep): string {
         const node = step.axNode as { name?: string | { value?: string } } | undefined;
-        if (!node) return step.itemText;
-        const n = node.name;
-        if (typeof n === 'string') return n;
-        if (n && typeof n === 'object' && 'value' in n) return String(n.value ?? '');
-        return step.itemText;
+        if (!node) return step.focusedElementText;
+        const name = node.name;
+        if (typeof name === 'string') return name;
+        if (name && typeof name === 'object' && 'value' in name) return String(name.value ?? '');
+        return step.focusedElementText;
     }
 
     private createViolation(

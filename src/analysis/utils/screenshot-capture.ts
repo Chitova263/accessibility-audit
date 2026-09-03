@@ -1,7 +1,7 @@
 import type { Page, CDPSession } from 'playwright';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import type { ScreenshotSuccess, ScreenshotFailure, Screenshot, BoundingBox } from '../core/violation';
+import type { ScreenshotFailure, Screenshot, BoundingBox } from '../core/violation';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Browser globals used in page.evaluate() contexts - declared as any since DOM lib not included
@@ -10,15 +10,10 @@ declare const window: any;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface ScreenshotOptions {
-    /** Highlight border color (default: #e53935 - red) */
     highlightColor?: string;
-    /** Highlight border width in pixels (default: 3) */
     highlightWidth?: number;
-    /** Whether to add a semi-transparent overlay on the element (default: true) */
     highlightOverlay?: boolean;
-    /** Overlay background color with alpha (default: rgba(229, 57, 53, 0.15)) */
     overlayColor?: string;
-    /** Label text to display near the highlighted element (e.g., rule ID like "empty-heading") */
     label?: string;
 }
 
@@ -65,7 +60,7 @@ export async function captureViewportWithHighlight(
         }
         elementBounds = quadToBoundingBox(model.content);
 
-        await applyHighlight(page, cdp, backendNodeId, opts);
+        await applyHighlight(cdp, backendNodeId, opts);
 
         if (opts.label) {
             await addLabel(page, elementBounds, opts.label, opts.highlightColor);
@@ -73,7 +68,7 @@ export async function captureViewportWithHighlight(
 
         const screenshotBuffer = await page.screenshot({ type: 'png' });
 
-        await removeHighlight(page, cdp, backendNodeId);
+        await removeHighlight(cdp, backendNodeId);
         await removeLabel(page);
 
         await mkdir(screenshotsDir, { recursive: true });
@@ -88,7 +83,7 @@ export async function captureViewportWithHighlight(
         };
     } catch (e) {
         try {
-            await removeHighlight(page, cdp, backendNodeId);
+            await removeHighlight(cdp, backendNodeId);
             await removeLabel(page);
         } catch {
             // Ignore cleanup errors
@@ -148,7 +143,6 @@ async function scrollElementToCenter(cdp: CDPSession, backendNodeId: number): Pr
 }
 
 async function applyHighlight(
-    page: Page,
     cdp: CDPSession,
     backendNodeId: number,
     opts: Required<Omit<ScreenshotOptions, 'label'>>
@@ -228,7 +222,7 @@ async function addLabel(page: Page, elementBounds: BoundingBox, labelText: strin
                 arrowPosition = 'top';
             }
 
-            let left = bounds.x + bounds.width / 2;
+            const left = bounds.x + bounds.width / 2;
 
             Object.assign(label.style, {
                 position: 'fixed',
@@ -296,7 +290,7 @@ async function removeLabel(page: Page): Promise<void> {
     }, LABEL_ID);
 }
 
-async function removeHighlight(page: Page, cdp: CDPSession, backendNodeId: number): Promise<void> {
+async function removeHighlight(cdp: CDPSession, backendNodeId: number): Promise<void> {
     const { object } = await cdp.send('DOM.resolveNode', { backendNodeId });
     if (!object.objectId) return;
 

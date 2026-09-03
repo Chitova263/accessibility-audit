@@ -5,12 +5,12 @@ import type { NavigationStep } from '../../../../screen-reader/navigation-strate
 
 const rule = new FragmentedLinkTextRule();
 
-const createStep = (index: number, itemText: string): NavigationStep => ({
+const createStep = (index: number, focusedElementText: string): NavigationStep => ({
     index,
     identifier: `step-${index}`,
-    spokenPhrases: [itemText],
-    itemText,
-    itemTextLog: [],
+    spokenPhrases: [focusedElementText],
+    focusedElementText,
+    focusedElementTextLog: [],
     timestamp: 1_700_000_000_000 + index,
     axNode: undefined,
     htmlSnippet: null,

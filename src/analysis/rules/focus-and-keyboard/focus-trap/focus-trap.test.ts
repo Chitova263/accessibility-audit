@@ -15,9 +15,9 @@ describe('focus-trap rule', () => {
 
     it('reports the element the tab walk got stuck on', async () => {
         const steps = createSteps([
-            { itemText: 'Home' },
-            { itemText: 'Plans' },
-            { itemText: 'Close dialog', role: 'button', htmlSnippet: '<button>Close dialog</button>' },
+            { focusedElementText: 'Home' },
+            { focusedElementText: 'Plans' },
+            { focusedElementText: 'Close dialog', role: 'button', htmlSnippet: '<button>Close dialog</button>' },
         ]);
 
         const result = await rule.run(mockContext([strategyResult('tab', steps, trapped)]));
@@ -34,7 +34,7 @@ describe('focus-trap rule', () => {
     });
 
     it('stays silent when the tab walk completed its cycle', async () => {
-        const steps = createSteps([{ itemText: 'Home' }, { itemText: 'Plans' }]);
+        const steps = createSteps([{ focusedElementText: 'Home' }, { focusedElementText: 'Plans' }]);
 
         const result = await rule.run(mockContext([strategyResult('tab', steps, cycleComplete)]));
 
@@ -46,7 +46,7 @@ describe('focus-trap rule', () => {
     });
 
     it('ignores trapped completion reported by a browse-mode strategy', async () => {
-        const steps = createSteps([{ itemText: 'Home' }]);
+        const steps = createSteps([{ focusedElementText: 'Home' }]);
 
         const result = await rule.run(mockContext([strategyResult('arrow', steps, trapped)]));
 
@@ -62,7 +62,7 @@ describe('focus-trap rule', () => {
     });
 
     it('checks every tab strategy in the run', async () => {
-        const steps = createSteps([{ itemText: 'Modal' }]);
+        const steps = createSteps([{ focusedElementText: 'Modal' }]);
 
         const result = await rule.run(
             mockContext([strategyResult('tab', steps, trapped), strategyResult('tab', steps, cycleComplete)])

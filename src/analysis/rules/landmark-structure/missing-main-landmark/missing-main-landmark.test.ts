@@ -6,7 +6,7 @@ import type { StepOverrides } from '../../test-fixtures';
 const landmark = (role: string, name: string): StepOverrides => ({
     role,
     name,
-    itemText: name || role,
+    focusedElementText: name || role,
     identifier: `${role}-${name || 'unnamed'}`,
     htmlSnippet: `<${role === 'navigation' ? 'nav' : role}>`,
 });

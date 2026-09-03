@@ -79,7 +79,7 @@ class PhraseRegexDetector implements EndDetector {
 class LoopDetector implements EndDetector {
     private readonly seen = new Set<string>();
 
-    constructor(private readonly key: 'phrase' | 'itemText') {}
+    constructor(private readonly key: 'phrase' | 'focusedElementText') {}
 
     check(ctx: EndDetectionContext): boolean {
         const value = ctx[this.key];

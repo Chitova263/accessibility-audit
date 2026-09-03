@@ -6,7 +6,7 @@ import type { StepOverrides } from '../../test-fixtures';
 const button = (name: string): StepOverrides => ({
     role: 'button',
     name,
-    itemText: name,
+    focusedElementText: name,
     identifier: `button-${name}`,
     htmlSnippet: `<button>${name}</button>`,
 });
@@ -14,7 +14,7 @@ const button = (name: string): StepOverrides => ({
 const link = (name: string): StepOverrides => ({
     role: 'link',
     name,
-    itemText: name,
+    focusedElementText: name,
     identifier: `link-${name}`,
     htmlSnippet: `<a href="/x">${name}</a>`,
 });
@@ -55,7 +55,7 @@ describe('button-not-in-tab-order rule', () => {
     });
 
     it('matches loosely when tab announcement carries extra text', async () => {
-        const tabStep: StepOverrides = { role: 'button', name: 'Submit form', itemText: 'Submit form' };
+        const tabStep: StepOverrides = { role: 'button', name: 'Submit form', focusedElementText: 'Submit form' };
 
         const result = await rule.run(
             mockContext([

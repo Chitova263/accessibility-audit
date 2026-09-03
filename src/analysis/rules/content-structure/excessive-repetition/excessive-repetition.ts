@@ -99,7 +99,7 @@ export class ExcessiveRepetitionRule implements Rule<ScreenReaderContext, Excess
 
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i]!;
-            const phrase = step.itemText.toLowerCase().trim();
+            const phrase = step.focusedElementText.toLowerCase().trim();
 
             if (phrase.length < minPhraseLength) {
                 if (count >= threshold) {
