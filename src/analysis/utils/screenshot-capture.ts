@@ -1,7 +1,7 @@
 import type { Page, CDPSession } from 'playwright';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import type { ScreenshotFailure, Screenshot, BoundingBox } from '../core/violation';
+import type { ScreenshotFailure, Screenshot, BoundingBox, Violation, ScreenReaderContext } from '../core/violation';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Browser globals used in page.evaluate() contexts - declared as any since DOM lib not included
@@ -97,6 +97,62 @@ export async function ensureScreenshotsDir(outputDir: string): Promise<string> {
     const screenshotsDir = join(outputDir, 'screenshots');
     await mkdir(screenshotsDir, { recursive: true });
     return screenshotsDir;
+}
+
+/**
+ * Post-processor that attaches screenshots to violations.
+ *
+ * This function separates screenshot capture (effectful I/O) from rule analysis (pure).
+ * Rules return violations without screenshots; this function adds them.
+ *
+ * Violations without a `context.axNode.backendDOMNodeId` are returned unchanged.
+ *
+ * @param violations - Violations from rule analysis (without screenshots)
+ * @param page - Playwright Page for screenshot capture
+ * @param cdp - CDP session for DOM operations
+ * @param outputDir - Output directory (screenshots saved to `outputDir/screenshots/`)
+ * @returns New array of violations with screenshots attached
+ */
+export async function attachScreenshots<T extends Violation>(
+    violations: T[],
+    page: Page,
+    cdp: CDPSession,
+    outputDir: string
+): Promise<T[]> {
+    const screenshotsDir = await ensureScreenshotsDir(outputDir);
+    const result: T[] = [];
+
+    for (const violation of violations) {
+        // Check if this is a ScreenReaderViolation with a backendDOMNodeId
+        const context = violation.context as ScreenReaderContext | undefined;
+        const backendNodeId = context?.axNode?.backendDOMNodeId;
+
+        if (typeof backendNodeId !== 'number' || !context) {
+            // No backend node ID — return violation unchanged
+            result.push(violation);
+            continue;
+        }
+
+        // Capture screenshot
+        const label = `${violation.rule.id}: ${violation.rule.summary}`;
+        const filename = `${violation.rule.id}-${violation.id}`;
+        const screenshot = await captureViewportWithHighlight(page, cdp, backendNodeId, screenshotsDir, filename, {
+            label,
+        });
+
+        // Create new violation with screenshot attached
+        const newContext: ScreenReaderContext = {
+            ...context,
+            screenshot,
+        };
+
+        result.push({
+            ...violation,
+            context: newContext as T['context'],
+        });
+    }
+
+    return result;
 }
 
 export type { Screenshot, ScreenshotSuccess, ScreenshotFailure, BoundingBox } from '../core/violation';

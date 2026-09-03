@@ -10,7 +10,6 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { getRule } from '../../rule-catalog';
 import {
     collectLinks,
@@ -62,7 +61,7 @@ export class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLin
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, GenericLinkTextStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
         let genericLinksWithSurroundingContext = 0;
 
@@ -76,17 +75,6 @@ export class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLin
             if (surroundingContext) genericLinksWithSurroundingContext++;
 
             const context = createScreenReaderContextFromLink(link, ctx.screenReader);
-            if (typeof link.backendNodeId === 'number') {
-                const filename = `${this.id}-${link.identifier}`;
-                context.screenshot = await captureViewportWithHighlight(
-                    page,
-                    cdp,
-                    link.backendNodeId,
-                    screenshotsDir,
-                    filename,
-                    { label: `${this.id}: ${this.meta.summary}` }
-                );
-            }
 
             violations.push(this.createViolation(link, surroundingContext, context));
         }

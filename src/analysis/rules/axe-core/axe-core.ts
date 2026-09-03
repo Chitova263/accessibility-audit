@@ -8,9 +8,15 @@
  * This rule delegates to axe-core and converts its results to
  * our unified Violation format. It does not map to a single
  * WCAG criterion since axe-core covers ~90 different rules.
+ *
+ * NOTE: This rule is currently disabled. It requires a live Page object
+ * which was removed from AuditContext in the screenshot separation refactor.
+ * To re-enable, axe-core should be run as a separate phase (like attachScreenshots)
+ * or receive its Page dependency through a different mechanism.
  */
 
 import AxeBuilder from '@axe-core/playwright';
+import type { Page } from 'playwright';
 import type { Rule, RuleMeta, RuleResult } from '../../core/rule';
 import type { AxeViolation, AxeContext } from '../../core/violation';
 import type { AuditContext } from '../../core/context';
@@ -19,6 +25,14 @@ export interface AxeCoreStats {
     totalViolations: number;
     byImpact: Record<string, number>;
     byRule: Record<string, number>;
+}
+
+/**
+ * Extended context for axe-core rule that includes the Page object.
+ * This is separate from AuditContext because axe-core needs live page access.
+ */
+export interface AxeCoreContext extends AuditContext {
+    page?: Page;
 }
 
 export class AxeCoreRule implements Rule<AxeContext, AxeCoreStats> {
@@ -33,7 +47,8 @@ export class AxeCoreRule implements Rule<AxeContext, AxeCoreStats> {
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<AxeContext, AxeCoreStats>> {
-        const { page } = ctx;
+        // axe-core needs a live Page object which isn't in the standard AuditContext
+        const page = (ctx as AxeCoreContext).page;
 
         if (!page) {
             return {

@@ -72,6 +72,8 @@ export interface ScreenReaderContext {
         role?: string;
         name?: string;
         properties?: unknown;
+        /** Backend DOM node ID for screenshot capture. Available when the AX node maps to a DOM element. */
+        backendDOMNodeId?: number;
     };
     screenshot?: Screenshot;
 }

@@ -11,7 +11,6 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { getRule } from '../../rule-catalog';
 import { collectLinks, createScreenReaderContextFromLink } from '../../utils/link-utils';
 import type { LinkInfo } from '../../utils/link-utils';
@@ -34,7 +33,7 @@ export class DuplicateLinkTextRule implements Rule<ScreenReaderContext, Duplicat
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, DuplicateLinkTextStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
 
         const links = collectLinks(transcript);
@@ -52,17 +51,6 @@ export class DuplicateLinkTextRule implements Rule<ScreenReaderContext, Duplicat
 
             for (const link of group) {
                 const context = createScreenReaderContextFromLink(link, ctx.screenReader);
-                if (typeof link.backendNodeId === 'number') {
-                    const filename = `${this.id}-${link.identifier}`;
-                    context.screenshot = await captureViewportWithHighlight(
-                        page,
-                        cdp,
-                        link.backendNodeId,
-                        screenshotsDir,
-                        filename,
-                        { label: `${this.id}: ${this.meta.summary}` }
-                    );
-                }
                 violations.push(this.createViolation(link, group.length, uniqueHrefs.size, context));
             }
         }

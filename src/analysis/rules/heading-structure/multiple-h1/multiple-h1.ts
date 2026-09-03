@@ -1,7 +1,6 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
 
 export interface MultipleH1Stats {
@@ -22,7 +21,6 @@ export class MultipleH1Rule implements Rule<ScreenReaderContext, MultipleH1Stats
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, MultipleH1Stats>> {
-        const { page, cdp, screenshotsDir } = ctx;
         const violations: ScreenReaderViolation[] = [];
         const headings = collectHeadings(ctx);
 
@@ -32,18 +30,6 @@ export class MultipleH1Rule implements Rule<ScreenReaderContext, MultipleH1Stats
             for (let i = 1; i < h1Headings.length; i++) {
                 const heading = h1Headings[i]!;
                 const context = createHeadingContext(heading, ctx.screenReader);
-
-                if (typeof heading.backendNodeId === 'number') {
-                    const filename = `${this.id}-${heading.identifier}`;
-                    context.screenshot = await captureViewportWithHighlight(
-                        page,
-                        cdp,
-                        heading.backendNodeId,
-                        screenshotsDir,
-                        filename,
-                        { label: `${this.id}: ${this.meta.summary}` }
-                    );
-                }
 
                 violations.push(this.createViolation(heading, i + 1, context));
             }

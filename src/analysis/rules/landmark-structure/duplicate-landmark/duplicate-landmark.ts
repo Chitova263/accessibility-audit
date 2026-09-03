@@ -2,7 +2,6 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { collectLandmarks, type LandmarkInfo } from '../../utils/landmark-utils';
 import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
@@ -24,7 +23,7 @@ export class DuplicateLandmarkRule implements Rule<ScreenReaderContext, Duplicat
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, DuplicateLandmarkStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
         const byRole: Record<string, number> = {};
 
@@ -46,17 +45,6 @@ export class DuplicateLandmarkRule implements Rule<ScreenReaderContext, Duplicat
                 byRole[role] = (byRole[role] ?? 0) + 1;
 
                 const context = this.createContext(landmark, ctx.screenReader);
-                if (typeof landmark.backendNodeId === 'number') {
-                    const filename = `${this.id}-${landmark.identifier}`;
-                    context.screenshot = await captureViewportWithHighlight(
-                        page,
-                        cdp,
-                        landmark.backendNodeId,
-                        screenshotsDir,
-                        filename,
-                        { label: `${this.id}: ${this.meta.summary}` }
-                    );
-                }
 
                 violations.push(this.createViolation(landmark, group.length, context));
             }

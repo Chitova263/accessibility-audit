@@ -35,6 +35,7 @@ function projectAxNode(node: unknown): ScreenReaderContext['axNode'] | undefined
         role?: { value?: unknown };
         name?: { value?: unknown };
         properties?: unknown;
+        backendDOMNodeId?: unknown;
     };
 
     const role = typeof axNode.role?.value === 'string' ? axNode.role.value : undefined;
@@ -52,6 +53,7 @@ function projectAxNode(node: unknown): ScreenReaderContext['axNode'] | undefined
     if (role) result.role = role;
     if (name) result.name = name;
     if (axNode.properties) result.properties = axNode.properties;
+    if (typeof axNode.backendDOMNodeId === 'number') result.backendDOMNodeId = axNode.backendDOMNodeId;
 
     return result;
 }

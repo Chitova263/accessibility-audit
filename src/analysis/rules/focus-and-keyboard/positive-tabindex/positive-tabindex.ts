@@ -15,7 +15,6 @@ import type {
     NavigationStep,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { getRole, getName } from '../../../../types/ax-utils';
 
 export interface PositiveTabindexStats {
@@ -49,7 +48,7 @@ export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveT
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, PositiveTabindexStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
 
         const focusableElements = this.collectTabOrderElements(transcript);
@@ -62,17 +61,6 @@ export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveT
                 anomaly.element.tabIndex,
                 ctx.screenReader
             );
-            if (typeof anomaly.element.backendNodeId === 'number') {
-                const filename = `${this.id}-${anomaly.element.step.identifier}`;
-                context.screenshot = await captureViewportWithHighlight(
-                    page,
-                    cdp,
-                    anomaly.element.backendNodeId,
-                    screenshotsDir,
-                    filename,
-                    { label: `${this.id}: ${this.meta.summary}` }
-                );
-            }
             violations.push(this.createViolation(anomaly, context));
         }
 

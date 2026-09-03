@@ -12,7 +12,6 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
 
 export interface AriaHiddenFocusableStats {
@@ -33,7 +32,7 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, AriaHiddenFocusableStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
         let totalFocusable = 0;
         const seen = new Set<string>();
@@ -56,18 +55,6 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
 
                 if (this.hasAriaHidden(htmlSnippet)) {
                     const context = createScreenReaderContext(step, 'tab', stepIndex, ctx.screenReader);
-                    const backendNodeId = step.axNode?.backendDOMNodeId;
-                    if (typeof backendNodeId === 'number') {
-                        const filename = `${this.id}-${step.identifier}`;
-                        context.screenshot = await captureViewportWithHighlight(
-                            page,
-                            cdp,
-                            backendNodeId,
-                            screenshotsDir,
-                            filename,
-                            { label: `${this.id}: ${this.meta.summary}` }
-                        );
-                    }
                     violations.push(this.createViolation(step, context, ctx.screenReader));
                 }
             }

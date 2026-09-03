@@ -11,7 +11,6 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
 
@@ -68,7 +67,7 @@ export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAl
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, FilenameAsAltStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
         const byIssue: Record<'filename-as-alt', number> = { 'filename-as-alt': 0 };
 
@@ -118,17 +117,6 @@ export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAl
                     image.stepIndex,
                     ctx.screenReader
                 );
-                if (typeof image.backendNodeId === 'number') {
-                    const filename = `${this.id}-${image.identifier}`;
-                    context.screenshot = await captureViewportWithHighlight(
-                        page,
-                        cdp,
-                        image.backendNodeId,
-                        screenshotsDir,
-                        filename,
-                        { label: `${this.id}: ${this.meta.summary}` }
-                    );
-                }
                 violations.push(this.createViolation(image, context));
             }
         }

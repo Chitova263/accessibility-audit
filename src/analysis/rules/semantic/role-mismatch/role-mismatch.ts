@@ -11,7 +11,6 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
 
@@ -91,7 +90,7 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, RoleMismatchStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
         const byIssue: Record<string, number> = {};
         let totalChecked = 0;
@@ -148,17 +147,6 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
                     element.stepIndex,
                     ctx.screenReader
                 );
-                if (typeof element.backendNodeId === 'number') {
-                    const filename = `${this.id}-${element.identifier}`;
-                    context.screenshot = await captureViewportWithHighlight(
-                        page,
-                        cdp,
-                        element.backendNodeId,
-                        screenshotsDir,
-                        filename,
-                        { label: `${this.id}: ${this.meta.summary}` }
-                    );
-                }
                 violations.push(this.createViolation(element, mismatch, context));
             }
         }

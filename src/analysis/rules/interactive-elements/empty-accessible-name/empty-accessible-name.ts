@@ -2,7 +2,6 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 import { getRole, getName } from '../../../../types/ax-utils';
 
@@ -46,7 +45,7 @@ export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyA
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, EmptyAccessibleNameStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
         let totalChecked = 0;
         const byRole: Record<string, number> = {};
@@ -70,19 +69,6 @@ export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyA
                 byRole[role] = (byRole[role] ?? 0) + 1;
 
                 const context = createScreenReaderContext(step, result.meta.name, stepIndex, ctx.screenReader);
-
-                const backendNodeId = node.backendDOMNodeId;
-                if (typeof backendNodeId === 'number') {
-                    const filename = `${this.id}-${step.identifier}`;
-                    context.screenshot = await captureViewportWithHighlight(
-                        page,
-                        cdp,
-                        backendNodeId,
-                        screenshotsDir,
-                        filename,
-                        { label: `${this.id}: ${this.meta.summary}` }
-                    );
-                }
 
                 violations.push(this.createViolation(step, role, context));
             }

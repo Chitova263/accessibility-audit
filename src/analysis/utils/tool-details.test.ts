@@ -29,13 +29,12 @@ describe('createScreenReaderContext', () => {
         );
     });
 
-    it('drops backendDOMNodeId and childIds from the axNode', async () => {
+    it('keeps backendDOMNodeId but drops childIds from the axNode', async () => {
         const axNode = { nodeId: '1', role: { value: 'link' }, childIds: ['2', '3'], backendDOMNodeId: 44 };
 
-        expect(Object.keys(createScreenReaderContext({ ...source, axNode }, 'link', 0, 'nvda').axNode!)).toEqual([
-            'nodeId',
-            'role',
-        ]);
+        const projected = createScreenReaderContext({ ...source, axNode }, 'link', 0, 'nvda').axNode!;
+        expect(Object.keys(projected)).toEqual(['nodeId', 'role', 'backendDOMNodeId']);
+        expect(projected.backendDOMNodeId).toBe(44);
     });
 
     it('carries source info through', async () => {

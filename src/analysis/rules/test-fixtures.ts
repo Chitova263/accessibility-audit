@@ -127,15 +127,10 @@ export const broadTranscript = (): StrategyResult[] => [
 ];
 
 /**
- * Create a mock AuditContext for tests that only need transcript.
- * Provides null-ish stubs for page and cdp that satisfy the type system.
+ * Create a mock AuditContext for tests.
+ * Now that rules don't access page/cdp/screenshotsDir, this is just transcript + screenReader.
  */
 export const mockContext = (transcript: StrategyResult[]): import('../core/context').AuditContext => ({
     transcript,
-    page: {
-        viewportSize: () => ({ width: 1280, height: 720 }),
-    } as never,
-    cdp: null as never,
-    screenshotsDir: '/tmp/screenshots',
     screenReader: 'nvda',
 });

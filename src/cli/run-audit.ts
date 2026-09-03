@@ -14,7 +14,7 @@ import { TabNavigationStrategy } from '../screen-reader/navigation-strategy/focu
 import { DownArrowNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/down-arrow-navigation-strategy';
 import { runRules } from '../analysis/rules/runner';
 import { summarizeViolations } from '../analysis/utils/summarize-violations';
-import { ensureScreenshotsDir } from '../analysis/utils/screenshot-capture';
+import { attachScreenshots } from '../analysis/utils/screenshot-capture';
 import { createPromptBuilder } from '../llm/prompt-builder';
 import { formatTranscriptAsText } from '../reporting/transcript-text-formatter';
 import { Logger } from '../utils/logger';
@@ -89,17 +89,16 @@ try {
 
     await cdp.send('DOM.enable');
 
-    const screenshotsDir = await ensureScreenshotsDir(outputDir);
-
     // axe-core drives the live page, so rules must run before the connection is closed.
     Logger.section('Running Analysis Rules');
-    const { violations: allViolations, byRule } = await runRules({
+    const { violations: ruleViolations, byRule } = await runRules({
         transcript: result.results,
-        page: result.page,
-        cdp,
-        screenshotsDir,
         screenReader: options.reader,
     });
+
+    // Post-process: attach screenshots to violations that have backendDOMNodeId
+    Logger.debug('Capturing screenshots for violations...');
+    const allViolations = await attachScreenshots(ruleViolations, result.page, cdp, outputDir);
 
     const fs = await import('fs/promises');
     const path = await import('path');

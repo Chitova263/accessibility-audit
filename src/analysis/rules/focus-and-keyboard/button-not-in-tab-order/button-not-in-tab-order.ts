@@ -2,7 +2,6 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 import {
     collectElementsByStrategy,
@@ -30,7 +29,7 @@ export class ButtonNotInTabOrderRule implements Rule<ScreenReaderContext, Button
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, ButtonNotInTabOrderStats>> {
-        const { transcript, page, cdp, screenshotsDir } = ctx;
+        const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
 
         const { elements: buttons, tabOrderSignatures } = collectElementsByStrategy(transcript, 'button', 'button');
@@ -40,18 +39,6 @@ export class ButtonNotInTabOrderRule implements Rule<ScreenReaderContext, Button
 
             if (!tabOrderSignatures.has(signature) && !isLikelyInTabOrder(button, tabOrderSignatures)) {
                 const context = createScreenReaderContext(button.step, button.strategyType, 0, ctx.screenReader);
-
-                if (typeof button.backendNodeId === 'number') {
-                    const filename = `${this.id}-${button.step.identifier}`;
-                    context.screenshot = await captureViewportWithHighlight(
-                        page,
-                        cdp,
-                        button.backendNodeId,
-                        screenshotsDir,
-                        filename,
-                        { label: `${this.id}: ${this.meta.summary}` }
-                    );
-                }
 
                 violations.push(this.createViolation(button, context));
             }

@@ -1,7 +1,6 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
 
 export interface HeadingLevelSkippedStats {
@@ -22,7 +21,6 @@ export class HeadingLevelSkippedRule implements Rule<ScreenReaderContext, Headin
     };
 
     async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, HeadingLevelSkippedStats>> {
-        const { page, cdp, screenshotsDir } = ctx;
         const violations: ScreenReaderViolation[] = [];
         const headings = collectHeadings(ctx);
 
@@ -31,18 +29,6 @@ export class HeadingLevelSkippedRule implements Rule<ScreenReaderContext, Headin
         for (const heading of headings) {
             if (previousLevel > 0 && heading.level > previousLevel + 1) {
                 const context = createHeadingContext(heading, ctx.screenReader);
-
-                if (typeof heading.backendNodeId === 'number') {
-                    const filename = `${this.id}-${heading.identifier}`;
-                    context.screenshot = await captureViewportWithHighlight(
-                        page,
-                        cdp,
-                        heading.backendNodeId,
-                        screenshotsDir,
-                        filename,
-                        { label: `${this.id}: ${this.meta.summary}` }
-                    );
-                }
 
                 violations.push(this.createViolation(heading, previousLevel, context));
             }
