@@ -13,7 +13,9 @@ import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
-import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
+import { getScreenReaderDisplayName, type ScreenReaderName } from '../../../../screen-reader/drivers/types';
+import type { AXNode } from '../../../../types/cdp';
+import { getRole, getName } from '../../../../types/ax-utils';
 
 /** Form field roles that require labels */
 const FORM_FIELD_ROLES = [
@@ -40,12 +42,12 @@ interface FormFieldInfo {
     stepIndex: number;
     htmlSnippet: string | null;
     spokenPhrases: string[];
-    itemText: string;
+    focusedElementText: string;
     identifier: string;
     timestamp: number;
-    axNode: unknown;
+    axNode: AXNode | undefined;
     strategyType: string;
-    backendNodeId?: number;
+    backendNodeId?: number | undefined;
 }
 
 export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormFieldNoLabelStats> {
@@ -79,18 +81,18 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
 
                 if (!node) continue;
 
-                const role = node.role?.value;
+                const role = getRole(node);
                 if (!role || !FORM_FIELD_ROLES.includes(role as (typeof FORM_FIELD_ROLES)[number])) {
                     continue;
                 }
 
                 formFields.push({
                     role,
-                    name: node.name?.value ?? '',
+                    name: getName(node) ?? '',
                     stepIndex,
                     htmlSnippet: step.htmlSnippet,
                     spokenPhrases: step.spokenPhrases,
-                    itemText: step.itemText,
+                    focusedElementText: step.focusedElementText,
                     identifier: step.identifier,
                     timestamp: step.timestamp,
                     axNode: node,
@@ -117,7 +119,7 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
                     {
                         identifier: field.identifier,
                         spokenPhrases: field.spokenPhrases,
-                        itemText: field.itemText,
+                        focusedElementText: field.focusedElementText,
                         axNode: field.axNode,
                     },
                     field.strategyType,
@@ -182,11 +184,10 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
     private createViolation(
         field: FormFieldInfo,
         context: ScreenReaderContext,
-        screenReader: AuditContext['screenReader']
+        screenReader: ScreenReaderName
     ): ScreenReaderViolation {
         const roleDesc = this.getRoleDescription(field.role);
         const screenReaderDisplayName = getScreenReaderDisplayName(screenReader);
-
         return {
             id: `unlabeled-form-field-${field.identifier}`,
             rule: {
@@ -195,7 +196,7 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
                 wcag: this.meta.wcag,
                 impact: this.meta.impact,
             },
-            message: `${capitalize(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. ${screenReaderDisplayName} announced: "${field.itemText || '(nothing)'}"`,
+            message: `${capitalize(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. ${screenReaderDisplayName} announced: "${field.focusedElementText || '(nothing)'}"`,
             ...(field.htmlSnippet != null && { element: { htmlSnippet: field.htmlSnippet } }),
             tool: 'screen-reader-audit',
             timestamp: field.timestamp,

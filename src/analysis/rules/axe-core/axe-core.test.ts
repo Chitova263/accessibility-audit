@@ -17,11 +17,11 @@ interface StubAxeResults {
 }
 
 /** The builder is replaced wholesale; `axeResult.current` is what `analyze()` returns. */
-const { axeResult } = vi.hoisted(() => ({ axeResult: { current: null as unknown } }));
+const { axeResult } = vi.hoisted(() => ({ axeResult: { current: null as StubAxeResults | null } }));
 
 vi.mock('@axe-core/playwright', () => ({
     default: class AxeBuilderStub {
-        constructor(_options: { page: Page }) {}
+        constructor(_page: { page: Page }) {}
         analyze() {
             return Promise.resolve(axeResult.current);
         }

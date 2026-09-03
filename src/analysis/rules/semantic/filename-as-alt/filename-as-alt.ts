@@ -12,6 +12,8 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import type { AXNode } from '../../../../types/cdp';
+import { getRole, getName } from '../../../../types/ax-utils';
 
 /** Patterns that indicate filename used as alt text */
 const FILENAME_PATTERNS = [
@@ -47,11 +49,11 @@ interface ImageInfo {
     stepIndex: number;
     htmlSnippet: string | null;
     spokenPhrases: string[];
-    itemText: string;
+    focusedElementText: string;
     identifier: string;
     timestamp: number;
-    axNode: unknown;
-    backendNodeId?: number;
+    axNode: AXNode | undefined;
+    backendNodeId?: number | undefined;
 }
 
 export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAltStats> {
@@ -79,19 +81,17 @@ export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAl
 
                 if (!node) continue;
 
-                const isImage =
-                    node.role?.value === 'img' ||
-                    node.role?.value === 'image' ||
-                    step.htmlSnippet?.toLowerCase().includes('<img');
+                const role = getRole(node);
+                const isImage = role === 'img' || role === 'image' || step.htmlSnippet?.toLowerCase().includes('<img');
 
                 if (!isImage) continue;
 
                 images.push({
-                    name: node.name?.value ?? '',
+                    name: getName(node) ?? '',
                     stepIndex,
                     htmlSnippet: step.htmlSnippet,
                     spokenPhrases: step.spokenPhrases,
-                    itemText: step.itemText,
+                    focusedElementText: step.focusedElementText,
                     identifier: step.identifier,
                     timestamp: step.timestamp,
                     axNode: node,
@@ -111,7 +111,7 @@ export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAl
                     {
                         identifier: image.identifier,
                         spokenPhrases: image.spokenPhrases,
-                        itemText: image.itemText,
+                        focusedElementText: image.focusedElementText,
                         axNode: image.axNode,
                     },
                     'graphics',
@@ -168,17 +168,15 @@ export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAl
 
     private createViolation(image: ImageInfo, context: ScreenReaderContext): ScreenReaderViolation {
         return {
-            id: `filename-alt-${image.identifier}`,
+            id: `filename-as-alt-${image.identifier}`,
             rule: {
                 id: this.id,
                 summary: this.meta.summary,
                 wcag: this.meta.wcag,
                 impact: this.meta.impact,
             },
-            message: `Image has filename as alt text: "${image.name}". Alt text should describe the image content, not be a filename or auto-generated identifier.`,
-            element: {
-                ...(image.htmlSnippet != null && { htmlSnippet: image.htmlSnippet }),
-            },
+            message: `Image has a filename as alt text: "${image.name}". Alt text should describe the image's purpose or content, not the file name.`,
+            element: image.htmlSnippet != null ? { htmlSnippet: image.htmlSnippet } : {},
             tool: 'screen-reader-audit',
             timestamp: image.timestamp,
             context,

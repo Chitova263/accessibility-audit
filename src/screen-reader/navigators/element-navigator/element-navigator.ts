@@ -1,15 +1,15 @@
 import type { ScreenReader } from '../../drivers/nvda';
-import type { IElementNavigator, NavigationItem, NavigatorType, EndDetector } from '../types';
+import type { ElementNavigator, NavigationItem, NavigatorType, EndDetector } from '../types';
 
-export interface ElementNavigatorConfig {
+export interface BrowseModeElementNavigatorConfig {
     readonly advanceKey: string;
     readonly endDetector: EndDetector;
 }
 
-export class ElementNavigator implements IElementNavigator {
+export class BrowseModeElementNavigator implements ElementNavigator {
     constructor(
         private readonly sr: ScreenReader,
-        private readonly config: ElementNavigatorConfig,
+        private readonly config: BrowseModeElementNavigatorConfig,
         public readonly type: NavigatorType
     ) {}
 
@@ -17,15 +17,15 @@ export class ElementNavigator implements IElementNavigator {
         this.config.endDetector.reset();
 
         while (true) {
-            const { spokenPhrases, itemText } = await this.sr.press(this.config.advanceKey);
+            const { spokenPhrases, focusedElementText } = await this.sr.press(this.config.advanceKey);
 
             const phrase = spokenPhrases.length > 0 ? spokenPhrases[spokenPhrases.length - 1]! : '';
 
-            if (this.config.endDetector.check({ phrase, itemText })) {
+            if (this.config.endDetector.check({ phrase, focusedElementText })) {
                 return;
             }
 
-            yield { phrase, itemText };
+            yield { phrase, focusedElementText };
         }
     }
 }

@@ -11,7 +11,7 @@ describe('form-field-no-label rule', () => {
 
     it('reports a form field with no accessible label', async () => {
         const steps = createSteps([
-            { role: 'textbox', name: '', itemText: 'edit blank', htmlSnippet: '<input type="text">' },
+            { role: 'textbox', name: '', focusedElementText: 'edit blank', htmlSnippet: '<input type="text">' },
         ]);
 
         const result = await rule.run(mockContext([strategyResult('tab', steps)]));
@@ -40,7 +40,7 @@ describe('form-field-no-label rule', () => {
     });
 
     it('says "(nothing)" when NVDA announced nothing for the field', async () => {
-        const steps = createSteps([{ role: 'checkbox', name: '', itemText: '' }]);
+        const steps = createSteps([{ role: 'checkbox', name: '', focusedElementText: '' }]);
 
         const result = await rule.run(mockContext([strategyResult('tab', steps)]));
 
@@ -48,7 +48,7 @@ describe('form-field-no-label rule', () => {
     });
 
     it('leaves labelled fields alone', async () => {
-        const steps = createSteps([{ role: 'textbox', name: 'Postcode', itemText: 'Postcode edit' }]);
+        const steps = createSteps([{ role: 'textbox', name: 'Postcode', focusedElementText: 'Postcode edit' }]);
 
         const result = await rule.run(mockContext([strategyResult('tab', steps)]));
 

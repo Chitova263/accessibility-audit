@@ -12,7 +12,6 @@
 
 import type { WcagCriterion } from '../core/violation';
 
-/** Tool-native severity, ordered most to least severe. */
 export type Impact = 'critical' | 'serious' | 'moderate' | 'minor';
 
 export interface RuleDefinition {
@@ -20,16 +19,11 @@ export interface RuleDefinition {
         readonly primary: WcagCriterion;
         readonly related?: readonly WcagCriterion[];
     };
-    /** Default impact. Rules that vary by context override it at the call site. */
+    /** Rules that vary by context can override at the call site */
     readonly impact: Impact;
-    /** Equivalent axe-core rule IDs; empty when axe has no equivalent. */
     readonly axeEquivalent: readonly string[];
     readonly summary: string;
-    /**
-     * Whether this rule benefits from element screenshots in reports.
-     * True for rules with specific DOM elements (headings, images, focusable elements).
-     * False for structural/conceptual issues (focus traps, missing landmarks, meta tags).
-     */
+    /** True for rules with specific DOM elements; false for structural issues */
     readonly supportsScreenshot: boolean;
 }
 

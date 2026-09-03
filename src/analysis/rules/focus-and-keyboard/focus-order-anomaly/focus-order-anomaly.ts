@@ -16,6 +16,7 @@ import type {
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
+import { getRole, getName } from '../../../../types/ax-utils';
 
 const BACKWARDS_JUMP_THRESHOLD = 5;
 
@@ -52,7 +53,7 @@ export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrd
         summary: 'Focus jumps backwards or skips large sections',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, FocusOrderAnomalyStats>> {
+    run(ctx: AuditContext): RuleResult<ScreenReaderContext, FocusOrderAnomalyStats> {
         const { transcript } = ctx;
         const violations: ScreenReaderViolation[] = [];
 
@@ -104,8 +105,8 @@ export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrd
                 const step = result.navigationSteps[tabIndex]!;
                 const node = step.axNode;
 
-                const name = node?.name?.value ?? step.itemText ?? '';
-                const role = node?.role?.value ?? '';
+                const name = getName(node) ?? step.focusedElementText ?? '';
+                const role = getRole(node) ?? '';
                 const backendNodeId = this.getBackendDomNodeId(step);
                 const readingOrderIndex = backendNodeId != null ? (readingOrder.get(backendNodeId) ?? null) : null;
 
@@ -171,7 +172,7 @@ export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrd
             },
             message: `Focus jumped backwards through the page. After "${previousLabel}", focus moved to "${currentLabel}", which is announced ${anomaly.jumpDistance} positions earlier when reading the page linearly. This can disorient keyboard users.`,
             ...(anomaly.element.htmlSnippet != null ? { element: { htmlSnippet: anomaly.element.htmlSnippet } } : {}),
-            tool: 'nvda-audit',
+            tool: 'screen-reader-audit',
             timestamp: anomaly.element.step.timestamp,
             context,
         };

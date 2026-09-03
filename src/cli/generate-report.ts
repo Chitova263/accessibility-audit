@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import * as path from 'path';
-import { generateReportFromFiles } from '../reporting';
+import { generateReportFromFiles } from '../reporting/from-files';
 import { Logger } from '../utils/logger';
 import { reportOptionsSchema, parseOptions } from './schemas';
 

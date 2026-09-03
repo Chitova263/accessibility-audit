@@ -5,13 +5,13 @@ import type { NavigationStep } from '../../../../screen-reader/navigation-strate
 
 const createStep = (
     index: number,
-    overrides: Partial<{ itemText: string; spokenPhrases: string[]; role: string }> = {}
+    overrides: Partial<{ focusedElementText: string; spokenPhrases: string[]; role: string }> = {}
 ): NavigationStep => ({
     index,
     identifier: `step-${index}`,
-    spokenPhrases: overrides.spokenPhrases ?? [overrides.itemText ?? `Item ${index}`],
-    itemText: overrides.itemText ?? `Item ${index}`,
-    itemTextLog: [],
+    spokenPhrases: overrides.spokenPhrases ?? [overrides.focusedElementText ?? `Item ${index}`],
+    focusedElementText: overrides.focusedElementText ?? `Item ${index}`,
+    focusedElementTextLog: [],
     timestamp: 1_700_000_000_000 + index,
     axNode: overrides.role ? ({ nodeId: `${index}`, role: { value: overrides.role } } as never) : undefined,
     htmlSnippet: null,
@@ -36,10 +36,10 @@ describe('reading-order-landmark-sequence rule', () => {
     it('does not treat ordinary content containing landmark words as landmarks', async () => {
         const result = await rule.run(
             arrowResult([
-                createStep(0, { itemText: 'Choose your domain name' }),
-                createStep(1, { itemText: 'Park beside the entrance' }),
-                createStep(2, { itemText: 'Scheduled maintenance tonight' }),
-                createStep(3, { itemText: 'Read the footer notes below' }),
+                createStep(0, { focusedElementText: 'Choose your domain name' }),
+                createStep(1, { focusedElementText: 'Park beside the entrance' }),
+                createStep(2, { focusedElementText: 'Scheduled maintenance tonight' }),
+                createStep(3, { focusedElementText: 'Read the footer notes below' }),
             ])
         );
 
@@ -50,9 +50,9 @@ describe('reading-order-landmark-sequence rule', () => {
     it('detects landmarks from spoken announcements', async () => {
         const result = await rule.run(
             arrowResult([
-                createStep(0, { itemText: 'banner landmark' }),
-                createStep(1, { itemText: 'main landmark' }),
-                createStep(2, { itemText: 'content info landmark' }),
+                createStep(0, { focusedElementText: 'banner landmark' }),
+                createStep(1, { focusedElementText: 'main landmark' }),
+                createStep(2, { focusedElementText: 'content info landmark' }),
             ])
         );
 
@@ -63,8 +63,8 @@ describe('reading-order-landmark-sequence rule', () => {
     it('reports contentinfo announced before main', async () => {
         const result = await rule.run(
             arrowResult([
-                createStep(0, { itemText: 'content info landmark' }),
-                createStep(1, { itemText: 'main landmark' }),
+                createStep(0, { focusedElementText: 'content info landmark' }),
+                createStep(1, { focusedElementText: 'main landmark' }),
             ])
         );
 
@@ -75,8 +75,8 @@ describe('reading-order-landmark-sequence rule', () => {
     it('reports complementary announced before main', async () => {
         const result = await rule.run(
             arrowResult([
-                createStep(0, { itemText: 'complementary landmark' }),
-                createStep(1, { itemText: 'main landmark' }),
+                createStep(0, { focusedElementText: 'complementary landmark' }),
+                createStep(1, { focusedElementText: 'main landmark' }),
             ])
         );
 

@@ -1,4 +1,6 @@
 import type { StrategyResult } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { AXNode } from '../../../types/cdp';
+import { getRole, getName } from '../../../types/ax-utils';
 
 export interface LandmarkInfo {
     role: string;
@@ -6,11 +8,11 @@ export interface LandmarkInfo {
     stepIndex: number;
     htmlSnippet: string | null;
     spokenPhrases: string[];
-    itemText: string;
+    focusedElementText: string;
     identifier: string;
     timestamp: number;
-    axNode: unknown;
-    backendNodeId?: number;
+    axNode: AXNode | undefined;
+    backendNodeId?: number | undefined;
 }
 
 /**
@@ -29,8 +31,8 @@ export function collectLandmarks(transcript: StrategyResult[]): LandmarkInfo[] {
 
             if (!node) continue;
 
-            const role = node.role?.value ?? '';
-            const name = node.name?.value ?? '';
+            const role = getRole(node) ?? '';
+            const name = getName(node) ?? '';
 
             landmarks.push({
                 role,
@@ -38,7 +40,7 @@ export function collectLandmarks(transcript: StrategyResult[]): LandmarkInfo[] {
                 stepIndex,
                 htmlSnippet: step.htmlSnippet,
                 spokenPhrases: step.spokenPhrases,
-                itemText: step.itemText,
+                focusedElementText: step.focusedElementText,
                 identifier: step.identifier,
                 timestamp: step.timestamp,
                 axNode: node,

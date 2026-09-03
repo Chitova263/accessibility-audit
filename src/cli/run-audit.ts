@@ -3,7 +3,7 @@ import { program } from 'commander';
 import { createDriver } from '../screen-reader/drivers/factory';
 import { Navigator } from '../screen-reader/navigators/navigator';
 import { ChromeDevToolsProtocolConnection } from '../chrome-dev-tools-protocol-connection';
-import type { INavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { NavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { PageSession } from '../screen-reader/page-session';
 import { HeadingNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/heading-navigation-strategy';
 import { LandmarkNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/landmark-navigation-strategy';
@@ -12,10 +12,11 @@ import { LinkNavigationStrategy } from '../screen-reader/navigation-strategy/bro
 import { HeadingHierarchyNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/heading-hierarchy-navigation-strategy';
 import { TabNavigationStrategy } from '../screen-reader/navigation-strategy/focus-mode-strategies/tab-navigation-strategy';
 import { DownArrowNavigationStrategy } from '../screen-reader/navigation-strategy/browse-mode-strategies/down-arrow-navigation-strategy';
-import { runRules, summarizeViolations } from '../analysis';
+import { runRules } from '../analysis/rules/runner';
+import { summarizeViolations } from '../analysis/utils/summarize-violations';
 import { ensureScreenshotsDir } from '../analysis/utils/screenshot-capture';
 import { createPromptBuilder } from '../llm/prompt-builder';
-import { formatTranscriptAsText } from '../reporting';
+import { formatTranscriptAsText } from '../reporting/transcript-text-formatter';
 import { Logger } from '../utils/logger';
 import { resolveOutputDir } from '../utils/output-dir';
 import { parseAuditInput } from './schemas';
@@ -31,7 +32,7 @@ program
     .action(() => {})
     .parse();
 
-const { url, options } = parseAuditInput(program.processedArgs[0], program.opts());
+const { url, options } = parseAuditInput(program.processedArgs[0] as string | undefined, program.opts());
 
 Logger.setLevel(options.verbose ? 'debug' : 'info');
 
@@ -53,7 +54,7 @@ try {
     await chromeDevToolsProtocolConnection.connect();
     Logger.debug('Chrome DevTools Protocol connection established');
 
-    const strategies: INavigationStrategy[] = [
+    const strategies: NavigationStrategy[] = [
         new HeadingNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps), screenReader: options.reader }),
         new LandmarkNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps), screenReader: options.reader }),
         new ButtonNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps), screenReader: options.reader }),
@@ -178,6 +179,6 @@ try {
     process.exit(1);
 } finally {
     if (chromeDevToolsProtocolConnection?.isConnected()) {
-        chromeDevToolsProtocolConnection?.disconnect();
+        await chromeDevToolsProtocolConnection?.disconnect();
     }
 }

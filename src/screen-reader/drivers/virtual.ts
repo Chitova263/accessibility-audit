@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 import { createRequire } from 'node:module';
-import type { ScreenReader, PressResult } from './types';
+import type { ScreenReader, KeyPressResult } from './types';
 import { Logger } from '../../utils/logger';
 
 const _require = createRequire(import.meta.url);
@@ -18,7 +18,7 @@ interface BrowserWindow {
         previous(): Promise<void>;
         perform(command: string): Promise<void>;
         lastSpokenPhrase(): Promise<string>;
-        itemText(): Promise<string>;
+        focusedElementText(): Promise<string>;
     };
 }
 
@@ -69,8 +69,8 @@ export class VirtualScreenReader implements ScreenReader {
         this.log.debug('Bundle loaded');
 
         await this.page.evaluate(async () => {
-            const w = globalThis as unknown as BrowserWindow;
-            await w.__vsr.start({ container: w.document.body });
+            const win = globalThis as unknown as BrowserWindow;
+            await win.__vsr.start({ container: win.document.body });
         });
         this.log.debug('Initialized on document.body');
     }
@@ -82,7 +82,7 @@ export class VirtualScreenReader implements ScreenReader {
         });
     }
 
-    async press(key: string): Promise<PressResult> {
+    async press(key: string): Promise<KeyPressResult> {
         if (key.startsWith(VSR_COMMAND_PREFIX)) {
             const commandKey = key.slice(VSR_COMMAND_PREFIX.length);
             const command = VSR_COMMAND_MAP[commandKey];
@@ -101,9 +101,9 @@ export class VirtualScreenReader implements ScreenReader {
             if (command === '__special:documentStart') {
                 await this.page.evaluate(async () => {
                     const vsr = (globalThis as unknown as BrowserWindow).__vsr;
-                    const w = globalThis as unknown as BrowserWindow;
+                    const win = globalThis as unknown as BrowserWindow;
                     await vsr.stop();
-                    await vsr.start({ container: w.document.body });
+                    await vsr.start({ container: win.document.body });
                 });
                 return this.captureCurrentState();
             }
@@ -150,17 +150,17 @@ export class VirtualScreenReader implements ScreenReader {
      * Capture current state after an action.
      * Virtual screen reader is synchronous, so speech is immediately available.
      */
-    private async captureCurrentState(): Promise<PressResult> {
+    private async captureCurrentState(): Promise<KeyPressResult> {
         const result = await this.page.evaluate(async () => {
             const vsr = (globalThis as unknown as BrowserWindow).__vsr;
             return {
                 lastPhrase: await vsr.lastSpokenPhrase(),
-                itemText: await vsr.itemText(),
+                focusedElementText: await vsr.focusedElementText(),
             };
         });
         return {
             spokenPhrases: result.lastPhrase ? [result.lastPhrase] : [],
-            itemText: result.itemText,
+            focusedElementText: result.focusedElementText,
         };
     }
 }

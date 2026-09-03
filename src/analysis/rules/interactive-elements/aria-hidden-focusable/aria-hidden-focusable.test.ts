@@ -12,7 +12,7 @@ describe('aria-hidden-focusable rule', () => {
     it('reports a focusable element hidden from the accessibility tree', async () => {
         const steps = createSteps([
             {
-                itemText: '',
+                focusedElementText: '',
                 spokenPhrases: [],
                 htmlSnippet: '<a href="/promo" aria-hidden="true">Promo</a>',
             },

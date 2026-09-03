@@ -8,6 +8,7 @@ import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import { getRole as getAxRole } from '../../../../types/ax-utils';
 
 export interface RegionDensity {
     landmark: string;
@@ -50,7 +51,7 @@ function getSpokenText(step: NavigationStep): string {
 }
 
 function getRole(step: NavigationStep): string | undefined {
-    return (step.axNode?.role as any)?.value;
+    return step.axNode ? getAxRole(step.axNode) : undefined;
 }
 
 function createViolation(

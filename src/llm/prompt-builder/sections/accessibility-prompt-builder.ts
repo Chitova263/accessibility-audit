@@ -16,7 +16,6 @@ export interface PageContext {
 export interface BuiltPrompt {
     system: string;
     user: string;
-    /** Combined prompt for copy-paste into AI chat */
     combined: string;
     metadata: {
         totalStrategies: number;
@@ -30,25 +29,14 @@ export interface BuiltPrompt {
 }
 
 export interface AccessibilityPromptConfig {
-    /** Screen reader used for the audit. */
     screenReader: ScreenReaderName;
-
-    /** Configuration for transcript section */
     transcript?: TranscriptSectionConfig;
-
-    /** Configuration for violations section */
     violations?: ViolationsSectionConfig;
-
-    /** Include JSON schema in prompt. Default: true */
+    /** Default: true */
     includeOutputSchema?: boolean;
-
-    /** Analysis categories to include. Default: all */
+    /** Default: all */
     analysisCategories?: AnalysisCategory[];
-
-    /** Custom system prompt additions */
     systemPromptAdditions?: string;
-
-    /** Custom analysis instructions */
     customInstructions?: string;
 }
 

@@ -8,21 +8,21 @@ import type {
 
 const createStep = (
     index: number,
-    overrides: Partial<{ itemText: string; role: string; backendDOMNodeId: number; htmlSnippet: string }> = {}
+    overrides: Partial<{ focusedElementText: string; role: string; backendDOMNodeId: number; htmlSnippet: string }> = {}
 ): NavigationStep => {
-    const itemText = overrides.itemText ?? `Item ${index}`;
+    const focusedElementText = overrides.focusedElementText ?? `Item ${index}`;
 
     return {
         index,
         identifier: `step-${index}`,
-        spokenPhrases: [itemText],
-        itemText,
-        itemTextLog: [],
+        spokenPhrases: [focusedElementText],
+        focusedElementText,
+        focusedElementTextLog: [],
         timestamp: 1_700_000_000_000 + index,
         axNode: {
             nodeId: `${index}`,
             role: { value: overrides.role ?? 'link' },
-            name: { value: itemText },
+            name: { value: focusedElementText },
             backendDOMNodeId: overrides.backendDOMNodeId,
         } as never,
         htmlSnippet: overrides.htmlSnippet ?? null,
@@ -51,7 +51,7 @@ const strategies = (tabSteps: NavigationStep[], arrowSteps?: NavigationStep[]) =
 
 /** Reading order: every tenth position is an element, the rest is plain text */
 const readingWalk = (): NavigationStep[] =>
-    [...Array(60)].map((_, i) =>
+    Array.from({ length: 60 }, (_, i) =>
         createStep(i, i % 10 === 0 ? { role: 'StaticText', backendDOMNodeId: i } : { role: 'StaticText' })
     );
 

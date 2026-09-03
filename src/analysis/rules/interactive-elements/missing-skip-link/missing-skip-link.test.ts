@@ -6,7 +6,7 @@ import type { StepOverrides } from '../../test-fixtures';
 const tabStop = (name: string, href = '/x'): StepOverrides => ({
     role: 'link',
     name,
-    itemText: name,
+    focusedElementText: name,
     identifier: `stop-${name}`,
     htmlSnippet: `<a href="${href}">${name}</a>`,
 });
@@ -82,7 +82,7 @@ describe('missing-skip-link rule', () => {
     });
 
     it('falls back to the role when a tab stop has no name', async () => {
-        const steps = createSteps([{ role: 'button', name: '', itemText: '' }]);
+        const steps = createSteps([{ role: 'button', name: '', focusedElementText: '' }]);
 
         const result = await rule.run(mockContext([strategyResult('tab', steps)]));
 

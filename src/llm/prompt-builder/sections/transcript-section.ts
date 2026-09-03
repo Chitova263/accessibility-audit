@@ -119,7 +119,8 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
     let name = '';
     if (node.name && typeof node.name === 'object') {
         const nameObj = node.name as Record<string, unknown>;
-        name = String(nameObj.value ?? '');
+        const rawValue = nameObj.value;
+        name = typeof rawValue === 'string' ? rawValue : typeof rawValue === 'number' ? String(rawValue) : '';
     } else if (typeof node.name === 'string') {
         name = node.name;
     }
@@ -128,7 +129,8 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
     let role = '';
     if (node.role && typeof node.role === 'object') {
         const roleObj = node.role as Record<string, unknown>;
-        role = String(roleObj.value ?? '');
+        const rawValue = roleObj.value;
+        role = typeof rawValue === 'string' ? rawValue : typeof rawValue === 'number' ? String(rawValue) : '';
     } else if (typeof node.role === 'string') {
         role = node.role;
     }
@@ -137,14 +139,17 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
     let description: string | undefined;
     if (node.description && typeof node.description === 'object') {
         const descObj = node.description as Record<string, unknown>;
-        description = descObj.value ? String(descObj.value) : undefined;
+        const rawValue = descObj.value;
+        description =
+            typeof rawValue === 'string' ? rawValue : typeof rawValue === 'number' ? String(rawValue) : undefined;
     }
 
     // Extract value
     let value: string | undefined;
     if (node.value && typeof node.value === 'object') {
         const valObj = node.value as Record<string, unknown>;
-        value = valObj.value ? String(valObj.value) : undefined;
+        const rawValue = valObj.value;
+        value = typeof rawValue === 'string' ? rawValue : typeof rawValue === 'number' ? String(rawValue) : undefined;
     }
 
     // Extract properties from the properties array
@@ -152,9 +157,9 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
     if (Array.isArray(node.properties)) {
         for (const prop of node.properties) {
             if (typeof prop === 'object' && prop !== null) {
-                const p = prop as Record<string, unknown>;
-                const propName = p.name as string;
-                const propValue = (p.value as Record<string, unknown>)?.value;
+                const propRecord = prop as Record<string, unknown>;
+                const propName = propRecord.name as string;
+                const propValue = (propRecord.value as Record<string, unknown>)?.value;
 
                 switch (propName) {
                     case 'focusable':
@@ -221,7 +226,7 @@ function transformStep(step: NavigationStep, config: ResolvedTranscriptConfig): 
         index: step.index,
         identifier: step.identifier,
         spoken,
-        itemText: step.itemText,
+        focusedElementText: step.focusedElementText,
         axNode,
         htmlSnippet,
     };
@@ -292,7 +297,7 @@ function addStepXml(
     const stepEle = parent.ele('step', { index: step.index, id: step.identifier });
 
     stepEle.ele('spoken').txt(step.spoken);
-    stepEle.ele('item_text').txt(step.itemText);
+    stepEle.ele('item_text').txt(step.focusedElementText);
 
     if (includeAxNode && step.axNode) {
         const axNodeEle = stepEle.ele('ax_node');

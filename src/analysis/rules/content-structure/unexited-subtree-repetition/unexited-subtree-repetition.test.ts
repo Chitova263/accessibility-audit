@@ -14,15 +14,15 @@ const arrowContext = (steps: ReturnType<typeof createStep>[]) =>
  * Build the canonical chat-widget pattern:
  *   - some normal page content
  *   - a button entry step (role=button, name=phrase)
- *   - N child-node steps (role=generic / no role, same itemText as button name)
+ *   - N child-node steps (role=generic / no role, same focusedElementText as button name)
  */
 const chatWidgetSteps = (phrase: string, repetitions: number, leadingCount = 5) => {
     const leading = Array.from({ length: leadingCount }, (_, i) =>
-        createStep(i, { itemText: `Content ${i}`, role: 'paragraph' })
+        createStep(i, { focusedElementText: `Content ${i}`, role: 'paragraph' })
     );
 
     const buttonEntry = createStep(leadingCount, {
-        itemText: phrase,
+        focusedElementText: phrase,
         role: 'button',
         name: phrase,
     });
@@ -30,7 +30,7 @@ const chatWidgetSteps = (phrase: string, repetitions: number, leadingCount = 5) 
     // Child node steps: same text, role=generic (unnamed div / SVG child)
     const children = Array.from({ length: repetitions }, (_, i) =>
         createStep(leadingCount + 1 + i, {
-            itemText: phrase,
+            focusedElementText: phrase,
             role: 'generic',
             name: '',
         })
@@ -53,8 +53,8 @@ describe('unexited-subtree-repetition rule', () => {
         const result = await rule.run(arrowContext(steps));
 
         expect(result.violations).toHaveLength(1);
-        const v = result.violations[0]!;
-        expect(v.rule.id).toBe('unexited-subtree-repetition');
+        const violation = result.violations[0]!;
+        expect(violation.rule.id).toBe('unexited-subtree-repetition');
         expect(result.stats!.detections[0]!.count).toBe(30); // button entry + 29 children
         expect(result.stats!.detections[0]!.reachedStrategyEnd).toBe(true);
     });
@@ -73,23 +73,25 @@ describe('unexited-subtree-repetition rule', () => {
     it('does NOT fire when repetition ends well before the strategy end', async () => {
         // Button in the middle, lots of content after — NOT subtree traversal
         const buttonEntry = createStep(5, {
-            itemText: 'Hello, how can I help you?',
+            focusedElementText: 'Hello, how can I help you?',
             role: 'button',
             name: 'Hello, how can I help you?',
         });
         const buttonChildren = Array.from({ length: 10 }, (_, i) =>
             createStep(6 + i, {
-                itemText: 'Hello, how can I help you?',
+                focusedElementText: 'Hello, how can I help you?',
                 role: 'generic',
                 name: '',
             })
         );
         const trailing = Array.from({ length: 20 }, (_, i) =>
-            createStep(16 + i, { itemText: `More content ${i}`, role: 'paragraph' })
+            createStep(16 + i, { focusedElementText: `More content ${i}`, role: 'paragraph' })
         );
 
         const steps = [
-            ...Array.from({ length: 5 }, (_, i) => createStep(i, { itemText: `Item ${i}`, role: 'paragraph' })),
+            ...Array.from({ length: 5 }, (_, i) =>
+                createStep(i, { focusedElementText: `Item ${i}`, role: 'paragraph' })
+            ),
             buttonEntry,
             ...buttonChildren,
             ...trailing,
@@ -102,10 +104,12 @@ describe('unexited-subtree-repetition rule', () => {
     it('does NOT fire when the repeated phrase has no matching button AX node', async () => {
         // Same text repeated at end, but no button — could be a broken loop
         const steps = [
-            ...Array.from({ length: 5 }, (_, i) => createStep(i, { itemText: `Item ${i}`, role: 'paragraph' })),
+            ...Array.from({ length: 5 }, (_, i) =>
+                createStep(i, { focusedElementText: `Item ${i}`, role: 'paragraph' })
+            ),
             ...Array.from({ length: 15 }, (_, i) =>
                 createStep(5 + i, {
-                    itemText: 'Some text',
+                    focusedElementText: 'Some text',
                     role: 'paragraph', // not a button
                 })
             ),
@@ -117,17 +121,17 @@ describe('unexited-subtree-repetition rule', () => {
 
     it('does NOT fire for a product grid with repeated "Add to cart" not at end', async () => {
         const steps = createSteps([
-            { itemText: 'Product A', role: 'heading' },
-            { itemText: 'Add to cart', role: 'button', name: 'Add to cart' },
-            { itemText: 'Product B', role: 'heading' },
-            { itemText: 'Add to cart', role: 'button', name: 'Add to cart' },
-            { itemText: 'Product C', role: 'heading' },
-            { itemText: 'Add to cart', role: 'button', name: 'Add to cart' },
-            { itemText: 'Product D', role: 'heading' },
-            { itemText: 'Add to cart', role: 'button', name: 'Add to cart' },
-            { itemText: 'Product E', role: 'heading' },
-            { itemText: 'Add to cart', role: 'button', name: 'Add to cart' },
-            { itemText: 'Footer', role: 'contentinfo' }, // trailing content, not a repetition
+            { focusedElementText: 'Product A', role: 'heading' },
+            { focusedElementText: 'Add to cart', role: 'button', name: 'Add to cart' },
+            { focusedElementText: 'Product B', role: 'heading' },
+            { focusedElementText: 'Add to cart', role: 'button', name: 'Add to cart' },
+            { focusedElementText: 'Product C', role: 'heading' },
+            { focusedElementText: 'Add to cart', role: 'button', name: 'Add to cart' },
+            { focusedElementText: 'Product D', role: 'heading' },
+            { focusedElementText: 'Add to cart', role: 'button', name: 'Add to cart' },
+            { focusedElementText: 'Product E', role: 'heading' },
+            { focusedElementText: 'Add to cart', role: 'button', name: 'Add to cart' },
+            { focusedElementText: 'Footer', role: 'contentinfo' }, // trailing content, not a repetition
         ]);
 
         const result = await rule.run(arrowContext(steps));
@@ -153,7 +157,9 @@ describe('unexited-subtree-repetition rule', () => {
         // Run ends 5 steps before end of strategy, default tolerance=3 → no fire
         const steps = [
             ...chatWidgetSteps('Help?', 10),
-            ...Array.from({ length: 5 }, (_, i) => createStep(100 + i, { itemText: `Footer ${i}`, role: 'paragraph' })),
+            ...Array.from({ length: 5 }, (_, i) =>
+                createStep(100 + i, { focusedElementText: `Footer ${i}`, role: 'paragraph' })
+            ),
         ];
         const defaultResult = await rule.run(arrowContext(steps));
         expect(defaultResult.violations).toHaveLength(0);
@@ -176,7 +182,7 @@ describe('unexited-subtree-repetition rule', () => {
         // (contrived but tests multi-detection)
         const widget2 = Array.from({ length: 10 }, (_, i) =>
             createStep(100 + i, {
-                itemText: 'Chat',
+                focusedElementText: 'Chat',
                 role: i === 0 ? 'button' : 'generic',
                 name: i === 0 ? 'Chat' : '',
             })

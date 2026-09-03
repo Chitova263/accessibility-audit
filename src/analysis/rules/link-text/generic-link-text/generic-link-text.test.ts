@@ -8,27 +8,33 @@ import type {
 
 const createStep = (
     index: number,
-    overrides: Partial<{ itemText: string; role: string; name: string; href: string; backendDOMNodeId: number }> = {}
+    overrides: Partial<{
+        focusedElementText: string;
+        role: string;
+        name: string;
+        href: string;
+        backendDOMNodeId: number;
+    }> = {}
 ): NavigationStep => {
-    const itemText = overrides.itemText ?? `Item ${index}`;
+    const focusedElementText = overrides.focusedElementText ?? `Item ${index}`;
     const role = overrides.role;
 
     return {
         index,
         identifier: `step-${index}`,
-        spokenPhrases: [itemText],
-        itemText,
-        itemTextLog: [],
+        spokenPhrases: [focusedElementText],
+        focusedElementText,
+        focusedElementTextLog: [],
         timestamp: 1_700_000_000_000 + index,
         axNode: role
             ? ({
                   nodeId: `${index}`,
                   role: { value: role },
-                  name: { value: overrides.name ?? itemText },
+                  name: { value: overrides.name ?? focusedElementText },
                   backendDOMNodeId: overrides.backendDOMNodeId,
               } as never)
             : undefined,
-        htmlSnippet: overrides.href ? `<a href="${overrides.href}">${itemText}</a>` : null,
+        htmlSnippet: overrides.href ? `<a href="${overrides.href}">${focusedElementText}</a>` : null,
     };
 };
 
@@ -52,7 +58,7 @@ const strategies = (linkSteps: NavigationStep[], arrowSteps?: NavigationStep[]) 
     return mockContext(results);
 };
 
-const genericLink = createStep(0, { itemText: 'Read more', role: 'link', href: '/a', backendDOMNodeId: 42 });
+const genericLink = createStep(0, { focusedElementText: 'Read more', role: 'link', href: '/a', backendDOMNodeId: 42 });
 
 describe('generic-link-text rule', () => {
     it('has correct metadata', () => {
@@ -63,9 +69,9 @@ describe('generic-link-text rule', () => {
 
     it('reports a generic link at full impact when no surrounding context', async () => {
         const arrowSteps = [
-            createStep(0, { itemText: 'Home', role: 'link', backendDOMNodeId: 7 }),
-            createStep(1, { itemText: 'Read more', role: 'link', backendDOMNodeId: 42 }),
-            createStep(2, { itemText: 'Contact', role: 'link', backendDOMNodeId: 8 }),
+            createStep(0, { focusedElementText: 'Home', role: 'link', backendDOMNodeId: 7 }),
+            createStep(1, { focusedElementText: 'Read more', role: 'link', backendDOMNodeId: 42 }),
+            createStep(2, { focusedElementText: 'Contact', role: 'link', backendDOMNodeId: 8 }),
         ];
 
         const result = await rule.run(strategies([genericLink], arrowSteps));
@@ -79,9 +85,9 @@ describe('generic-link-text rule', () => {
 
     it('downgrades impact when surrounding text provides context', async () => {
         const arrowSteps = [
-            createStep(0, { itemText: 'Fibre broadband for your home' }),
-            createStep(1, { itemText: 'Read more', role: 'link', backendDOMNodeId: 42 }),
-            createStep(2, { itemText: 'Available in most regions' }),
+            createStep(0, { focusedElementText: 'Fibre broadband for your home' }),
+            createStep(1, { focusedElementText: 'Read more', role: 'link', backendDOMNodeId: 42 }),
+            createStep(2, { focusedElementText: 'Available in most regions' }),
         ];
 
         const result = await rule.run(strategies([genericLink], arrowSteps));
@@ -94,7 +100,7 @@ describe('generic-link-text rule', () => {
     });
 
     it('falls back to full impact when arrow walk never reached the link', async () => {
-        const arrowSteps = [createStep(0, { itemText: 'Some other content' })];
+        const arrowSteps = [createStep(0, { focusedElementText: 'Some other content' })];
 
         const result = await rule.run(strategies([genericLink], arrowSteps));
 
@@ -109,7 +115,7 @@ describe('generic-link-text rule', () => {
     });
 
     it('leaves descriptive link text alone', async () => {
-        const descriptive = createStep(0, { itemText: 'Compare mobile plans', role: 'link', href: '/plans' });
+        const descriptive = createStep(0, { focusedElementText: 'Compare mobile plans', role: 'link', href: '/plans' });
 
         const result = await rule.run(strategies([descriptive]));
 

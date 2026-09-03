@@ -7,13 +7,14 @@ import type {
     StrategyResult,
     NavigationStep,
 } from '../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import { getRole, getName } from '../../types/ax-utils';
 
 export interface ElementSignature {
     name: string;
     htmlSnippet: string | null;
     step: NavigationStep;
     strategyType: string;
-    backendNodeId?: number;
+    backendNodeId?: number | undefined;
 }
 
 /**
@@ -21,7 +22,7 @@ export interface ElementSignature {
  * elements discovered via different strategies can be compared.
  */
 export function createSignature(step: NavigationStep): string {
-    const name = step.axNode?.name?.value ?? '';
+    const name = getName(step.axNode) ?? '';
     const snippet = step.htmlSnippet ?? '';
     return `${name}::${snippet}`.toLowerCase();
 }
@@ -52,7 +53,7 @@ export function countByRole(transcript: StrategyResult[], strategyType: string, 
     for (const result of transcript) {
         if (result.meta.name !== strategyType) continue;
         for (const step of result.navigationSteps) {
-            if (step.axNode?.role?.value === role) count++;
+            if (getRole(step.axNode) === role) count++;
         }
     }
     return count;
@@ -78,13 +79,13 @@ export function collectElementsByStrategy(
             const node = step.axNode;
             const signature = createSignature(step);
 
-            if (currentStrategyType === strategyType && node?.role?.value === role) {
+            if (currentStrategyType === strategyType && getRole(node) === role) {
                 elements.push({
-                    name: node.name?.value ?? '',
+                    name: getName(node) ?? '',
                     htmlSnippet: step.htmlSnippet,
                     step,
                     strategyType: currentStrategyType,
-                    backendNodeId: node.backendDOMNodeId,
+                    backendNodeId: node?.backendDOMNodeId,
                 });
             }
 

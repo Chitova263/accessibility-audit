@@ -13,10 +13,10 @@ exports[`buildTranscriptData > should exclude HTML snippets when includeHtmlSnip
       "steps": [
         {
           "axNode": null,
+          "focusedElementText": "Button",
           "htmlSnippet": null,
           "identifier": "step-0",
           "index": 0,
-          "itemText": "Button",
           "spoken": "Button",
         },
       ],
@@ -42,10 +42,10 @@ exports[`buildTranscriptData > should exclude axNodes when includeAxNodes is fal
       "steps": [
         {
           "axNode": null,
+          "focusedElementText": "Button",
           "htmlSnippet": null,
           "identifier": "step-0",
           "index": 0,
-          "itemText": "Button",
           "spoken": "Button",
         },
       ],
@@ -71,10 +71,10 @@ exports[`buildTranscriptData > should filter strategies based on excludeStrategi
       "steps": [
         {
           "axNode": null,
+          "focusedElementText": "Item 0",
           "htmlSnippet": null,
           "identifier": "step-0",
           "index": 0,
-          "itemText": "Item 0",
           "spoken": "Tab step",
         },
       ],
@@ -91,10 +91,10 @@ exports[`buildTranscriptData > should filter strategies based on excludeStrategi
       "steps": [
         {
           "axNode": null,
+          "focusedElementText": "Item 0",
           "htmlSnippet": null,
           "identifier": "step-0",
           "index": 0,
-          "itemText": "Item 0",
           "spoken": "Heading step",
         },
       ],
@@ -120,10 +120,10 @@ exports[`buildTranscriptData > should filter strategies based on includeStrategi
       "steps": [
         {
           "axNode": null,
+          "focusedElementText": "Item 0",
           "htmlSnippet": null,
           "identifier": "step-0",
           "index": 0,
-          "itemText": "Item 0",
           "spoken": "Tab step",
         },
       ],
@@ -140,10 +140,10 @@ exports[`buildTranscriptData > should filter strategies based on includeStrategi
       "steps": [
         {
           "axNode": null,
+          "focusedElementText": "Item 0",
           "htmlSnippet": null,
           "identifier": "step-0",
           "index": 0,
-          "itemText": "Item 0",
           "spoken": "Heading step",
         },
       ],
@@ -177,10 +177,10 @@ exports[`buildTranscriptData > should handle strategy results with complex axNod
             },
             "role": "checkbox",
           },
+          "focusedElementText": "Accept terms",
           "htmlSnippet": "<input type="checkbox" required>",
           "identifier": "checkbox-0",
           "index": 0,
-          "itemText": "Accept terms",
           "spoken": "Accept terms checkbox not checked",
         },
       ],
@@ -212,10 +212,10 @@ exports[`buildTranscriptData > should transform strategy results into transcript
             },
             "role": "heading",
           },
+          "focusedElementText": "Welcome",
           "htmlSnippet": "<h1>Welcome</h1>",
           "identifier": "h1-0",
           "index": 0,
-          "itemText": "Welcome",
           "spoken": "Welcome heading level 1",
         },
       ],
@@ -241,10 +241,10 @@ exports[`buildTranscriptData > should truncate HTML snippets based on maxHtmlSni
       "steps": [
         {
           "axNode": null,
+          "focusedElementText": "Long content",
           "htmlSnippet": "<div class="container"></div>...",
           "identifier": "long-html",
           "index": 0,
-          "itemText": "Long content",
           "spoken": "Long content",
         },
       ],

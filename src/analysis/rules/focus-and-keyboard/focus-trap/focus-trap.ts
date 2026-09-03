@@ -64,7 +64,7 @@ export class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> 
         step: {
             identifier: string;
             spokenPhrases: string[];
-            itemText: string;
+            focusedElementText: string;
             timestamp: number;
             htmlSnippet: string | null;
             axNode: unknown;
@@ -82,7 +82,7 @@ export class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> 
                 wcag: this.meta.wcag,
                 impact: this.meta.impact,
             },
-            message: `Keyboard focus trap detected after ${stepsBeforeTrap} tab presses. Users cannot navigate away from this element using the keyboard. Element text: "${step.itemText}"`,
+            message: `Keyboard focus trap detected after ${stepsBeforeTrap} tab presses. Users cannot navigate away from this element using the keyboard. Element text: "${step.focusedElementText}"`,
             element: step.htmlSnippet != null ? { htmlSnippet: step.htmlSnippet } : {},
             tool: 'nvda-audit',
             timestamp: step.timestamp,

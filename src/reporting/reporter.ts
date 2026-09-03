@@ -10,58 +10,31 @@ import type { Violation } from '../analysis/core/violation';
 import type { StrategyResult } from '../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 export interface ReportMeta {
-    /** Timestamp when audit was run (ms since epoch) */
     timestamp: number;
-
-    /** Duration of the audit in milliseconds */
     duration?: number;
-
-    /** Version of the audit tool */
     toolVersion?: string;
-
-    /** Strategies that were executed */
     strategies?: string[];
 }
 
 export interface ReportData {
-    /** LLM analysis response (validated by Zod schema) */
     analysis: LlmCompleteResponse;
-
-    /** Raw violations from rule-based analyzers (screenshots embedded in context for NVDA violations) */
+    /** Screenshots embedded in context for screen reader violations */
     violations: Violation[];
-
-    /** Navigation strategy results (optional, for transcript inclusion) */
     transcript?: StrategyResult[] | undefined;
-
-    /** Audit metadata */
     meta: ReportMeta;
 }
 
 export interface ReportOutput {
-    /** Output format identifier (e.g., 'html', 'json', 'pdf') */
     format: string;
-
-    /** The generated report content */
     content: string;
-
-    /** Suggested filename for saving */
     filename: string;
-
-    /** MIME type for the content */
     mimeType: string;
 }
 
 export interface ReporterOptions {
-    /** Include transcript in report */
     includeTranscript?: boolean;
-
-    /** Include HTML snippets in report */
     includeHtmlSnippets?: boolean;
-
-    /** Custom title for the report */
     title?: string;
-
-    /** Base path for resolving screenshot file paths (for file-based screenshots) */
     screenshotsBasePath?: string;
 }
 
@@ -88,7 +61,6 @@ export interface ReporterOptions {
  * ```
  */
 export interface Reporter {
-    /** Unique identifier for this reporter */
     readonly name: string;
 
     /**

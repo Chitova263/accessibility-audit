@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DownArrowNavigator } from './down-arrow-navigator';
-import type { ScreenReader, PressResult } from '../../drivers/nvda';
+import type { ScreenReader, KeyPressResult } from '../../drivers/nvda';
 
 function createMockScreenReader(): ScreenReader {
     return {
         name: 'nvda',
         start: vi.fn().mockResolvedValue(undefined),
         stop: vi.fn().mockResolvedValue(undefined),
-        press: vi.fn().mockResolvedValue({ spokenPhrases: [], itemText: '' } satisfies PressResult),
+        press: vi.fn().mockResolvedValue({ spokenPhrases: [], focusedElementText: '' } satisfies KeyPressResult),
     };
 }
 
@@ -15,16 +15,16 @@ function createMockScreenReader(): ScreenReader {
  * Helper to create a mock press function that returns different results on each call.
  * Use `null` phrase to simulate end of document (no speech).
  */
-function createPressMock(results: Array<{ phrase: string | null; itemText?: string }>) {
+function createPressMock(results: Array<{ phrase: string | null; focusedElementText?: string }>) {
     let callIndex = 0;
-    return vi.fn().mockImplementation((): Promise<PressResult> => {
+    return vi.fn().mockImplementation((): Promise<KeyPressResult> => {
         const result = results[callIndex++];
         if (!result || result.phrase === null) {
-            return Promise.resolve({ spokenPhrases: [], itemText: '' });
+            return Promise.resolve({ spokenPhrases: [], focusedElementText: '' });
         }
         return Promise.resolve({
             spokenPhrases: [result.phrase],
-            itemText: result.itemText ?? '',
+            focusedElementText: result.focusedElementText ?? '',
         });
     });
 }
@@ -130,11 +130,11 @@ describe('DownArrowNavigator', () => {
         expect(items[1]!.phrase).toBe('Recovery item');
     });
 
-    it('skips blank announcements where neither phrase nor itemText exist', async () => {
+    it('skips blank announcements where neither phrase nor focusedElementText exist', async () => {
         mockSR.press = createPressMock([
             { phrase: 'First item' },
-            { phrase: '', itemText: '' }, // Blank - skipped
-            { phrase: '', itemText: '' }, // Blank - skipped
+            { phrase: '', focusedElementText: '' }, // Blank - skipped
+            { phrase: '', focusedElementText: '' }, // Blank - skipped
             { phrase: 'After blanks' },
             { phrase: null }, // Silent
             { phrase: null }, // Second silent - end
@@ -146,7 +146,7 @@ describe('DownArrowNavigator', () => {
             items.push(item);
         }
 
-        // Blanks are skipped (no itemText or phrase), so 2 total
+        // Blanks are skipped (no focusedElementText or phrase), so 2 total
         expect(items).toHaveLength(2);
         expect(items[0]!.phrase).toBe('First item');
         expect(items[1]!.phrase).toBe('After blanks');

@@ -7,13 +7,13 @@ const rule = new ContentDensityPerRegionRule();
 
 const createStep = (
     index: number,
-    overrides: Partial<{ itemText: string; spokenPhrases: string[]; role: string }> = {}
+    overrides: Partial<{ focusedElementText: string; spokenPhrases: string[]; role: string }> = {}
 ): NavigationStep => ({
     index,
     identifier: `step-${index}`,
-    spokenPhrases: overrides.spokenPhrases ?? [overrides.itemText ?? `Item ${index}`],
-    itemText: overrides.itemText ?? `Item ${index}`,
-    itemTextLog: [],
+    spokenPhrases: overrides.spokenPhrases ?? [overrides.focusedElementText ?? `Item ${index}`],
+    focusedElementText: overrides.focusedElementText ?? `Item ${index}`,
+    focusedElementTextLog: [],
     timestamp: 1_700_000_000_000 + index,
     axNode: overrides.role ? ({ nodeId: `${index}`, role: { value: overrides.role } } as never) : undefined,
     htmlSnippet: null,
@@ -36,9 +36,9 @@ describe('content-density-per-region rule', () => {
     });
 
     it('records dense navigation regions but leaves the violation to navigation-size', async () => {
-        const steps = [createStep(0, { itemText: 'navigation landmark' })];
+        const steps = [createStep(0, { focusedElementText: 'navigation landmark' })];
         for (let i = 1; i <= 60; i++) {
-            steps.push(createStep(i, { itemText: `Nav link ${i}` }));
+            steps.push(createStep(i, { focusedElementText: `Nav link ${i}` }));
         }
         const customRule = new ContentDensityPerRegionRule({ threshold: 50 });
 
@@ -49,9 +49,9 @@ describe('content-density-per-region rule', () => {
     });
 
     it('reports dense non-navigation regions', async () => {
-        const steps = [createStep(0, { itemText: 'main landmark' })];
+        const steps = [createStep(0, { focusedElementText: 'main landmark' })];
         for (let i = 1; i <= 60; i++) {
-            steps.push(createStep(i, { itemText: `Content ${i}` }));
+            steps.push(createStep(i, { focusedElementText: `Content ${i}` }));
         }
         const customRule = new ContentDensityPerRegionRule({ threshold: 50 });
 
@@ -62,8 +62,8 @@ describe('content-density-per-region rule', () => {
 
     it('stays silent when regions are under threshold', async () => {
         const steps = [
-            createStep(0, { itemText: 'main landmark' }),
-            ...Array.from({ length: 20 }, (_, i) => createStep(i + 1, { itemText: `Item ${i}` })),
+            createStep(0, { focusedElementText: 'main landmark' }),
+            ...Array.from({ length: 20 }, (_, i) => createStep(i + 1, { focusedElementText: `Item ${i}` })),
         ];
 
         const result = await rule.run(arrowResult(steps));

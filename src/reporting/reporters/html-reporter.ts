@@ -5,7 +5,6 @@ import { generateFilename, formatTimestamp, escapeHtml, truncate } from '../repo
 import type { LlmFinding, LlmViolationEnhancement, LlmEvidence } from '../../llm/prompt-builder';
 
 export interface HtmlReporterOptions extends ReporterOptions {
-    /** Base path for resolving screenshot paths (defaults to cwd) */
     screenshotsBasePath?: string;
 }
 
@@ -760,13 +759,13 @@ ${impactSections}
 
         // Single step — inline row, no surrounding box
         if (steps.length === 1) {
-            const s = steps[0]!;
+            const step = steps[0]!;
             return `
           <div class="evidence-inline">
-            <a href="#step-${escapeHtml(s.identifier)}" class="evidence-badge" title="Jump to transcript step">
-              <span class="evidence-badge__strategy">${escapeHtml(s.strategy)}</span><span class="evidence-badge__idx">${s.stepIndex}</span>
+            <a href="#step-${escapeHtml(step.identifier)}" class="evidence-badge" title="Jump to transcript step">
+              <span class="evidence-badge__strategy">${escapeHtml(step.strategy)}</span><span class="evidence-badge__idx">${step.stepIndex}</span>
             </a>
-            <span class="evidence-inline__spoken">"${escapeHtml(s.spokenPhrase)}"</span>
+            <span class="evidence-inline__spoken">"${escapeHtml(step.spokenPhrase)}"</span>
           </div>
           ${patternCaption}`;
         }
@@ -867,13 +866,13 @@ ${impactSections}
             index: number;
             identifier: string;
             spokenPhrases: string[];
-            itemText: string;
+            focusedElementText: string;
             htmlSnippet: string | null;
         },
         walk: string,
         cited: Set<string>
     ): string {
-        const spoken = step.spokenPhrases.join(' ') || step.itemText || '(no announcement)';
+        const spoken = step.spokenPhrases.join(' ') || step.focusedElementText || '(no announcement)';
         const isCited = cited.has(step.identifier);
         const lineId = `step-${escapeHtml(step.identifier)}`;
         const markupId = `markup-${escapeHtml(step.identifier)}`;

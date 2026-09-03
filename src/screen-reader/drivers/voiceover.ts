@@ -1,6 +1,6 @@
 import { voiceOver } from '@guidepup/guidepup';
 import { delay } from '@guidepup/guidepup/lib/delay';
-import type { ScreenReader, PressResult } from './types';
+import type { ScreenReader, KeyPressResult } from './types';
 
 export class VoiceOverDriver implements ScreenReader {
     readonly name = 'voiceover' as const;
@@ -16,16 +16,15 @@ export class VoiceOverDriver implements ScreenReader {
         await voiceOver.stop();
     }
 
-    async press(key: string): Promise<PressResult> {
+    async press(key: string): Promise<KeyPressResult> {
         await voiceOver.clearSpokenPhraseLog();
         await voiceOver.press(key);
         const spokenPhrases = await this.waitForSpeechStable();
-        const itemText = await voiceOver.itemText();
+        const focusedElementText = await voiceOver.itemText();
 
-        return { spokenPhrases, itemText };
+        return { spokenPhrases, focusedElementText };
     }
 
-    /** Wait for speech to stabilize by polling until the phrase log stops changing. */
     private async waitForSpeechStable(): Promise<string[]> {
         const startTime = Date.now();
         let lastLogLength = -1;

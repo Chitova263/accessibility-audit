@@ -61,7 +61,6 @@ export function isScreenshotSuccess(screenshot: Screenshot): screenshot is Scree
 
 export interface ScreenReaderContext {
     source: {
-        /** The screen reader used for this audit */
         screenReader: ScreenReaderName;
         strategy: string;
         stepIndex: number;
@@ -96,6 +95,7 @@ export function isScreenReaderViolation(violation: Violation): violation is Scre
     return (
         violation.tool === 'screen-reader-audit' &&
         violation.context != null &&
-        'source' in (violation.context as object)
+        typeof violation.context === 'object' &&
+        'source' in violation.context
     );
 }

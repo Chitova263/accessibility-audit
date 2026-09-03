@@ -26,20 +26,20 @@ function getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | 
     return transcript.find((r) => r.meta.name === 'arrow');
 }
 
-function extractLinkText(itemText: string): string | null {
-    const lower = itemText.toLowerCase();
+function extractLinkText(focusedElementText: string): string | null {
+    const lower = focusedElementText.toLowerCase();
     if (!lower.includes('link')) return null;
 
     // Extract text after "link," pattern
-    const match = itemText.match(/link,?\s*(.*)$/i);
+    const match = focusedElementText.match(/link,?\s*(.*)$/i);
     if (match && match[1]) {
         return match[1].trim();
     }
     return null;
 }
 
-function isSingleCharLink(itemText: string): { isLink: boolean; char: string | null } {
-    const linkText = extractLinkText(itemText);
+function isSingleCharLink(focusedElementText: string): { isLink: boolean; char: string | null } {
+    const linkText = extractLinkText(focusedElementText);
     if (linkText === null) return { isLink: false, char: null };
 
     // Single character or single digit
@@ -121,7 +121,7 @@ export class FragmentedLinkTextRule implements Rule<ScreenReaderContext, Fragmen
 
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i]!;
-            const { isLink, char } = isSingleCharLink(step.itemText);
+            const { isLink, char } = isSingleCharLink(step.focusedElementText);
 
             if (isLink && char !== null) {
                 if (sequenceStart === null) {

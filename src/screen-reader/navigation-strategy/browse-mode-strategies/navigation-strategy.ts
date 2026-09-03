@@ -1,5 +1,6 @@
 import type { Navigator } from '../../navigators/navigator';
 import type { ScreenReader, ScreenReaderName } from '../../drivers/types';
+import type { AXNode, GetFullAXTreeResult } from '../../../types/cdp';
 
 export type StrategyName =
     | 'tab'
@@ -23,7 +24,6 @@ export interface StrategyMetadata {
 
 export interface NavigationStrategyConfig {
     maxSteps: number;
-    /** Screen reader being used. Used for description text. */
     screenReader: ScreenReaderName;
 }
 
@@ -31,11 +31,10 @@ export interface NavigationStep {
     index: number;
     identifier: string;
     spokenPhrases: string[];
-    itemText: string;
-    itemTextLog: string[];
+    focusedElementText: string;
+    focusedElementTextLog: string[];
     timestamp: number;
-    // @ts-ignore
-    axNode: Protocol.Accessibility.AXNode | undefined;
+    axNode: AXNode | undefined;
     htmlSnippet: string | null;
 }
 
@@ -54,9 +53,8 @@ export interface StrategyResult {
     completionReason: CompletionReason;
 }
 
-export interface AxContext {
-    // @ts-ignore
-    tree: Protocol.Accessibility.getFullAXTreeReturnValue;
+export interface AccessibilityContext {
+    tree: GetFullAXTreeResult;
     getNodeOuterHtml(backendDOMNodeId: number): Promise<string>;
     getFocusedHtmlElementBackendNodeId(): Promise<number | null>;
     getFocusedNodeHtml(): Promise<string | null>;
@@ -70,10 +68,10 @@ export interface AxContext {
 export interface NavigationContext {
     navigator: Navigator;
     reader: ScreenReader;
-    ax: AxContext;
+    accessibility: AccessibilityContext;
 }
 
-export interface INavigationStrategy {
+export interface NavigationStrategy {
     meta: StrategyMetadata;
     execute(ctx: NavigationContext): Promise<StrategyResult>;
 }

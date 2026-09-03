@@ -1,5 +1,5 @@
 import type {
-    INavigationStrategy,
+    NavigationStrategy,
     NavigationContext,
     NavigationStep,
     NavigationStrategyConfig,
@@ -11,7 +11,7 @@ import { NavigationStrategyResult } from './navigation-strategy-result';
 import { getScreenReaderDisplayName } from '../../drivers/types';
 import { getKeyBindings } from '../../navigators/config';
 
-export class LandmarkNavigationStrategy implements INavigationStrategy {
+export class LandmarkNavigationStrategy implements NavigationStrategy {
     public readonly meta: StrategyMetadata;
 
     public constructor(public readonly config: NavigationStrategyConfig) {
@@ -25,16 +25,18 @@ export class LandmarkNavigationStrategy implements INavigationStrategy {
     }
 
     public async execute(ctx: NavigationContext): Promise<StrategyResult> {
-        const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
+        const cursor = new AxTreeCursor(ctx.accessibility.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        for await (const { phrase, itemText } of ctx.navigator.landmarks()) {
-            const landmarkRole = extractLandmarkRole(phrase) ?? extractLandmarkRole(itemText);
+        for await (const { phrase, focusedElementText } of ctx.navigator.landmarks()) {
+            const landmarkRole = extractLandmarkRole(phrase) ?? extractLandmarkRole(focusedElementText);
             const matchResult = landmarkRole ? cursor.matchNextByRole(landmarkRole) : null;
 
             const axNode = matchResult?.node;
             const htmlSnippet =
-                axNode?.backendDOMNodeId != null ? await ctx.ax.getNodeOuterHtml(axNode.backendDOMNodeId) : null;
+                axNode?.backendDOMNodeId != null
+                    ? await ctx.accessibility.getNodeOuterHtml(axNode.backendDOMNodeId)
+                    : null;
 
             navigationSteps.push({
                 index: navigationSteps.length,
@@ -43,8 +45,8 @@ export class LandmarkNavigationStrategy implements INavigationStrategy {
                 identifier: crypto.randomUUID(),
                 spokenPhrases: [phrase],
                 timestamp: Date.now(),
-                itemText,
-                itemTextLog: [itemText],
+                focusedElementText,
+                focusedElementTextLog: [focusedElementText],
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {

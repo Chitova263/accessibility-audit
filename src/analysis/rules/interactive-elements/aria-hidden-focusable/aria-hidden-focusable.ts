@@ -90,7 +90,7 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
         step: {
             identifier: string;
             spokenPhrases: string[];
-            itemText: string;
+            focusedElementText: string;
             timestamp: number;
             htmlSnippet: string | null;
         },

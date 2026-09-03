@@ -1,7 +1,7 @@
 import type { ScreenReader } from '../../drivers/nvda';
-import type { IElementNavigator, NavigationItem } from '../types';
+import type { ElementNavigator, NavigationItem } from '../types';
 
-export class TabNavigator implements IElementNavigator {
+export class TabNavigator implements ElementNavigator {
     public readonly type = 'focusable' as const;
 
     constructor(
@@ -16,10 +16,10 @@ export class TabNavigator implements IElementNavigator {
                 ? firstResult.spokenPhrases[firstResult.spokenPhrases.length - 1]!
                 : '';
 
-        yield { phrase: firstPhrase, itemText: firstResult.itemText };
+        yield { phrase: firstPhrase, focusedElementText: firstResult.focusedElementText };
 
         while (true) {
-            const { spokenPhrases, itemText } = await this.sr.press(this.tabKey);
+            const { spokenPhrases, focusedElementText } = await this.sr.press(this.tabKey);
             const phrase = spokenPhrases.length > 0 ? spokenPhrases[spokenPhrases.length - 1]! : '';
 
             // Cycle detection - back to first element
@@ -27,7 +27,7 @@ export class TabNavigator implements IElementNavigator {
                 return;
             }
 
-            yield { phrase, itemText };
+            yield { phrase, focusedElementText };
         }
     }
 }

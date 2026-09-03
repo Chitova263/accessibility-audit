@@ -12,7 +12,7 @@ import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 export interface NestedPattern {
     step: number;
     pattern: string;
-    itemText: string;
+    focusedElementText: string;
 }
 
 export interface NestedInteractiveElementsStats {
@@ -36,10 +36,10 @@ function getLinkStrategyResult(transcript: StrategyResult[]): StrategyResult | u
     return transcript.find((r) => r.meta.name === 'link');
 }
 
-function detectNestedPattern(itemText: string): string | null {
+function detectNestedPattern(focusedElementText: string): string | null {
     for (const pattern of NESTED_PATTERNS) {
-        if (pattern.test(itemText)) {
-            const match = itemText.match(pattern);
+        if (pattern.test(focusedElementText)) {
+            const match = focusedElementText.match(pattern);
             return match ? match[0] : null;
         }
     }
@@ -89,20 +89,20 @@ export class NestedInteractiveElementsRule implements Rule<ScreenReaderContext, 
         // Check arrow navigation for nested patterns
         const arrowResult = getArrowStrategyResult(transcript);
         if (arrowResult) {
-            this.analyzeSteps(arrowResult.navigationSteps, arrowResult.meta.name, patterns, seen);
+            this.analyzeSteps(arrowResult.navigationSteps, patterns, seen);
         }
 
         // Also check link navigation
         const linkResult = getLinkStrategyResult(transcript);
         if (linkResult) {
-            this.analyzeSteps(linkResult.navigationSteps, linkResult.meta.name, patterns, seen);
+            this.analyzeSteps(linkResult.navigationSteps, patterns, seen);
         }
 
         const violations: ScreenReaderViolation[] = patterns.map((p) => {
             const step = (arrowResult ?? linkResult)!.navigationSteps[p.step]!;
             return createViolation(
                 `Nested interactive elements detected: "${p.pattern}". ` +
-                    `The announcement "${p.itemText.substring(0, 100)}${p.itemText.length > 100 ? '...' : ''}" ` +
+                    `The announcement "${p.focusedElementText.substring(0, 100)}${p.focusedElementText.length > 100 ? '...' : ''}" ` +
                     'indicates improperly nested links or buttons, which confuses screen reader users.',
                 step,
                 (arrowResult ?? linkResult)!.meta.name,
@@ -119,26 +119,21 @@ export class NestedInteractiveElementsRule implements Rule<ScreenReaderContext, 
         };
     }
 
-    private analyzeSteps(
-        steps: NavigationStep[],
-        strategyName: string,
-        patterns: NestedPattern[],
-        seen: Set<string>
-    ): void {
+    private analyzeSteps(steps: NavigationStep[], patterns: NestedPattern[], seen: Set<string>): void {
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i]!;
-            const pattern = detectNestedPattern(step.itemText);
+            const pattern = detectNestedPattern(step.focusedElementText);
 
             if (pattern) {
                 // Dedupe by pattern + truncated text
-                const key = `${pattern}:${step.itemText.substring(0, 50)}`;
+                const key = `${pattern}:${step.focusedElementText.substring(0, 50)}`;
                 if (seen.has(key)) continue;
                 seen.add(key);
 
                 patterns.push({
                     step: i,
                     pattern,
-                    itemText: step.itemText,
+                    focusedElementText: step.focusedElementText,
                 });
             }
         }

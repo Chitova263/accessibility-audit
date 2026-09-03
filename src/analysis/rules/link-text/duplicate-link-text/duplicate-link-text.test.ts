@@ -8,27 +8,33 @@ import type {
 
 const createStep = (
     index: number,
-    overrides: Partial<{ itemText: string; role: string; name: string; href: string; backendDOMNodeId: number }> = {}
+    overrides: Partial<{
+        focusedElementText: string;
+        role: string;
+        name: string;
+        href: string;
+        backendDOMNodeId: number;
+    }> = {}
 ): NavigationStep => {
-    const itemText = overrides.itemText ?? `Item ${index}`;
+    const focusedElementText = overrides.focusedElementText ?? `Item ${index}`;
     const role = overrides.role;
 
     return {
         index,
         identifier: `step-${index}`,
-        spokenPhrases: [itemText],
-        itemText,
-        itemTextLog: [],
+        spokenPhrases: [focusedElementText],
+        focusedElementText,
+        focusedElementTextLog: [],
         timestamp: 1_700_000_000_000 + index,
         axNode: role
             ? ({
                   nodeId: `${index}`,
                   role: { value: role },
-                  name: { value: overrides.name ?? itemText },
+                  name: { value: overrides.name ?? focusedElementText },
                   backendDOMNodeId: overrides.backendDOMNodeId,
               } as never)
             : undefined,
-        htmlSnippet: overrides.href ? `<a href="${overrides.href}">${itemText}</a>` : null,
+        htmlSnippet: overrides.href ? `<a href="${overrides.href}">${focusedElementText}</a>` : null,
     };
 };
 
@@ -52,9 +58,9 @@ describe('duplicate-link-text rule', () => {
 
     it('reports links with same text but different destinations', async () => {
         const links = [
-            createStep(0, { itemText: 'Read more', role: 'link', href: '/article-1' }),
-            createStep(1, { itemText: 'Read more', role: 'link', href: '/article-2' }),
-            createStep(2, { itemText: 'Read more', role: 'link', href: '/article-3' }),
+            createStep(0, { focusedElementText: 'Read more', role: 'link', href: '/article-1' }),
+            createStep(1, { focusedElementText: 'Read more', role: 'link', href: '/article-2' }),
+            createStep(2, { focusedElementText: 'Read more', role: 'link', href: '/article-3' }),
         ];
 
         const result = await rule.run(linkStrategy(links));
@@ -72,8 +78,8 @@ describe('duplicate-link-text rule', () => {
 
     it('stays silent when same text goes to same destination', async () => {
         const links = [
-            createStep(0, { itemText: 'Home', role: 'link', href: '/' }),
-            createStep(1, { itemText: 'Home', role: 'link', href: '/' }),
+            createStep(0, { focusedElementText: 'Home', role: 'link', href: '/' }),
+            createStep(1, { focusedElementText: 'Home', role: 'link', href: '/' }),
         ];
 
         const result = await rule.run(linkStrategy(links));
@@ -83,8 +89,8 @@ describe('duplicate-link-text rule', () => {
 
     it('stays silent when links have unique text', async () => {
         const links = [
-            createStep(0, { itemText: 'Article One', role: 'link', href: '/article-1' }),
-            createStep(1, { itemText: 'Article Two', role: 'link', href: '/article-2' }),
+            createStep(0, { focusedElementText: 'Article One', role: 'link', href: '/article-1' }),
+            createStep(1, { focusedElementText: 'Article Two', role: 'link', href: '/article-2' }),
         ];
 
         const result = await rule.run(linkStrategy(links));
@@ -94,8 +100,8 @@ describe('duplicate-link-text rule', () => {
 
     it('matches link text case-insensitively', async () => {
         const links = [
-            createStep(0, { itemText: 'Read More', role: 'link', href: '/a' }),
-            createStep(1, { itemText: 'read more', role: 'link', href: '/b' }),
+            createStep(0, { focusedElementText: 'Read More', role: 'link', href: '/a' }),
+            createStep(1, { focusedElementText: 'read more', role: 'link', href: '/b' }),
         ];
 
         const result = await rule.run(linkStrategy(links));
@@ -105,10 +111,10 @@ describe('duplicate-link-text rule', () => {
 
     it('counts multiple duplicate groups separately', async () => {
         const links = [
-            createStep(0, { itemText: 'Details', role: 'link', href: '/a' }),
-            createStep(1, { itemText: 'Details', role: 'link', href: '/b' }),
-            createStep(2, { itemText: 'Learn more', role: 'link', href: '/x' }),
-            createStep(3, { itemText: 'Learn more', role: 'link', href: '/y' }),
+            createStep(0, { focusedElementText: 'Details', role: 'link', href: '/a' }),
+            createStep(1, { focusedElementText: 'Details', role: 'link', href: '/b' }),
+            createStep(2, { focusedElementText: 'Learn more', role: 'link', href: '/x' }),
+            createStep(3, { focusedElementText: 'Learn more', role: 'link', href: '/y' }),
         ];
 
         const result = await rule.run(linkStrategy(links));

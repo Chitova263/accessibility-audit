@@ -13,6 +13,8 @@ import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/v
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
+import type { AXNode } from '../../../../types/cdp';
+import { getRole, getName } from '../../../../types/ax-utils';
 
 /** Threshold for "excessive" navigation links */
 const EXCESSIVE_NAV_LINKS_THRESHOLD = 40;
@@ -37,7 +39,7 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
         summary: 'Page has an excessive number of links',
     };
 
-    async run(ctx: AuditContext): Promise<RuleResult<ScreenReaderContext, ExcessiveNavigationLinksStats>> {
+    run(ctx: AuditContext): RuleResult<ScreenReaderContext, ExcessiveNavigationLinksStats> {
         const { transcript, screenReader } = ctx;
         const violations: ScreenReaderViolation[] = [];
 
@@ -54,9 +56,9 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
             if (result.meta.name !== 'landmark') continue;
 
             for (const step of result.navigationSteps) {
-                const role = step.axNode?.role?.value;
+                const role = getRole(step.axNode);
                 if (role === 'navigation') {
-                    navigationLandmarkNames.push(step.axNode?.name?.value || '(unnamed navigation)');
+                    navigationLandmarkNames.push(getName(step.axNode) || '(unnamed navigation)');
                 }
             }
         }
@@ -103,10 +105,10 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
         firstLinkStep: {
             identifier: string;
             spokenPhrases: string[];
-            itemText: string;
+            focusedElementText: string;
             timestamp: number;
             htmlSnippet: string | null;
-            axNode: unknown;
+            axNode: AXNode | undefined;
         },
         impact: 'serious' | 'moderate',
         screenReader: ScreenReaderName
@@ -116,7 +118,7 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
             {
                 identifier: firstLinkStep.identifier,
                 spokenPhrases: firstLinkStep.spokenPhrases,
-                itemText: firstLinkStep.itemText,
+                focusedElementText: firstLinkStep.focusedElementText,
                 axNode: firstLinkStep.axNode,
             },
             'link',

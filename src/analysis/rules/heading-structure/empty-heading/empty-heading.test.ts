@@ -7,7 +7,7 @@ const heading = (level: number, name: string): StepOverrides => ({
     role: 'heading',
     level,
     name,
-    itemText: name,
+    focusedElementText: name,
     identifier: `heading-${level}-${name}`,
     htmlSnippet: `<h${level}>${name}</h${level}>`,
 });
@@ -20,7 +20,10 @@ describe('empty-heading rule', () => {
     });
 
     it('reports a heading with no text', async () => {
-        const steps = createSteps([heading(1, 'Home'), { role: 'heading', level: 2, name: '', itemText: '' }]);
+        const steps = createSteps([
+            heading(1, 'Home'),
+            { role: 'heading', level: 2, name: '', focusedElementText: '' },
+        ]);
 
         const result = await rule.run(mockContext([strategyResult('heading', steps)]));
 
@@ -34,7 +37,7 @@ describe('empty-heading rule', () => {
     });
 
     it('treats whitespace-only name as empty', async () => {
-        const steps = createSteps([{ role: 'heading', level: 1, name: '   ', itemText: '   ' }]);
+        const steps = createSteps([{ role: 'heading', level: 1, name: '   ', focusedElementText: '   ' }]);
 
         const result = await rule.run(mockContext([strategyResult('heading', steps)]));
 
@@ -51,9 +54,9 @@ describe('empty-heading rule', () => {
 
     it('reports multiple empty headings', async () => {
         const steps = createSteps([
-            { role: 'heading', level: 1, name: '', itemText: '' },
+            { role: 'heading', level: 1, name: '', focusedElementText: '' },
             heading(2, 'Good'),
-            { role: 'heading', level: 3, name: '', itemText: '' },
+            { role: 'heading', level: 3, name: '', focusedElementText: '' },
         ]);
 
         const result = await rule.run(mockContext([strategyResult('heading', steps)]));
@@ -63,7 +66,7 @@ describe('empty-heading rule', () => {
     });
 
     it('ignores headings from non-heading strategies', async () => {
-        const steps = createSteps([{ role: 'heading', level: 1, name: '', itemText: '' }]);
+        const steps = createSteps([{ role: 'heading', level: 1, name: '', focusedElementText: '' }]);
 
         const result = await rule.run(mockContext([strategyResult('tab', steps)]));
 

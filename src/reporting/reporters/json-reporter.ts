@@ -2,11 +2,8 @@ import type { Reporter, ReportData, ReportOutput, ReporterOptions } from '../rep
 import { generateFilename } from '../reporter';
 
 export interface JsonReporterOptions extends ReporterOptions {
-    /** Pretty print with indentation */
     pretty?: boolean;
-    /** Indentation spaces (when pretty = true) */
     indent?: number;
-    /** Only include summary, not full details */
     summaryOnly?: boolean;
 }
 

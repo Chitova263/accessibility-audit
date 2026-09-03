@@ -7,13 +7,13 @@ const rule = new ExcessiveRepetitionRule();
 
 const createStep = (
     index: number,
-    overrides: Partial<{ itemText: string; spokenPhrases: string[]; role: string }> = {}
+    overrides: Partial<{ focusedElementText: string; spokenPhrases: string[]; role: string }> = {}
 ): NavigationStep => ({
     index,
     identifier: `step-${index}`,
-    spokenPhrases: overrides.spokenPhrases ?? [overrides.itemText ?? `Item ${index}`],
-    itemText: overrides.itemText ?? `Item ${index}`,
-    itemTextLog: [],
+    spokenPhrases: overrides.spokenPhrases ?? [overrides.focusedElementText ?? `Item ${index}`],
+    focusedElementText: overrides.focusedElementText ?? `Item ${index}`,
+    focusedElementTextLog: [],
     timestamp: 1_700_000_000_000 + index,
     axNode: overrides.role ? ({ nodeId: `${index}`, role: { value: overrides.role } } as never) : undefined,
     htmlSnippet: null,
@@ -36,7 +36,7 @@ describe('excessive-repetition rule', () => {
     });
 
     it('tolerates short runs of repeated announcements by default', async () => {
-        const steps = [...Array(4)].map((_, i) => createStep(i, { itemText: 'Add to basket' }));
+        const steps = Array.from({ length: 4 }, (_, i) => createStep(i, { focusedElementText: 'Add to basket' }));
 
         const result = await rule.run(arrowResult(steps));
 
@@ -45,7 +45,7 @@ describe('excessive-repetition rule', () => {
     });
 
     it('reports runs that reach the threshold', async () => {
-        const steps = [...Array(6)].map((_, i) => createStep(i, { itemText: 'Add to basket' }));
+        const steps = Array.from({ length: 6 }, (_, i) => createStep(i, { focusedElementText: 'Add to basket' }));
 
         const result = await rule.run(arrowResult(steps));
 
@@ -54,7 +54,7 @@ describe('excessive-repetition rule', () => {
     });
 
     it('honours a custom threshold', async () => {
-        const steps = [...Array(3)].map((_, i) => createStep(i, { itemText: 'Add to basket' }));
+        const steps = Array.from({ length: 3 }, (_, i) => createStep(i, { focusedElementText: 'Add to basket' }));
         const customRule = new ExcessiveRepetitionRule({ threshold: 3 });
 
         const result = await customRule.run(arrowResult(steps));

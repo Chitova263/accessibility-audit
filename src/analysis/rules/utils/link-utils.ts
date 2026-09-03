@@ -11,6 +11,8 @@ import type {
 } from '../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 import { createScreenReaderContext } from '../../utils/tool-details';
 import type { ScreenReaderContext } from '../../core/violation';
+import type { AXNode } from '../../../types/cdp';
+import { getRole, getName } from '../../../types/ax-utils';
 
 /** Roles that carry their own purpose and do not count as context for a link */
 const INTERACTIVE_ROLES = ['button', 'link', 'menuitem', 'tab', 'checkbox', 'radio', 'switch', 'textbox', 'combobox'];
@@ -27,10 +29,10 @@ export interface LinkInfo {
     stepIndex: number;
     htmlSnippet: string | null;
     spokenPhrases: string[];
-    itemText: string;
+    focusedElementText: string;
     identifier: string;
     timestamp: number;
-    axNode: unknown;
+    axNode: AXNode | undefined;
     backendNodeId: number | null;
 }
 
@@ -55,15 +57,15 @@ export function collectLinks(transcript: StrategyResult[]): LinkInfo[] {
             const step = result.navigationSteps[stepIndex]!;
             const node = step.axNode;
 
-            if (!node || node.role?.value !== 'link') continue;
+            if (!node || getRole(node) !== 'link') continue;
 
             links.push({
-                name: node.name?.value ?? '',
+                name: getName(node) ?? '',
                 href: extractHref(step.htmlSnippet),
                 stepIndex,
                 htmlSnippet: step.htmlSnippet,
                 spokenPhrases: step.spokenPhrases,
-                itemText: step.itemText,
+                focusedElementText: step.focusedElementText,
                 identifier: step.identifier,
                 timestamp: step.timestamp,
                 axNode: node,
@@ -127,7 +129,7 @@ export function createScreenReaderContextFromLink(link: LinkInfo, screenReader: 
         {
             identifier: link.identifier,
             spokenPhrases: link.spokenPhrases,
-            itemText: link.itemText,
+            focusedElementText: link.focusedElementText,
             axNode: link.axNode,
         },
         'link',
@@ -147,11 +149,11 @@ function collectContextText(readingSteps: NavigationStep[], start: number, end: 
 
     for (let i = start; i < end; i++) {
         const step = readingSteps[i]!;
-        const role = step.axNode?.role?.value;
+        const role = getRole(step.axNode);
 
         if (role && INTERACTIVE_ROLES.includes(role)) continue;
 
-        const text = step.itemText.trim();
+        const text = step.focusedElementText.trim();
         if (text.length > MIN_CONTEXT_TEXT_LENGTH) {
             texts.push(text);
         }

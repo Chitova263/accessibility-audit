@@ -1,6 +1,6 @@
 import type { ScreenReader } from '../drivers/nvda';
-import type { IElementNavigator, ScreenReaderKeyBindings, ScreenReaderEndDetection } from './types';
-import { ElementNavigator } from './element-navigator/element-navigator';
+import type { ElementNavigator, ScreenReaderKeyBindings, ScreenReaderEndDetection } from './types';
+import { BrowseModeElementNavigator } from './element-navigator/element-navigator';
 import { TabNavigator } from './tab-navigator/tab-navigator';
 import { DownArrowNavigator } from './down-arrow-navigator/down-arrow-navigator';
 import { createEndDetector } from './end-detector';
@@ -20,8 +20,8 @@ export class Navigator {
         return new Navigator(config.reader, config.keyBindings, config.endDetection);
     }
 
-    headings(): IElementNavigator {
-        return new ElementNavigator(
+    headings(): ElementNavigator {
+        return new BrowseModeElementNavigator(
             this.sr,
             {
                 advanceKey: this.keyBindings.nextHeading,
@@ -31,31 +31,31 @@ export class Navigator {
         );
     }
 
-    headingsLevel1(): IElementNavigator {
+    headingsLevel1(): ElementNavigator {
         return this.headingsLevel(1);
     }
 
-    headingsLevel2(): IElementNavigator {
+    headingsLevel2(): ElementNavigator {
         return this.headingsLevel(2);
     }
 
-    headingsLevel3(): IElementNavigator {
+    headingsLevel3(): ElementNavigator {
         return this.headingsLevel(3);
     }
 
-    headingsLevel4(): IElementNavigator {
+    headingsLevel4(): ElementNavigator {
         return this.headingsLevel(4);
     }
 
-    headingsLevel5(): IElementNavigator {
+    headingsLevel5(): ElementNavigator {
         return this.headingsLevel(5);
     }
 
-    headingsLevel6(): IElementNavigator {
+    headingsLevel6(): ElementNavigator {
         return this.headingsLevel(6);
     }
 
-    headingsLevel(level: 1 | 2 | 3 | 4 | 5 | 6): IElementNavigator {
+    headingsLevel(level: 1 | 2 | 3 | 4 | 5 | 6): ElementNavigator {
         const typeMap = {
             1: 'heading1',
             2: 'heading2',
@@ -65,7 +65,7 @@ export class Navigator {
             6: 'heading6',
         } as const;
 
-        return new ElementNavigator(
+        return new BrowseModeElementNavigator(
             this.sr,
             {
                 advanceKey: this.keyBindings.nextHeadingLevel(level),
@@ -75,8 +75,8 @@ export class Navigator {
         );
     }
 
-    links(): IElementNavigator {
-        return new ElementNavigator(
+    links(): ElementNavigator {
+        return new BrowseModeElementNavigator(
             this.sr,
             {
                 advanceKey: this.keyBindings.nextLink,
@@ -86,8 +86,8 @@ export class Navigator {
         );
     }
 
-    landmarks(): IElementNavigator {
-        return new ElementNavigator(
+    landmarks(): ElementNavigator {
+        return new BrowseModeElementNavigator(
             this.sr,
             {
                 advanceKey: this.keyBindings.nextLandmark,
@@ -97,8 +97,8 @@ export class Navigator {
         );
     }
 
-    buttons(): IElementNavigator {
-        return new ElementNavigator(
+    buttons(): ElementNavigator {
+        return new BrowseModeElementNavigator(
             this.sr,
             {
                 advanceKey: this.keyBindings.nextButton,
@@ -108,11 +108,11 @@ export class Navigator {
         );
     }
 
-    focusableElements(): IElementNavigator {
+    focusableElements(): ElementNavigator {
         return new TabNavigator(this.sr, this.keyBindings.tab);
     }
 
-    linearElements(): IElementNavigator {
+    linearElements(): ElementNavigator {
         const endDetector = this.endDetection.linear ? createEndDetector(this.endDetection.linear) : undefined;
         return new DownArrowNavigator(this.sr, this.keyBindings.arrowDown, 30, endDetector);
     }

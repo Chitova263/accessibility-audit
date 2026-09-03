@@ -1,17 +1,13 @@
 import { z } from 'zod';
 
-/** Screen reader types supported by the tool */
 export const screenReaderTypeSchema = z.enum(['nvda', 'virtual', 'voiceover']);
 export type ScreenReaderType = z.infer<typeof screenReaderTypeSchema>;
 
-/** Report output formats */
 export const reportFormatSchema = z.enum(['html', 'json']);
 export type ReportFormat = z.infer<typeof reportFormatSchema>;
 
-/** Valid URL schema */
 export const urlSchema = z.string().url('Must be a valid URL');
 
-/** CLI options for `a11y audit` command */
 export const auditOptionsSchema = z.object({
     outputDir: z.string().optional(),
     maxSteps: z.coerce.number().int().positive().default(500),
@@ -20,14 +16,12 @@ export const auditOptionsSchema = z.object({
 });
 export type AuditOptions = z.infer<typeof auditOptionsSchema>;
 
-/** Full audit input including URL argument */
 export const auditInputSchema = z.object({
     url: urlSchema,
     options: auditOptionsSchema,
 });
 export type AuditInput = z.infer<typeof auditInputSchema>;
 
-/** CLI options for `a11y report` command */
 export const reportOptionsSchema = z.object({
     dir: z.string().optional(),
     llmResponse: z.string().optional(),

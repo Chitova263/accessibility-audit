@@ -1,5 +1,5 @@
 import type {
-    INavigationStrategy,
+    NavigationStrategy,
     NavigationContext,
     NavigationStep,
     NavigationStrategyConfig,
@@ -11,7 +11,7 @@ import { NavigationStrategyResult } from './navigation-strategy-result';
 import { getScreenReaderDisplayName } from '../../drivers/types';
 import { getKeyBindings } from '../../navigators/config';
 
-export class ButtonNavigationStrategy implements INavigationStrategy {
+export class ButtonNavigationStrategy implements NavigationStrategy {
     public readonly meta: StrategyMetadata;
 
     public constructor(public readonly config: NavigationStrategyConfig) {
@@ -25,18 +25,20 @@ export class ButtonNavigationStrategy implements INavigationStrategy {
     }
 
     public async execute(ctx: NavigationContext): Promise<StrategyResult> {
-        const cursor = new AxTreeCursor(ctx.ax.tree.nodes);
+        const cursor = new AxTreeCursor(ctx.accessibility.tree.nodes);
         const navigationSteps: NavigationStep[] = [];
 
-        for await (const { phrase, itemText } of ctx.navigator.buttons()) {
-            let matchResult = cursor.matchNext(itemText, 'button');
+        for await (const { phrase, focusedElementText } of ctx.navigator.buttons()) {
+            let matchResult = cursor.matchNext(focusedElementText, 'button');
             if (!matchResult) {
                 matchResult = cursor.matchNext(phrase, 'button');
             }
 
             const axNode = matchResult?.node;
             const htmlSnippet =
-                axNode?.backendDOMNodeId != null ? await ctx.ax.getNodeOuterHtml(axNode.backendDOMNodeId) : null;
+                axNode?.backendDOMNodeId != null
+                    ? await ctx.accessibility.getNodeOuterHtml(axNode.backendDOMNodeId)
+                    : null;
 
             navigationSteps.push({
                 index: navigationSteps.length,
@@ -45,8 +47,8 @@ export class ButtonNavigationStrategy implements INavigationStrategy {
                 identifier: crypto.randomUUID(),
                 spokenPhrases: [phrase],
                 timestamp: Date.now(),
-                itemText,
-                itemTextLog: [itemText],
+                focusedElementText,
+                focusedElementTextLog: [focusedElementText],
             });
 
             if (navigationSteps.length >= this.config.maxSteps) {

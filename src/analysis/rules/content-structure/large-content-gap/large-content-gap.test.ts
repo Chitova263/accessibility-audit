@@ -9,27 +9,27 @@ const rule = new LargeContentGapRule();
 const plain = (count: number): StepOverrides[] => Array.from({ length: count }, () => ({}));
 
 const headingStep = (name: string, level = 2): StepOverrides => ({
-    itemText: name,
+    focusedElementText: name,
     spokenPhrases: [`${name} heading, level ${level}`],
 });
 
 const mainLandmarkStep = (text = 'Main content'): StepOverrides => ({
-    itemText: `main landmark, ${text}`,
+    focusedElementText: `main landmark, ${text}`,
     spokenPhrases: [`main landmark, ${text}`],
 });
 
 const contentInfoLandmarkStep = (text = 'Footer'): StepOverrides => ({
-    itemText: `content info landmark, ${text}`,
+    focusedElementText: `content info landmark, ${text}`,
     spokenPhrases: [`content info landmark, ${text}`],
 });
 
 const bannerLandmarkStep = (text = 'Header'): StepOverrides => ({
-    itemText: `banner landmark, ${text}`,
+    focusedElementText: `banner landmark, ${text}`,
     spokenPhrases: [`banner landmark, ${text}`],
 });
 
 const navigationLandmarkStep = (text = 'Nav'): StepOverrides => ({
-    itemText: `navigation landmark, ${text}`,
+    focusedElementText: `navigation landmark, ${text}`,
     spokenPhrases: [`navigation landmark, ${text}`],
 });
 

@@ -44,6 +44,6 @@ export class AxTreeUtil {
                 }
                 return el?.outerHTML ?? null;
             })()
-        `) as Promise<string | null>;
+        `);
     }
 }
