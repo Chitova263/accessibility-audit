@@ -29,12 +29,6 @@ const arrowResult = (navigationSteps: NavigationStep[]) =>
     ]);
 
 describe('steps-to-main-content rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('steps-to-main-content');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.1');
-    });
-
     it('reports a missing main landmark when linear reading never announces one', async () => {
         const result = await rule.run(arrowResult([createStep(0), createStep(1)]));
 

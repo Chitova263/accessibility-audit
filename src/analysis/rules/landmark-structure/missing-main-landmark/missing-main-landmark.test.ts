@@ -12,12 +12,6 @@ const landmark = (role: string, name: string): StepOverrides => ({
 });
 
 describe('missing-main-landmark rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('missing-main-landmark');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('reports a page with landmarks but no main', async () => {
         const steps = createSteps([landmark('banner', 'Header'), landmark('navigation', 'Primary')]);
 

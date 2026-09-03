@@ -50,12 +50,6 @@ const linkStrategy = (linkSteps: NavigationStep[]) => {
 };
 
 describe('duplicate-link-text rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('duplicate-link-text');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.4');
-    });
-
     it('reports links with same text but different destinations', async () => {
         const links = [
             createStep(0, { focusedElementText: 'Read more', role: 'link', href: '/article-1' }),

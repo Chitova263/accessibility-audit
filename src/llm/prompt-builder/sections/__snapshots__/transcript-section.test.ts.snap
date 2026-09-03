@@ -156,43 +156,6 @@ exports[`buildTranscriptData > should filter strategies based on includeStrategi
 }
 `;
 
-exports[`buildTranscriptData > should handle strategy results with complex axNodes 1`] = `
-{
-  "sections": [
-    {
-      "completionReason": {
-        "detail": "tab focus cycled through all elements",
-        "kind": "cycle-complete",
-      },
-      "description": "Tab navigation",
-      "mode": "focus",
-      "steps": [
-        {
-          "axNode": {
-            "name": "Accept terms",
-            "properties": {
-              "checked": false,
-              "focusable": true,
-              "required": true,
-            },
-            "role": "checkbox",
-          },
-          "focusedElementText": "Accept terms",
-          "htmlSnippet": "<input type="checkbox" required>",
-          "identifier": "checkbox-0",
-          "index": 0,
-          "spoken": "Accept terms checkbox not checked",
-        },
-      ],
-      "strategyName": "tab",
-      "totalSteps": 1,
-    },
-  ],
-  "totalSteps": 1,
-  "totalStrategies": 1,
-}
-`;
-
 exports[`buildTranscriptData > should transform strategy results into transcript data 1`] = `
 {
   "sections": [
@@ -255,52 +218,6 @@ exports[`buildTranscriptData > should truncate HTML snippets based on maxHtmlSni
   "totalSteps": 1,
   "totalStrategies": 1,
 }
-`;
-
-exports[`buildTranscriptSection > should build complete XML section from strategy results 1`] = `
-"<transcript strategies="2" total_steps="3">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation through focusable elements</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="2">
-            <step index="0" id="skip-link">
-                <spoken>Skip to main content link</spoken>
-                <item_text>Skip to main content</item_text>
-                <ax_node>
-                    <role>link</role>
-                    <name>Skip to main content</name>
-                </ax_node>
-                <html_snippet><![CDATA[<a href="#main">Skip to main content</a>]]></html_snippet>
-            </step>
-            <step index="1" id="search-input">
-                <spoken>Search edit blank</spoken>
-                <item_text>Search</item_text>
-                <ax_node>
-                    <role>textbox</role>
-                    <name>Search</name>
-                    <properties focusable="true"/>
-                </ax_node>
-                <html_snippet><![CDATA[<input type="search" placeholder="Search...">]]></html_snippet>
-            </step>
-        </steps>
-    </strategy>
-    <strategy name="heading" mode="browse">
-        <description>Navigate through headings</description>
-        <completion_reason kind="exhausted">no more headings found on page</completion_reason>
-        <steps total="1">
-            <step index="0" id="main-heading">
-                <spoken>Welcome to Our Site heading level 1</spoken>
-                <item_text>Welcome to Our Site</item_text>
-                <ax_node>
-                    <role>heading</role>
-                    <name>Welcome to Our Site</name>
-                    <properties level="1"/>
-                </ax_node>
-                <html_snippet><![CDATA[<h1>Welcome to Our Site</h1>]]></html_snippet>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
 `;
 
 exports[`buildTranscriptSection > should build section with all config options 1`] = `
@@ -450,77 +367,6 @@ exports[`edge cases > should handle axNode with empty properties object 1`] = `
 </transcript>"
 `;
 
-exports[`edge cases > should handle steps with empty spoken phrases 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="1">
-            <step index="0" id="empty-spoken">
-                <spoken/>
-                <item_text/>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`edge cases > should handle unicode and emoji in content 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="1">
-            <step index="0" id="unicode-test">
-                <spoken>🔍 Search • Búsqueda • 搜索</spoken>
-                <item_text>🔍 Search</item_text>
-                <ax_node>
-                    <role>button</role>
-                    <name>🔍 Search • Búsqueda</name>
-                </ax_node>
-                <html_snippet><![CDATA[<button>🔍 Search</button>]]></html_snippet>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`edge cases > should handle very long identifiers 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="1">
-            <step index="0" id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">
-                <spoken>Test</spoken>
-                <item_text>Test</item_text>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > XML escaping > should escape special characters in axNode fields 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="tab" mode="focus">
-        <description>Tab &lt;navigation&gt; &amp; more</description>
-        <completion_reason kind="limit-reached">stopped at safety limit</completion_reason>
-        <steps total="1">
-            <step index="0" id="ax-escape-test">
-                <spoken>Test</spoken>
-                <item_text>Test</item_text>
-                <ax_node>
-                    <role>link</role>
-                    <name>Terms &amp; Conditions</name>
-                    <description>Read our &lt;legal&gt; terms</description>
-                    <value>"Important" info</value>
-                </ax_node>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
 exports[`renderTranscriptXml > XML escaping > should escape special characters in spoken text 1`] = `
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" mode="focus">
@@ -535,77 +381,6 @@ exports[`renderTranscriptXml > XML escaping > should escape special characters i
     </strategy>
 </transcript>"
 `;
-
-exports[`renderTranscriptXml > XML escaping > should escape special characters in strategy name and identifier 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="custom-strategy&lt;test&gt;" mode="browse">
-        <description>Description with "quotes"</description>
-        <completion_reason kind="exhausted">reason with &lt;angle&gt; brackets</completion_reason>
-        <steps total="1">
-            <step index="0" id="id-with-&quot;quotes&quot;-&amp;-&lt;brackets&gt;">
-                <spoken>Test</spoken>
-                <item_text>Test</item_text>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > config options > should exclude HTML snippets when includeHtmlSnippets is false 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="1">
-            <step index="0" id="step-0">
-                <spoken>Button, button</spoken>
-                <item_text>Button</item_text>
-                <ax_node>
-                    <role>button</role>
-                    <name>Submit</name>
-                </ax_node>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > config options > should exclude axNodes when includeAxNodes is false 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="1">
-            <step index="0" id="step-0">
-                <spoken>Button, button</spoken>
-                <item_text>Button</item_text>
-                <html_snippet><![CDATA[<button>Submit</button>]]></html_snippet>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > config options > should exclude both axNodes and HTML when both are disabled 1`] = `
-"<transcript strategies="1" total_steps="2">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="2">
-            <step index="0" id="step-0">
-                <spoken>Button, button</spoken>
-                <item_text>Button</item_text>
-            </step>
-            <step index="1" id="step-1">
-                <spoken>Link, link</spoken>
-                <item_text>Link</item_text>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > empty transcript > should render empty transcript correctly 1`] = `"<transcript strategies="0" total_steps="0"/>"`;
 
 exports[`renderTranscriptXml > multiple strategies > should render multiple strategies with mixed content 1`] = `
 "<transcript strategies="3" total_steps="6">
@@ -688,25 +463,6 @@ exports[`renderTranscriptXml > multiple strategies > should render multiple stra
 </transcript>"
 `;
 
-exports[`renderTranscriptXml > single strategy with minimal steps > should render a single strategy with basic steps 1`] = `
-"<transcript strategies="1" total_steps="2">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="2">
-            <step index="0" id="step-0">
-                <spoken>Skip to main content, link</spoken>
-                <item_text>Skip to main content</item_text>
-            </step>
-            <step index="1" id="step-1">
-                <spoken>Search, edit</spoken>
-                <item_text>Search</item_text>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
 exports[`renderTranscriptXml > steps with HTML snippets > should render step with complex HTML containing special characters 1`] = `
 "<transcript strategies="1" total_steps="1">
     <strategy name="tab" mode="focus">
@@ -717,22 +473,6 @@ exports[`renderTranscriptXml > steps with HTML snippets > should render step wit
                 <spoken>Product card</spoken>
                 <item_text>Product card</item_text>
                 <html_snippet><![CDATA[<div class="card" data-price="$19.99" data-attrs='{"sale": true}'><img src="product.jpg" alt="Widget & Gadget"><span>Price: $19.99</span></div>]]></html_snippet>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > steps with HTML snippets > should render step with simple HTML snippet in CDATA 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="button" mode="browse">
-        <description>Button navigation</description>
-        <completion_reason kind="exhausted">no more buttons found on page</completion_reason>
-        <steps total="1">
-            <step index="0" id="btn-0">
-                <spoken>Submit, button</spoken>
-                <item_text>Submit</item_text>
-                <html_snippet><![CDATA[<button type="submit" class="btn-primary">Submit</button>]]></html_snippet>
             </step>
         </steps>
     </strategy>
@@ -754,66 +494,6 @@ exports[`renderTranscriptXml > steps with axNode > should render step with all a
                     <description>Expandable folder</description>
                     <value>5 items</value>
                     <properties focusable="true" focused="true" disabled="false" expanded="true" selected="true" checked="mixed" level="2" required="false" invalid="false"/>
-                </ax_node>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > steps with axNode > should render step with axNode description and value 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="1">
-            <step index="0" id="input-0">
-                <spoken>Email address, edit, required</spoken>
-                <item_text>Email address</item_text>
-                <ax_node>
-                    <role>textbox</role>
-                    <name>Email address</name>
-                    <description>Enter your email for notifications</description>
-                    <value>user@example.com</value>
-                </ax_node>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > steps with axNode > should render step with axNode properties 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="tab" mode="focus">
-        <description>Tab navigation</description>
-        <completion_reason kind="cycle-complete">tab focus cycled through all elements</completion_reason>
-        <steps total="1">
-            <step index="0" id="checkbox-0">
-                <spoken>Accept terms, checkbox, not checked, required</spoken>
-                <item_text>Accept terms</item_text>
-                <ax_node>
-                    <role>checkbox</role>
-                    <name>Accept terms</name>
-                    <properties focusable="true" checked="false" required="true"/>
-                </ax_node>
-            </step>
-        </steps>
-    </strategy>
-</transcript>"
-`;
-
-exports[`renderTranscriptXml > steps with axNode > should render step with basic axNode (role and name) 1`] = `
-"<transcript strategies="1" total_steps="1">
-    <strategy name="heading" mode="browse">
-        <description>Heading navigation</description>
-        <completion_reason kind="exhausted">no more headings found on page</completion_reason>
-        <steps total="1">
-            <step index="0" id="heading-0">
-                <spoken>Main Content, heading, level 1</spoken>
-                <item_text>Main Content</item_text>
-                <ax_node>
-                    <role>heading</role>
-                    <name>Main Content</name>
                 </ax_node>
             </step>
         </steps>

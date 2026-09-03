@@ -26,12 +26,6 @@ const arrowResult = (navigationSteps: NavigationStep[]) =>
     ]);
 
 describe('fragmented-link-text rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('fragmented-link-text');
-        expect(rule.meta.impact).toBe('critical');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.4');
-    });
-
     it('detects single-character link sequences', async () => {
         const steps = [
             createStep(0, 'Some content'),

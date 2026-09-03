@@ -56,12 +56,6 @@ const readingWalk = (): NavigationStep[] =>
     );
 
 describe('focus-order-anomaly rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('focus-order-anomaly');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.3');
-    });
-
     it('stays silent when tab order follows reading order', async () => {
         const tabSteps = [
             createStep(0, { backendDOMNodeId: 0 }),

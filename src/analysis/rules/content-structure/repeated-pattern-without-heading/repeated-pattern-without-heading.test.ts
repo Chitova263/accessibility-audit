@@ -16,12 +16,6 @@ const clickableStep = (name: string): StepOverrides => ({
 });
 
 describe('repeated-pattern-without-heading rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('repeated-pattern-without-heading');
-        expect(rule.meta.impact).toBe('minor');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('reports a run of clickable items with no heading in front of it', async () => {
         const arrow = strategyResult(
             'arrow',

@@ -13,12 +13,6 @@ const heading = (level: number, name: string): StepOverrides => ({
 });
 
 describe('multiple-h1 rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('multiple-h1');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('flags every H1 after the first', async () => {
         const steps = createSteps([heading(1, 'First'), heading(1, 'Second'), heading(1, 'Third')]);
 

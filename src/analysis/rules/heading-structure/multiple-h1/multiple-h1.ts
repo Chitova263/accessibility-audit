@@ -1,7 +1,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
 
 export interface MultipleH1Stats {
@@ -35,7 +35,7 @@ export class MultipleH1Rule implements Rule<ScreenReaderContext, MultipleH1Stats
 
                 if (typeof heading.backendNodeId === 'number') {
                     const filename = `${this.id}-${heading.identifier}`;
-                    context.screenshot = await captureScreenshotToFile(
+                    context.screenshot = await captureViewportWithHighlight(
                         page,
                         cdp,
                         heading.backendNodeId,

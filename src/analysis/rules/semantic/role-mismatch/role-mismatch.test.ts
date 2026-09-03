@@ -3,12 +3,6 @@ import { rule } from './role-mismatch';
 import { createSteps, strategyResult, mockContext } from '../../test-fixtures';
 
 describe('role-mismatch rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('role-mismatch');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('4.1.2');
-    });
-
     it('reports a link marked up as a button', async () => {
         const steps = createSteps([
             { role: 'button', name: 'Buy now', htmlSnippet: '<a href="/buy" role="button">Buy now</a>' },

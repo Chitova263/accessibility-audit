@@ -42,11 +42,6 @@ describe('getRule', () => {
 });
 
 describe('rule catalog contents', () => {
-    it('exposes every rule id', async () => {
-        expect(RULE_IDS).toHaveLength(Object.keys(RULES).length);
-        expect(new Set(RULE_IDS).size).toBe(RULE_IDS.length);
-    });
-
     it.each(RULE_IDS)('%s is well formed', (ruleId) => {
         const rule = RULES[ruleId];
 

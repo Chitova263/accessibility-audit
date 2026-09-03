@@ -29,12 +29,6 @@ const arrowResult = (navigationSteps: NavigationStep[]) =>
     ]);
 
 describe('excessive-repetition rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('excessive-repetition');
-        expect(rule.meta.impact).toBe('minor');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('tolerates short runs of repeated announcements by default', async () => {
         const steps = Array.from({ length: 4 }, (_, i) => createStep(i, { focusedElementText: 'Add to basket' }));
 

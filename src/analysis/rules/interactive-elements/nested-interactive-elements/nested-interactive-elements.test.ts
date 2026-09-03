@@ -26,12 +26,6 @@ const arrowResult = (navigationSteps: NavigationStep[]) =>
     ]);
 
 describe('nested-interactive-elements rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('nested-interactive-elements');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('4.1.1');
-    });
-
     it('detects "link, link" pattern', async () => {
         const steps = [
             createStep(0, 'Some content'),

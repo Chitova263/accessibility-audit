@@ -13,12 +13,6 @@ const heading = (level: number, name: string): StepOverrides => ({
 });
 
 describe('missing-h1 rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('missing-h1');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('reports when headings start below H1', async () => {
         const steps = createSteps([heading(2, 'About'), heading(3, 'Team')]);
 

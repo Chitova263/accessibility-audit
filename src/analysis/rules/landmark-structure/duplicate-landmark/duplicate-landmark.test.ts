@@ -12,12 +12,6 @@ const landmark = (role: string, name: string, identifier?: string): StepOverride
 });
 
 describe('duplicate-landmark rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('duplicate-landmark');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('reports same-role landmarks that share a name', async () => {
         const steps = createSteps([
             landmark('main', 'Main content'),

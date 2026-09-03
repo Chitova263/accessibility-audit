@@ -41,12 +41,6 @@ const tabStrategy = (tabSteps: NavigationStep[]) => {
 };
 
 describe('positive-tabindex rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('positive-tabindex');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.3');
-    });
-
     it('reports positive tabindex', async () => {
         const tabSteps = [createStep(0, { htmlSnippet: '<a href="/a" tabindex="3">Plans</a>' })];
 

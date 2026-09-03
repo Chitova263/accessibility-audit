@@ -2,7 +2,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 import {
     collectElementsByStrategy,
@@ -43,7 +43,7 @@ export class ButtonNotInTabOrderRule implements Rule<ScreenReaderContext, Button
 
                 if (typeof button.backendNodeId === 'number') {
                     const filename = `${this.id}-${button.step.identifier}`;
-                    context.screenshot = await captureScreenshotToFile(
+                    context.screenshot = await captureViewportWithHighlight(
                         page,
                         cdp,
                         button.backendNodeId,

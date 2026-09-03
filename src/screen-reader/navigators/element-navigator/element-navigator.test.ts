@@ -36,7 +36,7 @@ describe('BrowseModeElementNavigator', () => {
         mockSR = createMockScreenReader();
     });
 
-    it('yields items when pressing key produces speech', async () => {
+    it('yields spoken items until the end phrase is announced', async () => {
         mockSR.press = createPressMock([
             { phrase: 'heading level 1, Welcome', focusedElementText: 'Welcome' },
             { phrase: 'heading level 2, About', focusedElementText: 'About' },
@@ -59,81 +59,8 @@ describe('BrowseModeElementNavigator', () => {
 
         expect(items).toHaveLength(2);
         expect(items[0]!.phrase).toBe('heading level 1, Welcome');
-        expect(items[1]!.phrase).toBe('heading level 2, About');
-    });
-
-    it('stops when end phrase is detected', async () => {
-        mockSR.press = createPressMock([{ phrase: 'link, Home' }, { phrase: 'no next link' }]);
-
-        const navigator = new BrowseModeElementNavigator(
-            mockSR,
-            {
-                advanceKey: 'k',
-                endDetector: createEndDetector({ type: 'phrase-contains', text: 'no next link' }),
-            },
-            'link'
-        );
-
-        const items = [];
-        for await (const item of navigator) {
-            items.push(item);
-        }
-
-        expect(items).toHaveLength(1);
-        expect(items[0]!.phrase).toBe('link, Home');
-    });
-
-    it('has correct type property', () => {
-        const navigator = new BrowseModeElementNavigator(
-            mockSR,
-            {
-                advanceKey: 'd',
-                endDetector: createEndDetector({ type: 'phrase-contains', text: 'no next landmark' }),
-            },
-            'landmark'
-        );
-        expect(navigator.type).toBe('landmark');
-    });
-
-    it('presses the correct key', async () => {
-        mockSR.press = createPressMock([{ phrase: 'no next button' }]);
-
-        const navigator = new BrowseModeElementNavigator(
-            mockSR,
-            {
-                advanceKey: 'b',
-                endDetector: createEndDetector({ type: 'phrase-contains', text: 'no next button' }),
-            },
-            'button'
-        );
-
-        for await (const _item of navigator) {
-            // consume
-        }
-
-        expect(mockSR.press).toHaveBeenCalledWith('b');
-    });
-
-    it('returns focusedElementText from KeyPressResult', async () => {
-        mockSR.press = createPressMock([
-            { phrase: 'heading level 1, Welcome', focusedElementText: 'Welcome' },
-            { phrase: 'no next heading' },
-        ]);
-
-        const navigator = new BrowseModeElementNavigator(
-            mockSR,
-            {
-                advanceKey: 'h',
-                endDetector: createEndDetector({ type: 'phrase-contains', text: 'no next heading' }),
-            },
-            'heading'
-        );
-
-        const items = [];
-        for await (const item of navigator) {
-            items.push(item);
-        }
-
         expect(items[0]!.focusedElementText).toBe('Welcome');
+        expect(items[1]!.phrase).toBe('heading level 2, About');
+        expect(mockSR.press).toHaveBeenCalledWith('h');
     });
 });

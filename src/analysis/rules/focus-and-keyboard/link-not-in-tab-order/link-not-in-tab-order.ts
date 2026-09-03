@@ -2,7 +2,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 import {
     collectElementsByStrategy,
@@ -43,7 +43,7 @@ export class LinkNotInTabOrderRule implements Rule<ScreenReaderContext, LinkNotI
 
                 if (typeof link.backendNodeId === 'number') {
                     const filename = `${this.id}-${link.step.identifier}`;
-                    context.screenshot = await captureScreenshotToFile(
+                    context.screenshot = await captureViewportWithHighlight(
                         page,
                         cdp,
                         link.backendNodeId,

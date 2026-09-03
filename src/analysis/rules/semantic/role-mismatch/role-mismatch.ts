@@ -11,7 +11,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
 
@@ -150,7 +150,7 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
                 );
                 if (typeof element.backendNodeId === 'number') {
                     const filename = `${this.id}-${element.identifier}`;
-                    context.screenshot = await captureScreenshotToFile(
+                    context.screenshot = await captureViewportWithHighlight(
                         page,
                         cdp,
                         element.backendNodeId,

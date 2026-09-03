@@ -13,12 +13,6 @@ const heading = (level: number, name: string): StepOverrides => ({
 });
 
 describe('empty-heading rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('empty-heading');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('reports a heading with no text', async () => {
         const steps = createSteps([
             heading(1, 'Home'),

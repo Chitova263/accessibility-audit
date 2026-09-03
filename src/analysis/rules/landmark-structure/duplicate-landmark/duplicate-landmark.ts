@@ -2,7 +2,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { collectLandmarks, type LandmarkInfo } from '../../utils/landmark-utils';
 import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
@@ -48,7 +48,7 @@ export class DuplicateLandmarkRule implements Rule<ScreenReaderContext, Duplicat
                 const context = this.createContext(landmark, ctx.screenReader);
                 if (typeof landmark.backendNodeId === 'number') {
                     const filename = `${this.id}-${landmark.identifier}`;
-                    context.screenshot = await captureScreenshotToFile(
+                    context.screenshot = await captureViewportWithHighlight(
                         page,
                         cdp,
                         landmark.backendNodeId,

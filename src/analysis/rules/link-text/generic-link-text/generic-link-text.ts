@@ -10,7 +10,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { getRule } from '../../rule-catalog';
 import {
     collectLinks,
@@ -78,7 +78,7 @@ export class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLin
             const context = createScreenReaderContextFromLink(link, ctx.screenReader);
             if (typeof link.backendNodeId === 'number') {
                 const filename = `${this.id}-${link.identifier}`;
-                context.screenshot = await captureScreenshotToFile(
+                context.screenshot = await captureViewportWithHighlight(
                     page,
                     cdp,
                     link.backendNodeId,

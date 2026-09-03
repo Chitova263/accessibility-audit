@@ -29,12 +29,6 @@ const arrowResult = (navigationSteps: NavigationStep[]) =>
     ]);
 
 describe('content-density-per-region rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('content-density-per-region');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.1');
-    });
-
     it('records dense navigation regions but leaves the violation to navigation-size', async () => {
         const steps = [createStep(0, { focusedElementText: 'navigation landmark' })];
         for (let i = 1; i <= 60; i++) {

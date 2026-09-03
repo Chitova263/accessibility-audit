@@ -25,7 +25,6 @@ export type { ViolationTotals } from './analysis/utils/summarize-violations';
 export { createScreenReaderContext } from './analysis/utils/tool-details';
 export type { ContextSource } from './analysis/utils/tool-details';
 export {
-    captureScreenshotToFile,
     captureViewportWithHighlight,
     ensureScreenshotsDir,
     isScreenshotSuccess,

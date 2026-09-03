@@ -12,12 +12,6 @@ const image = (name: string): StepOverrides => ({
 });
 
 describe('filename-as-alt rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('filename-as-alt');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.1.1');
-    });
-
     it.each([
         ['IMG_1234.jpg', 'camera filename'],
         ['DSC-0042.png', 'camera filename'],

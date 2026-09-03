@@ -2,7 +2,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 import { getRole, getName } from '../../../../types/ax-utils';
 
@@ -74,7 +74,7 @@ export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyA
                 const backendNodeId = node.backendDOMNodeId;
                 if (typeof backendNodeId === 'number') {
                     const filename = `${this.id}-${step.identifier}`;
-                    context.screenshot = await captureScreenshotToFile(
+                    context.screenshot = await captureViewportWithHighlight(
                         page,
                         cdp,
                         backendNodeId,

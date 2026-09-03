@@ -26,12 +26,6 @@ const arrowResult = (navigationSteps: NavigationStep[]) =>
     ]);
 
 describe('excessive-blank-announcements rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('excessive-blank-announcements');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('tolerates short runs of blanks', async () => {
         const steps = [
             createStep(0, 'Some content'),

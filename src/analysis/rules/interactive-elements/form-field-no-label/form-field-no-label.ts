@@ -11,7 +11,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { capitalize } from '../../../utils/string-utils';
 import { getScreenReaderDisplayName, type ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type { AXNode } from '../../../../types/cdp';
@@ -128,7 +128,7 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
                 );
                 if (typeof field.backendNodeId === 'number') {
                     const filename = `${this.id}-${field.identifier}`;
-                    context.screenshot = await captureScreenshotToFile(
+                    context.screenshot = await captureViewportWithHighlight(
                         page,
                         cdp,
                         field.backendNodeId,

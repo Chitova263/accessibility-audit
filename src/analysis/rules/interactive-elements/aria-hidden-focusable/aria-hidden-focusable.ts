@@ -12,7 +12,7 @@ import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { captureScreenshotToFile } from '../../../utils/screenshot-capture';
+import { captureViewportWithHighlight } from '../../../utils/screenshot-capture';
 import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
 
 export interface AriaHiddenFocusableStats {
@@ -59,7 +59,7 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
                     const backendNodeId = step.axNode?.backendDOMNodeId;
                     if (typeof backendNodeId === 'number') {
                         const filename = `${this.id}-${step.identifier}`;
-                        context.screenshot = await captureScreenshotToFile(
+                        context.screenshot = await captureViewportWithHighlight(
                             page,
                             cdp,
                             backendNodeId,

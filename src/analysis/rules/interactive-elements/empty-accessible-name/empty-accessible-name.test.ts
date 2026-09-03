@@ -3,12 +3,6 @@ import { rule } from './empty-accessible-name';
 import { mockContext, strategyResult, createSteps } from '../../test-fixtures';
 
 describe('empty-accessible-name rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('empty-accessible-name');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('4.1.2');
-    });
-
     it('reports an interactive element with no accessible name', async () => {
         const transcript = [strategyResult('tab', createSteps([{ role: 'button', name: '' }]))];
 

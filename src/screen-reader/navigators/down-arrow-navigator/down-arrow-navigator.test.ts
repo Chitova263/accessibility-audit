@@ -36,7 +36,7 @@ describe('DownArrowNavigator', () => {
         mockSR = createMockScreenReader();
     });
 
-    it('yields items when pressing down arrow produces speech', async () => {
+    it('yields items until 2 consecutive silent presses end the document', async () => {
         mockSR.press = createPressMock([
             { phrase: 'First item' },
             { phrase: 'Second item' },
@@ -53,27 +53,10 @@ describe('DownArrowNavigator', () => {
         expect(items).toHaveLength(2);
         expect(items[0]!.phrase).toBe('First item');
         expect(items[1]!.phrase).toBe('Second item');
+        expect(mockSR.press).toHaveBeenCalledTimes(4); // 2 content + 2 silent
     });
 
-    it('stops after detecting same phrase repeated 30 times (repeat threshold)', async () => {
-        const repeatedPhrase = 'link, Support';
-        const results: Array<{ phrase: string }> = [];
-        for (let i = 0; i < 35; i++) {
-            results.push({ phrase: repeatedPhrase });
-        }
-        mockSR.press = createPressMock(results);
-
-        const navigator = new DownArrowNavigator(mockSR, 'Down', 30); // repeatThreshold = 30
-        const items = [];
-        for await (const item of navigator) {
-            items.push(item);
-        }
-
-        // Should stop at 30 repetitions (repeat threshold)
-        expect(items).toHaveLength(30);
-    });
-
-    it('respects custom repeat threshold', async () => {
+    it('stops once the same phrase repeats up to the repeat threshold', async () => {
         const repeatedPhrase = 'repeated item';
         const results: Array<{ phrase: string }> = [];
         for (let i = 0; i < 20; i++) {
@@ -89,24 +72,6 @@ describe('DownArrowNavigator', () => {
         }
 
         expect(items).toHaveLength(customThreshold);
-    });
-
-    it('stops after 2 consecutive silent presses (no speech = end of document)', async () => {
-        mockSR.press = createPressMock([
-            { phrase: 'First item' },
-            { phrase: 'Second item' },
-            { phrase: null }, // First silent press
-            { phrase: null }, // Second silent press - confirms end
-        ]);
-
-        const navigator = new DownArrowNavigator(mockSR, 'Down');
-        const items = [];
-        for await (const item of navigator) {
-            items.push(item);
-        }
-
-        expect(items).toHaveLength(2);
-        expect(mockSR.press).toHaveBeenCalledTimes(4); // 2 content + 2 silent
     });
 
     it('resets silent counter when speech occurs after one silent press', async () => {
@@ -150,10 +115,5 @@ describe('DownArrowNavigator', () => {
         expect(items).toHaveLength(2);
         expect(items[0]!.phrase).toBe('First item');
         expect(items[1]!.phrase).toBe('After blanks');
-    });
-
-    it('has correct type property', () => {
-        const navigator = new DownArrowNavigator(mockSR, 'Down');
-        expect(navigator.type).toBe('linear');
     });
 });

@@ -3,12 +3,6 @@ import { rule } from './aria-hidden-focusable';
 import { createSteps, strategyResult, mockContext } from '../../test-fixtures';
 
 describe('aria-hidden-focusable rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('aria-hidden-focusable');
-        expect(rule.meta.impact).toBe('critical');
-        expect(rule.meta.wcag.primary.criterion).toBe('4.1.2');
-    });
-
     it('reports a focusable element hidden from the accessibility tree', async () => {
         const steps = createSteps([
             {

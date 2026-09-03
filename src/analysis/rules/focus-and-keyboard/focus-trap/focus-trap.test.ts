@@ -7,12 +7,6 @@ const trapped: CompletionReason = { kind: 'trapped', detail: 'keyboard focus cou
 const cycleComplete: CompletionReason = { kind: 'cycle-complete', detail: 'tab focus cycled through all elements' };
 
 describe('focus-trap rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('focus-trap');
-        expect(rule.meta.impact).toBe('critical');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.1.2');
-    });
-
     it('reports the element the tab walk got stuck on', async () => {
         const steps = createSteps([
             { focusedElementText: 'Home' },

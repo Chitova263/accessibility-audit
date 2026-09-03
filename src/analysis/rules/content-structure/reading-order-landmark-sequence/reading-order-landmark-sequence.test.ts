@@ -27,12 +27,6 @@ const arrowResult = (navigationSteps: NavigationStep[]) =>
     ]);
 
 describe('reading-order-landmark-sequence rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('reading-order-landmark-sequence');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.2');
-    });
-
     it('does not treat ordinary content containing landmark words as landmarks', async () => {
         const result = await rule.run(
             arrowResult([

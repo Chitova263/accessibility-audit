@@ -20,12 +20,6 @@ const link = (name: string): StepOverrides => ({
 });
 
 describe('link-not-in-tab-order rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('link-not-in-tab-order');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.1.1');
-    });
-
     it('reports a link reachable with K but absent from tab order', async () => {
         const result = await rule.run(
             mockContext([

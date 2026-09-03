@@ -92,20 +92,6 @@ export async function captureViewportWithHighlight(
     }
 }
 
-/**
- * @deprecated Use captureViewportWithHighlight instead
- */
-export async function captureScreenshotToFile(
-    page: Page,
-    cdp: CDPSession,
-    backendNodeId: number,
-    screenshotsDir: string,
-    filename: string,
-    options: ScreenshotOptions = {}
-): Promise<Screenshot> {
-    return captureViewportWithHighlight(page, cdp, backendNodeId, screenshotsDir, filename, options);
-}
-
 /** Ensure the screenshots directory exists within the output directory. */
 export async function ensureScreenshotsDir(outputDir: string): Promise<string> {
     const screenshotsDir = join(outputDir, 'screenshots');

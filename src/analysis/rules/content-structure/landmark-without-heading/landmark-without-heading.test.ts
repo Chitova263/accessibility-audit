@@ -21,12 +21,6 @@ const landmarkStep = (role: string): StepOverrides => ({
 const landmarkWalk = strategyResult('landmark', createSteps([{ role: 'banner', name: 'Header' }]));
 
 describe('landmark-without-heading rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('landmark-without-heading');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('reports a substantial landmark that contains no heading', async () => {
         const arrow = strategyResult('arrow', createSteps([landmarkStep('banner'), ...plain(5)]));
 

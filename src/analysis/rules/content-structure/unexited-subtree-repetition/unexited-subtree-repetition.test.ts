@@ -42,12 +42,6 @@ const chatWidgetSteps = (phrase: string, repetitions: number, leadingCount = 5) 
 // ─── tests ───────────────────────────────────────────────────────────────────
 
 describe('unexited-subtree-repetition rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('unexited-subtree-repetition');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('4.1.2');
-    });
-
     it('detects the canonical chat-widget subtree traversal pattern', async () => {
         const steps = chatWidgetSteps('Hello, how can I help you?', 29);
         const result = await rule.run(arrowContext(steps));

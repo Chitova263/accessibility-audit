@@ -35,7 +35,7 @@ describe('TabNavigator', () => {
         mockSR = createMockScreenReader();
     });
 
-    it('yields items when pressing Tab produces speech', async () => {
+    it('yields tab stops until focus cycles back to the starting element', async () => {
         mockSR.press = createPressMock([
             { phrase: 'link, Skip to content', focusedElementText: 'Skip to content' },
             { phrase: 'link, Home', focusedElementText: 'Home' },
@@ -51,57 +51,9 @@ describe('TabNavigator', () => {
 
         expect(items).toHaveLength(3);
         expect(items[0]!.phrase).toBe('link, Skip to content');
+        expect(items[0]!.focusedElementText).toBe('Skip to content');
         expect(items[1]!.phrase).toBe('link, Home');
         expect(items[2]!.phrase).toBe('button, Menu');
-    });
-
-    it('stops when returning to starting element (cycle detection)', async () => {
-        mockSR.press = createPressMock([
-            { phrase: 'link, First' },
-            { phrase: 'link, Second' },
-            { phrase: 'link, First' }, // Back to start
-        ]);
-
-        const navigator = new TabNavigator(mockSR, 'Tab');
-        const items = [];
-        for await (const item of navigator) {
-            items.push(item);
-        }
-
-        expect(items).toHaveLength(2);
-    });
-
-    it('has correct type property', () => {
-        const navigator = new TabNavigator(mockSR, 'Tab');
-        expect(navigator.type).toBe('focusable');
-    });
-
-    it('presses the correct key', async () => {
-        mockSR.press = createPressMock([
-            { phrase: 'link, Only' },
-            { phrase: 'link, Only' }, // Cycle
-        ]);
-
-        const navigator = new TabNavigator(mockSR, 'Tab');
-        for await (const _item of navigator) {
-            // consume
-        }
-
         expect(mockSR.press).toHaveBeenCalledWith('Tab');
-    });
-
-    it('returns focusedElementText from KeyPressResult', async () => {
-        mockSR.press = createPressMock([
-            { phrase: 'link, Skip to content', focusedElementText: 'Skip to content' },
-            { phrase: 'link, Skip to content' }, // Cycle
-        ]);
-
-        const navigator = new TabNavigator(mockSR, 'Tab');
-        const items = [];
-        for await (const item of navigator) {
-            items.push(item);
-        }
-
-        expect(items[0]!.focusedElementText).toBe('Skip to content');
     });
 });

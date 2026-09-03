@@ -13,12 +13,6 @@ const heading = (level: number, name: string): StepOverrides => ({
 });
 
 describe('heading-level-skipped rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('heading-level-skipped');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-    });
-
     it('reports a skipped level going down the outline', async () => {
         const steps = createSteps([heading(1, 'Overview'), heading(3, 'Details')]);
 

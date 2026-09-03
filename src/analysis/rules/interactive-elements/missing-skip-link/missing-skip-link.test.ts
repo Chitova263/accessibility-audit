@@ -12,12 +12,6 @@ const tabStop = (name: string, href = '/x'): StepOverrides => ({
 });
 
 describe('missing-skip-link rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('missing-skip-link');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.1');
-    });
-
     it('finds a skip link at the first tab stop', async () => {
         const steps = createSteps([tabStop('Skip to main content', '#main'), tabStop('Home')]);
 

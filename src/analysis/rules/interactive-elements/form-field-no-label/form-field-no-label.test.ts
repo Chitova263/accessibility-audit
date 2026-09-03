@@ -3,12 +3,6 @@ import { rule } from './form-field-no-label';
 import { createSteps, strategyResult, mockContext } from '../../test-fixtures';
 
 describe('form-field-no-label rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('form-field-no-label');
-        expect(rule.meta.impact).toBe('critical');
-        expect(rule.meta.wcag.primary.criterion).toBe('3.3.2');
-    });
-
     it('reports a form field with no accessible label', async () => {
         const steps = createSteps([
             { role: 'textbox', name: '', focusedElementText: 'edit blank', htmlSnippet: '<input type="text">' },

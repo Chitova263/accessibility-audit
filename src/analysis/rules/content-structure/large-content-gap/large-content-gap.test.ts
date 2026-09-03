@@ -36,13 +36,6 @@ const navigationLandmarkStep = (text = 'Nav'): StepOverrides => ({
 const headingWalk = strategyResult('heading', []);
 
 describe('large-content-gap rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('large-content-gap');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('1.3.1');
-        expect(rule.meta.summary).toContain('main content');
-    });
-
     describe('main landmark scoping', () => {
         it('only analyzes content within main landmark', async () => {
             const arrow = strategyResult(

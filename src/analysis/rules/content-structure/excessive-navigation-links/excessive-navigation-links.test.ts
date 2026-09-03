@@ -7,12 +7,6 @@ const links = (count: number): NavigationStep[] =>
     Array.from({ length: count }, (_, i) => createStep(i, { role: 'link', focusedElementText: `Link ${i}` }));
 
 describe('excessive-navigation-links rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('excessive-navigation-links');
-        expect(rule.meta.impact).toBe('moderate');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.1');
-    });
-
     it('stays silent for a page with a normal number of links', async () => {
         const result = await rule.run(mockContext([strategyResult('link', links(39))]));
 

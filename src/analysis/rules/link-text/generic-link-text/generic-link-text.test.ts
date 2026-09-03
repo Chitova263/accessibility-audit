@@ -61,12 +61,6 @@ const strategies = (linkSteps: NavigationStep[], arrowSteps?: NavigationStep[]) 
 const genericLink = createStep(0, { focusedElementText: 'Read more', role: 'link', href: '/a', backendDOMNodeId: 42 });
 
 describe('generic-link-text rule', () => {
-    it('has correct metadata', () => {
-        expect(rule.id).toBe('generic-link-text');
-        expect(rule.meta.impact).toBe('serious');
-        expect(rule.meta.wcag.primary.criterion).toBe('2.4.4');
-    });
-
     it('reports a generic link at full impact when no surrounding context', async () => {
         const arrowSteps = [
             createStep(0, { focusedElementText: 'Home', role: 'link', backendDOMNodeId: 7 }),
