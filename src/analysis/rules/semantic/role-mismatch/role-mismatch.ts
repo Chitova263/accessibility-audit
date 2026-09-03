@@ -10,6 +10,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
@@ -85,7 +86,6 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
         wcag: {
             primary: { criterion: '4.1.2', level: 'A' },
         },
-        impact: 'moderate',
         summary: "Element's ARIA role doesn't match the underlying HTML element",
     };
 
@@ -147,7 +147,18 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
                     element.stepIndex,
                     ctx.screenReader
                 );
-                violations.push(this.createViolation(element, mismatch, context));
+                violations.push(
+                    buildViolation({
+                        ruleId: 'role-mismatch',
+                        impact: 'moderate',
+                        stepId: `role-mismatch-${element.identifier}`,
+                        message: `${mismatch.description} Element: <${element.htmlTag}> with role="${element.role}"${element.name ? ` and name "${element.name}"` : ''}.`,
+                        timestamp: element.timestamp,
+                        context,
+                        htmlSnippet: element.htmlSnippet,
+                        screenReader: ctx.screenReader,
+                    })
+                );
             }
         }
 
@@ -227,29 +238,6 @@ export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchS
         }
 
         return unique;
-    }
-
-    private createViolation(
-        element: ElementInfo,
-        mismatch: MismatchInfo,
-        context: ScreenReaderContext
-    ): ScreenReaderViolation {
-        return {
-            id: `role-mismatch-${element.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `${mismatch.description} Element: <${element.htmlTag}> with role="${element.role}"${element.name ? ` and name "${element.name}"` : ''}.`,
-            element: {
-                ...(element.htmlSnippet != null && { htmlSnippet: element.htmlSnippet }),
-            },
-            tool: 'screen-reader-audit',
-            timestamp: element.timestamp,
-            context,
-        };
     }
 }
 

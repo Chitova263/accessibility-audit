@@ -18,7 +18,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:update": "vitest run -u",
-        "lint": "eslint src",
+        "lint": "eslint --fix src",
         "prepublishOnly": "npm run build",
         "sample": "npx tsx src/cli/run-audit.ts https://www.example.com --reader virtual"
     },

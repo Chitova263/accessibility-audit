@@ -1,7 +1,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
+import { buildViolation } from '../../rule-catalog';
+import { collectHeadings, createHeadingContext } from '../../utils/heading-utils';
 
 export interface HeadingLevelSkippedStats {
     totalHeadings: number;
@@ -16,7 +17,6 @@ export class HeadingLevelSkippedRule implements Rule<ScreenReaderContext, Headin
         wcag: {
             primary: { criterion: '1.3.1', level: 'A' },
         },
-        impact: 'moderate',
         summary: 'Heading levels are skipped (e.g., H1 to H3)',
     };
 
@@ -30,7 +30,18 @@ export class HeadingLevelSkippedRule implements Rule<ScreenReaderContext, Headin
             if (previousLevel > 0 && heading.level > previousLevel + 1) {
                 const context = createHeadingContext(heading, ctx.screenReader);
 
-                violations.push(this.createViolation(heading, previousLevel, context));
+                violations.push(
+                    buildViolation({
+                        ruleId: 'heading-level-skipped',
+                        impact: 'moderate',
+                        stepId: `skipped-level-${heading.identifier}`,
+                        message: `Heading level skipped: H${previousLevel} → H${heading.level}. Expected H${previousLevel + 1}. Skipping heading levels breaks the document outline for screen reader users.`,
+                        timestamp: heading.timestamp,
+                        context,
+                        htmlSnippet: heading.htmlSnippet,
+                        screenReader: ctx.screenReader,
+                    })
+                );
             }
 
             previousLevel = heading.level;
@@ -43,27 +54,6 @@ export class HeadingLevelSkippedRule implements Rule<ScreenReaderContext, Headin
                 headingSequence: headings.map((h) => h.level),
                 violationsFound: violations.length,
             },
-        };
-    }
-
-    private createViolation(
-        heading: HeadingInfo,
-        previousLevel: number,
-        context: ScreenReaderContext
-    ): ScreenReaderViolation {
-        return {
-            id: `skipped-level-${heading.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Heading level skipped: H${previousLevel} → H${heading.level}. Expected H${previousLevel + 1}. Skipping heading levels breaks the document outline for screen reader users.`,
-            ...(heading.htmlSnippet != null && { element: { htmlSnippet: heading.htmlSnippet } }),
-            tool: 'screen-reader-audit',
-            timestamp: heading.timestamp,
-            context,
         };
     }
 }

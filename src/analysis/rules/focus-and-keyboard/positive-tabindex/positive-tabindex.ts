@@ -14,6 +14,7 @@ import type {
     StrategyResult,
     NavigationStep,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRole, getName } from '../../../../types/ax-utils';
 
@@ -43,7 +44,6 @@ export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveT
         wcag: {
             primary: { criterion: '2.4.3', level: 'A' },
         },
-        impact: 'serious',
         summary: 'Element has positive tabindex disrupting natural order',
     };
 
@@ -61,7 +61,18 @@ export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveT
                 anomaly.element.tabIndex,
                 ctx.screenReader
             );
-            violations.push(this.createViolation(anomaly, context));
+            violations.push(
+                buildViolation({
+                    ruleId: 'positive-tabindex',
+                    impact: 'serious',
+                    stepId: `positive-tabindex-${anomaly.element.step.identifier}`,
+                    message: `Element has positive tabindex="${anomaly.tabindexValue}". Positive tabindex values disrupt natural focus order and should be avoided. Use tabindex="0" or rely on DOM order instead.`,
+                    timestamp: anomaly.element.step.timestamp,
+                    context,
+                    htmlSnippet: anomaly.element.htmlSnippet,
+                    screenReader: ctx.screenReader,
+                })
+            );
         }
 
         return {
@@ -123,23 +134,6 @@ export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveT
             return parseInt(match[1], 10);
         }
         return null;
-    }
-
-    private createViolation(anomaly: TabindexAnomaly, context: ScreenReaderContext): ScreenReaderViolation {
-        return {
-            id: `positive-tabindex-${anomaly.element.step.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Element has positive tabindex="${anomaly.tabindexValue}". Positive tabindex values disrupt natural focus order and should be avoided. Use tabindex="0" or rely on DOM order instead.`,
-            ...(anomaly.element.htmlSnippet != null ? { element: { htmlSnippet: anomaly.element.htmlSnippet } } : {}),
-            tool: 'nvda-audit',
-            timestamp: anomaly.element.step.timestamp,
-            context,
-        };
     }
 }
 

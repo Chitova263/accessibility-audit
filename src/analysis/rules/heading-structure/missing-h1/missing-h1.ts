@@ -1,8 +1,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
+import { buildViolation } from '../../rule-catalog';
+import { collectHeadings, createHeadingContext } from '../../utils/heading-utils';
 
 export interface MissingH1Stats {
     totalHeadings: number;
@@ -17,7 +17,6 @@ export class MissingH1Rule implements Rule<ScreenReaderContext, MissingH1Stats> 
         wcag: {
             primary: { criterion: '1.3.1', level: 'A' },
         },
-        impact: 'serious',
         summary: 'Page has no H1 heading',
     };
 
@@ -30,7 +29,19 @@ export class MissingH1Rule implements Rule<ScreenReaderContext, MissingH1Stats> 
         // Only flag missing H1 when there are other headings present;
         // a completely heading-free page may be appropriate for simple content.
         if (h1Count === 0 && headings.length > 0) {
-            violations.push(this.createViolation(headings[0]!, ctx.screenReader));
+            const firstHeading = headings[0]!;
+            violations.push(
+                buildViolation({
+                    ruleId: 'missing-h1',
+                    impact: 'serious',
+                    stepId: firstHeading.identifier,
+                    message: `Page has no H1 heading. First heading found is H${firstHeading.level}. Pages should have exactly one H1 that describes the main content.`,
+                    timestamp: firstHeading.timestamp,
+                    context: createHeadingContext(firstHeading, ctx.screenReader),
+                    htmlSnippet: firstHeading.htmlSnippet,
+                    screenReader: ctx.screenReader,
+                })
+            );
         }
 
         return {
@@ -40,23 +51,6 @@ export class MissingH1Rule implements Rule<ScreenReaderContext, MissingH1Stats> 
                 h1Count,
                 violationsFound: violations.length,
             },
-        };
-    }
-
-    private createViolation(firstHeading: HeadingInfo, screenReader: ScreenReaderName): ScreenReaderViolation {
-        return {
-            id: `missing-h1-${firstHeading.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Page has no H1 heading. First heading found is H${firstHeading.level}. Pages should have exactly one H1 that describes the main content.`,
-            ...(firstHeading.htmlSnippet != null && { element: { htmlSnippet: firstHeading.htmlSnippet } }),
-            tool: 'screen-reader-audit',
-            timestamp: firstHeading.timestamp,
-            context: createHeadingContext(firstHeading, screenReader),
         };
     }
 }

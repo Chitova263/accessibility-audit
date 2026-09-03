@@ -11,9 +11,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
-import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
 
 /** Threshold for "excessive" navigation links */
@@ -35,7 +34,6 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
         wcag: {
             primary: { criterion: '2.4.1', level: 'A' },
         },
-        impact: 'moderate',
         summary: 'Page has an excessive number of links',
     };
 
@@ -75,9 +73,51 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
 
         if (firstLinkStep !== null) {
             if (totalLinks >= VERY_EXCESSIVE_NAV_LINKS_THRESHOLD) {
-                violations.push(this.createViolation(totalLinks, firstLinkStep, 'serious', screenReader));
+                const context = createScreenReaderContext(
+                    {
+                        identifier: firstLinkStep.identifier,
+                        spokenPhrases: firstLinkStep.spokenPhrases,
+                        focusedElementText: firstLinkStep.focusedElementText,
+                        axNode: firstLinkStep.axNode,
+                    },
+                    'link',
+                    0,
+                    screenReader
+                );
+                violations.push(
+                    buildViolation({
+                        ruleId: 'excessive-navigation-links',
+                        impact: 'serious',
+                        stepId: firstLinkStep.identifier,
+                        message: `Page has ${totalLinks} links (threshold: ${VERY_EXCESSIVE_NAV_LINKS_THRESHOLD}). Excessive links make keyboard navigation tedious. Consider grouping links, using skip links, or simplifying navigation structure.`,
+                        timestamp: firstLinkStep.timestamp,
+                        context,
+                        screenReader,
+                    })
+                );
             } else if (totalLinks >= EXCESSIVE_NAV_LINKS_THRESHOLD) {
-                violations.push(this.createViolation(totalLinks, firstLinkStep, 'moderate', screenReader));
+                const context = createScreenReaderContext(
+                    {
+                        identifier: firstLinkStep.identifier,
+                        spokenPhrases: firstLinkStep.spokenPhrases,
+                        focusedElementText: firstLinkStep.focusedElementText,
+                        axNode: firstLinkStep.axNode,
+                    },
+                    'link',
+                    0,
+                    screenReader
+                );
+                violations.push(
+                    buildViolation({
+                        ruleId: 'excessive-navigation-links',
+                        impact: 'moderate',
+                        stepId: firstLinkStep.identifier,
+                        message: `Page has ${totalLinks} links (threshold: ${EXCESSIVE_NAV_LINKS_THRESHOLD}). Excessive links make keyboard navigation tedious. Consider grouping links, using skip links, or simplifying navigation structure.`,
+                        timestamp: firstLinkStep.timestamp,
+                        context,
+                        screenReader,
+                    })
+                );
             }
         }
 
@@ -98,48 +138,6 @@ export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, E
             }
         }
         return null;
-    }
-
-    private createViolation(
-        linkCount: number,
-        firstLinkStep: {
-            identifier: string;
-            spokenPhrases: string[];
-            focusedElementText: string;
-            timestamp: number;
-            htmlSnippet: string | null;
-            axNode: AXNode | undefined;
-        },
-        impact: 'serious' | 'moderate',
-        screenReader: ScreenReaderName
-    ): ScreenReaderViolation {
-        const threshold = impact === 'serious' ? VERY_EXCESSIVE_NAV_LINKS_THRESHOLD : EXCESSIVE_NAV_LINKS_THRESHOLD;
-        const context = createScreenReaderContext(
-            {
-                identifier: firstLinkStep.identifier,
-                spokenPhrases: firstLinkStep.spokenPhrases,
-                focusedElementText: firstLinkStep.focusedElementText,
-                axNode: firstLinkStep.axNode,
-            },
-            'link',
-            0,
-            screenReader
-        );
-
-        return {
-            id: `excessive-navigation-${firstLinkStep.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact,
-            },
-            message: `Page has ${linkCount} links (threshold: ${threshold}). Excessive links make keyboard navigation tedious. Consider grouping links, using skip links, or simplifying navigation structure.`,
-            element: {},
-            tool: 'screen-reader-audit',
-            timestamp: firstLinkStep.timestamp,
-            context,
-        };
     }
 }
 

@@ -1,13 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { getRule } from '../../rule-catalog';
-import type {
-    NavigationStep,
-    StrategyResult,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
+import type { StrategyResult } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 export interface FragmentedSequence {
     startStep: number;
@@ -55,22 +51,6 @@ function isSingleCharLink(focusedElementText: string): { isLink: boolean; char: 
     return { isLink: true, char: null };
 }
 
-function createViolation(
-    message: string,
-    step: NavigationStep,
-    strategyName: string,
-    screenReader: ScreenReaderName
-): ScreenReaderViolation {
-    return {
-        id: `fragmented-link-text-${step.identifier}`,
-        rule: getRule('fragmented-link-text'),
-        message,
-        tool: 'screen-reader-audit',
-        timestamp: step.timestamp,
-        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
-    };
-}
-
 /**
  * Detects sequences of single-character links that form words or numbers.
  * This typically indicates improper markup where text is fragmented into
@@ -96,7 +76,6 @@ export class FragmentedLinkTextRule implements Rule<ScreenReaderContext, Fragmen
 
     readonly meta: RuleMeta = {
         wcag: { primary: { criterion: '2.4.4', level: 'A' } },
-        impact: 'critical',
         summary: 'Link text is fragmented into individual characters',
     };
 
@@ -156,16 +135,20 @@ export class FragmentedLinkTextRule implements Rule<ScreenReaderContext, Fragmen
 
         const violations: ScreenReaderViolation[] = sequences.map((seq) => {
             const step = steps[seq.startStep]!;
-            return createViolation(
-                `Link text fragmented into ${seq.characters.length} single-character links at steps ${seq.startStep}-${seq.endStep}. ` +
+            return buildViolation({
+                ruleId: 'fragmented-link-text',
+                impact: 'critical',
+                stepId: `fragmented-link-text-${step.identifier}`,
+                message:
+                    `Link text fragmented into ${seq.characters.length} single-character links at steps ${seq.startStep}-${seq.endStep}. ` +
                     `Reconstructed text: "${seq.reconstructedText}". ` +
                     `Screen reader users hear each character announced as a separate link, making the content unusable. ` +
                     `This can be caused by: (1) separate <a> tags per character, (2) web components with shadow DOM ` +
                     `containing screen-reader-only text inside a link, or (3) nested shadow DOM boundaries.`,
-                step,
-                arrowResult.meta.name,
-                screenReader
-            );
+                timestamp: step.timestamp,
+                context: createScreenReaderContext(step, arrowResult.meta.name, step.index, screenReader),
+                screenReader,
+            });
         });
 
         return {

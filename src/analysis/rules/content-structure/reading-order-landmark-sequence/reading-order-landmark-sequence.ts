@@ -1,9 +1,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { getRule } from '../../rule-catalog';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -53,25 +52,6 @@ function getRole(step: NavigationStep): string | undefined {
     return step.axNode ? getAxRole(step.axNode) : undefined;
 }
 
-function createViolation(
-    ruleId: Parameters<typeof getRule>[0],
-    message: string,
-    step: NavigationStep,
-    strategyName: string,
-    screenReader: ScreenReaderName,
-    impactOverride?: Parameters<typeof getRule>[1]
-): ScreenReaderViolation {
-    return {
-        id: `${ruleId}-${step.identifier}`,
-        rule: getRule(ruleId, impactOverride),
-        message,
-        ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'screen-reader-audit',
-        timestamp: step.timestamp,
-        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
-    };
-}
-
 /**
  * Analyzes if landmarks appear in a logical reading order.
  * Footer/aside appearing before main content indicates DOM order issues.
@@ -83,7 +63,6 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<ScreenReaderContex
 
     readonly meta: RuleMeta = {
         wcag: { primary: { criterion: '1.3.2', level: 'A' } },
-        impact: 'serious',
         summary: 'Landmarks announced out of logical reading order',
     };
 
@@ -137,31 +116,41 @@ export class ReadingOrderLandmarkSequenceRule implements Rule<ScreenReaderContex
 
         if (!hasMainBeforeFooter && footerIndex !== -1 && mainIndex !== -1) {
             const footerStep = steps[landmarkSequence[footerIndex]!.stepIndex]!;
-            violations.push(
-                createViolation(
-                    'reading-order-landmark-sequence',
-                    `Footer/contentinfo landmark (step ${landmarkSequence[footerIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Screen reader users will hear footer content before main content.`,
-                    footerStep,
-                    arrowResult.meta.name,
-                    screenReader
-                )
-            );
             violationMessages.push('Footer before main');
+            violations.push(
+                buildViolation({
+                    ruleId: 'reading-order-landmark-sequence',
+                    impact: 'serious',
+                    stepId: `reading-order-landmark-sequence-${footerStep.identifier}`,
+                    message: `Footer/contentinfo landmark (step ${landmarkSequence[footerIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Screen reader users will hear footer content before main content.`,
+                    timestamp: footerStep.timestamp,
+                    context: createScreenReaderContext(
+                        footerStep,
+                        arrowResult.meta.name,
+                        footerStep.index,
+                        screenReader
+                    ),
+                    htmlSnippet: footerStep.htmlSnippet,
+                    screenReader,
+                })
+            );
         }
 
         if (!hasMainBeforeAside && asideIndex !== -1 && mainIndex !== -1) {
             const asideStep = steps[landmarkSequence[asideIndex]!.stepIndex]!;
-            violations.push(
-                createViolation(
-                    'reading-order-landmark-sequence',
-                    `Complementary/aside landmark (step ${landmarkSequence[asideIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Consider if sidebar content should come after main content.`,
-                    asideStep,
-                    arrowResult.meta.name,
-                    screenReader,
-                    'moderate'
-                )
-            );
             violationMessages.push('Aside before main');
+            violations.push(
+                buildViolation({
+                    ruleId: 'reading-order-landmark-sequence',
+                    impact: 'moderate',
+                    stepId: `reading-order-landmark-sequence-${asideStep.identifier}`,
+                    message: `Complementary/aside landmark (step ${landmarkSequence[asideIndex]!.stepIndex}) appears before main landmark (step ${landmarkSequence[mainIndex]!.stepIndex}). Consider if sidebar content should come after main content.`,
+                    timestamp: asideStep.timestamp,
+                    context: createScreenReaderContext(asideStep, arrowResult.meta.name, asideStep.index, screenReader),
+                    htmlSnippet: asideStep.htmlSnippet,
+                    screenReader,
+                })
+            );
         }
 
         return {

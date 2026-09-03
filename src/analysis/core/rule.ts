@@ -1,12 +1,11 @@
 import type { AuditContext } from './context';
-import type { Violation, ScreenReaderContext, WcagCriterion, Impact } from './violation';
+import type { Violation, ScreenReaderContext, WcagCriterion } from './violation';
 
 export interface RuleMeta {
     wcag: {
         primary: WcagCriterion;
         related?: WcagCriterion[];
     };
-    impact: Impact;
     summary: string;
 }
 

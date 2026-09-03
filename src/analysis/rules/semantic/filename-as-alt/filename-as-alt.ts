@@ -10,6 +10,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
@@ -62,7 +63,6 @@ export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAl
         wcag: {
             primary: { criterion: '1.1.1', level: 'A' },
         },
-        impact: 'serious',
         summary: 'Image has a filename as alt text (e.g., "IMG_1234.jpg")',
     };
 
@@ -117,7 +117,18 @@ export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAl
                     image.stepIndex,
                     ctx.screenReader
                 );
-                violations.push(this.createViolation(image, context));
+                violations.push(
+                    buildViolation({
+                        ruleId: 'filename-as-alt',
+                        impact: 'serious',
+                        stepId: `filename-as-alt-${image.identifier}`,
+                        message: `Image has a filename as alt text: "${image.name}". Alt text should describe the image's purpose or content, not the file name.`,
+                        timestamp: image.timestamp,
+                        context,
+                        htmlSnippet: image.htmlSnippet,
+                        screenReader: ctx.screenReader,
+                    })
+                );
             }
         }
 
@@ -152,23 +163,6 @@ export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAl
         }
 
         return unique;
-    }
-
-    private createViolation(image: ImageInfo, context: ScreenReaderContext): ScreenReaderViolation {
-        return {
-            id: `filename-as-alt-${image.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Image has a filename as alt text: "${image.name}". Alt text should describe the image's purpose or content, not the file name.`,
-            element: image.htmlSnippet != null ? { htmlSnippet: image.htmlSnippet } : {},
-            tool: 'screen-reader-audit',
-            timestamp: image.timestamp,
-            context,
-        };
     }
 }
 

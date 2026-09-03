@@ -14,8 +14,8 @@ import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 const LANDMARK_ITEM_THRESHOLD_DEFAULT = 5;
 
@@ -40,7 +40,6 @@ export class LandmarkWithoutHeadingRule implements Rule<ScreenReaderContext, Lan
         wcag: {
             primary: { criterion: '1.3.1', level: 'A' },
         },
-        impact: 'moderate',
         summary: 'Landmark contains many items but no heading',
     };
 
@@ -75,7 +74,24 @@ export class LandmarkWithoutHeadingRule implements Rule<ScreenReaderContext, Lan
         );
 
         for (const landmark of flagged) {
-            violations.push(this.createViolation(landmark, ctx.screenReader));
+            const landmarkSpoken = landmark.landmark.spokenPhrases.join(' ');
+            violations.push(
+                buildViolation({
+                    ruleId: 'landmark-without-heading',
+                    impact: 'moderate',
+                    stepId: `landmark-without-heading-${landmark.landmark.identifier}`,
+                    message: `Landmark "${landmarkSpoken}" contains ${landmark.contentSteps.length} items but no heading. Consider adding a heading to help screen reader users understand the section's purpose.`,
+                    timestamp: landmark.landmark.timestamp,
+                    context: createScreenReaderContext(
+                        landmark.landmark,
+                        'arrow',
+                        landmark.stepIndex,
+                        ctx.screenReader
+                    ),
+                    htmlSnippet: landmark.landmark.htmlSnippet,
+                    screenReader: ctx.screenReader,
+                })
+            );
         }
 
         return {
@@ -123,27 +139,6 @@ export class LandmarkWithoutHeadingRule implements Rule<ScreenReaderContext, Lan
             const spoken = step.spokenPhrases.join(' ').toLowerCase();
             return spoken.includes('heading, level') || spoken.includes('heading level');
         });
-    }
-
-    private createViolation(landmark: LandmarkContent, screenReader: ScreenReaderName): ScreenReaderViolation {
-        const landmarkSpoken = landmark.landmark.spokenPhrases.join(' ');
-
-        return {
-            id: `landmark-without-heading-${landmark.landmark.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Landmark "${landmarkSpoken}" contains ${landmark.contentSteps.length} items but no heading. Consider adding a heading to help screen reader users understand the section's purpose.`,
-            ...(landmark.landmark.htmlSnippet != null
-                ? { element: { htmlSnippet: landmark.landmark.htmlSnippet } }
-                : {}),
-            tool: 'screen-reader-audit',
-            timestamp: landmark.landmark.timestamp,
-            context: createScreenReaderContext(landmark.landmark, 'arrow', landmark.stepIndex, screenReader),
-        };
     }
 }
 

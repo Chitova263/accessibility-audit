@@ -1,9 +1,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { getRule } from '../../rule-catalog';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -31,25 +30,6 @@ function getRole(step: NavigationStep): string | undefined {
     return step.axNode ? getAxRole(step.axNode) : undefined;
 }
 
-function createViolation(
-    ruleId: Parameters<typeof getRule>[0],
-    message: string,
-    step: NavigationStep,
-    strategyName: string,
-    screenReader: ScreenReaderName,
-    impactOverride?: Parameters<typeof getRule>[1]
-): ScreenReaderViolation {
-    return {
-        id: `${ruleId}-${step.identifier}`,
-        rule: getRule(ruleId, impactOverride),
-        message,
-        ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'screen-reader-audit',
-        timestamp: step.timestamp,
-        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
-    };
-}
-
 /**
  * Analyzes how many steps it takes to reach the main content landmark.
  * Excessive steps before main content indicate poor bypass block implementation.
@@ -68,7 +48,6 @@ export class StepsToMainContentRule implements Rule<ScreenReaderContext, StepsTo
 
     readonly meta: RuleMeta = {
         wcag: { primary: { criterion: '2.4.1', level: 'A' } },
-        impact: 'moderate',
         summary: 'Main content reached only after excessive linear reading steps',
     };
 
@@ -114,27 +93,34 @@ export class StepsToMainContentRule implements Rule<ScreenReaderContext, StepsTo
         if (exceedsThreshold && mainFoundAtStep !== null) {
             const step = steps[mainFoundAtStep]!;
             violations.push(
-                createViolation(
-                    'steps-to-main-content',
-                    `Main content reached after ${stepsToMain} steps (threshold: ${threshold}). Users must navigate through excessive content before reaching main content. Consider adding or improving skip links.`,
-                    step,
-                    arrowResult.meta.name,
-                    screenReader
-                )
+                buildViolation({
+                    ruleId: 'steps-to-main-content',
+                    impact: 'moderate',
+                    stepId: `steps-to-main-content-${step.identifier}`,
+                    message: `Main content reached after ${stepsToMain} steps (threshold: ${threshold}). Users must navigate through excessive content before reaching main content. Consider adding or improving skip links.`,
+                    timestamp: step.timestamp,
+                    context: createScreenReaderContext(step, arrowResult.meta.name, step.index, screenReader),
+                    htmlSnippet: step.htmlSnippet,
+                    screenReader,
+                })
             );
         }
 
         // Never reaching a main landmark is worse than reaching it late: there is no
         // target for skip links and no way to bypass repeated content at all.
         if (mainFoundAtStep === null && steps.length > 0) {
+            const step = steps[0]!;
             violations.push(
-                createViolation(
-                    'missing-main-landmark',
-                    `No main landmark was announced across ${steps.length} steps of linear reading. Without a main landmark, screen reader users cannot jump past repeated header and navigation content. Wrap the primary content in a <main> element.`,
-                    steps[0]!,
-                    arrowResult.meta.name,
-                    screenReader
-                )
+                buildViolation({
+                    ruleId: 'missing-main-landmark',
+                    impact: 'serious',
+                    stepId: `missing-main-landmark-${step.identifier}`,
+                    message: `No main landmark was announced across ${steps.length} steps of linear reading. Without a main landmark, screen reader users cannot jump past repeated header and navigation content. Wrap the primary content in a <main> element.`,
+                    timestamp: step.timestamp,
+                    context: createScreenReaderContext(step, arrowResult.meta.name, step.index, screenReader),
+                    htmlSnippet: step.htmlSnippet,
+                    screenReader,
+                })
             );
         }
 

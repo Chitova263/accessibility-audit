@@ -1,9 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { collectLandmarks, type LandmarkInfo } from '../../utils/landmark-utils';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
+import { collectLandmarks } from '../../utils/landmark-utils';
 
 export interface DuplicateLandmarkStats {
     totalLandmarks: number;
@@ -18,7 +18,6 @@ export class DuplicateLandmarkRule implements Rule<ScreenReaderContext, Duplicat
         wcag: {
             primary: { criterion: '1.3.1', level: 'A' },
         },
-        impact: 'moderate',
         summary: 'Multiple landmarks of same type without unique names',
     };
 
@@ -44,9 +43,35 @@ export class DuplicateLandmarkRule implements Rule<ScreenReaderContext, Duplicat
 
                 byRole[role] = (byRole[role] ?? 0) + 1;
 
-                const context = this.createContext(landmark, ctx.screenReader);
+                const context = createScreenReaderContext(
+                    {
+                        identifier: landmark.identifier,
+                        spokenPhrases: landmark.spokenPhrases,
+                        focusedElementText: landmark.focusedElementText,
+                        axNode: landmark.axNode,
+                    },
+                    'landmark',
+                    landmark.stepIndex,
+                    ctx.screenReader
+                );
 
-                violations.push(this.createViolation(landmark, group.length, context));
+                const hasName = landmark.name.trim() !== '';
+                const message = hasName
+                    ? `Multiple "${landmark.role}" landmarks with same name "${landmark.name}" (${group.length} total). Each landmark of the same type should have a unique accessible name.`
+                    : `Multiple "${landmark.role}" landmarks without unique names (${group.length} total). When multiple landmarks of the same type exist, each should have a unique accessible name.`;
+
+                violations.push(
+                    buildViolation({
+                        ruleId: 'duplicate-landmark',
+                        impact: 'moderate',
+                        stepId: `duplicate-landmark-${landmark.identifier}`,
+                        message,
+                        timestamp: landmark.timestamp,
+                        context,
+                        htmlSnippet: landmark.htmlSnippet,
+                        screenReader: ctx.screenReader,
+                    })
+                );
             }
         }
 
@@ -58,46 +83,6 @@ export class DuplicateLandmarkRule implements Rule<ScreenReaderContext, Duplicat
                 byRole,
             },
         };
-    }
-
-    private createViolation(
-        landmark: LandmarkInfo,
-        totalCount: number,
-        context: ScreenReaderContext
-    ): ScreenReaderViolation {
-        const hasName = landmark.name.trim() !== '';
-        const message = hasName
-            ? `Multiple "${landmark.role}" landmarks with same name "${landmark.name}" (${totalCount} total). Each landmark of the same type should have a unique accessible name.`
-            : `Multiple "${landmark.role}" landmarks without unique names (${totalCount} total). When multiple landmarks of the same type exist, each should have a unique accessible name.`;
-
-        return {
-            id: `duplicate-landmark-${landmark.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message,
-            ...(landmark.htmlSnippet != null && { element: { htmlSnippet: landmark.htmlSnippet } }),
-            tool: 'screen-reader-audit',
-            timestamp: landmark.timestamp,
-            context,
-        };
-    }
-
-    private createContext(landmark: LandmarkInfo, screenReader: ScreenReaderName): ScreenReaderContext {
-        return createScreenReaderContext(
-            {
-                identifier: landmark.identifier,
-                spokenPhrases: landmark.spokenPhrases,
-                focusedElementText: landmark.focusedElementText,
-                axNode: landmark.axNode,
-            },
-            'landmark',
-            landmark.stepIndex,
-            screenReader
-        );
     }
 }
 

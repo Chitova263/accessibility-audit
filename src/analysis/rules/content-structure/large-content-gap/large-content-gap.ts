@@ -17,8 +17,8 @@ import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 const GAP_THRESHOLD_DEFAULT = 15;
 
@@ -53,7 +53,6 @@ export class LargeContentGapRule implements Rule<ScreenReaderContext, LargeConte
         wcag: {
             primary: { criterion: '1.3.1', level: 'A' },
         },
-        impact: 'moderate',
         summary: 'Long run of main content with no heading between items',
     };
 
@@ -93,7 +92,23 @@ export class LargeContentGapRule implements Rule<ScreenReaderContext, LargeConte
         const gaps = this.findLargeContentGaps(mainRegion);
 
         for (const gap of gaps) {
-            violations.push(this.createViolation(gap, ctx.screenReader));
+            violations.push(
+                buildViolation({
+                    ruleId: 'large-content-gap',
+                    impact: 'moderate',
+                    stepId: `large-content-gap-${gap.startStep.identifier}`,
+                    message: `Large content section (${gap.stepCount} items) within main content without a heading. Content between steps ${gap.originalStartIndex} and ${gap.originalEndIndex} may need a section heading for screen reader navigation. Threshold: ${this.threshold} items.`,
+                    timestamp: gap.startStep.timestamp,
+                    context: createScreenReaderContext(
+                        gap.startStep,
+                        'arrow',
+                        gap.originalStartIndex,
+                        ctx.screenReader
+                    ),
+                    htmlSnippet: gap.startStep.htmlSnippet,
+                    screenReader: ctx.screenReader,
+                })
+            );
         }
 
         return {
@@ -227,23 +242,6 @@ export class LargeContentGapRule implements Rule<ScreenReaderContext, LargeConte
             }
         }
         return indices;
-    }
-
-    private createViolation(gap: ContentGap, screenReader: ScreenReaderName): ScreenReaderViolation {
-        return {
-            id: `large-content-gap-${gap.startStep.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Large content section (${gap.stepCount} items) within main content without a heading. Content between steps ${gap.originalStartIndex} and ${gap.originalEndIndex} may need a section heading for screen reader navigation. Threshold: ${this.threshold} items.`,
-            ...(gap.startStep.htmlSnippet != null ? { element: { htmlSnippet: gap.startStep.htmlSnippet } } : {}),
-            tool: 'screen-reader-audit',
-            timestamp: gap.startStep.timestamp,
-            context: createScreenReaderContext(gap.startStep, 'arrow', gap.originalStartIndex, screenReader),
-        };
     }
 }
 

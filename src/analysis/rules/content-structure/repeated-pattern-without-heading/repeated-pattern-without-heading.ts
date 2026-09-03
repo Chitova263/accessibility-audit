@@ -15,8 +15,8 @@ import type {
     NavigationStep,
     StrategyResult,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 const REPETITION_THRESHOLD_DEFAULT = 3;
 
@@ -46,7 +46,6 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<
         wcag: {
             primary: { criterion: '1.3.1', level: 'A' },
         },
-        impact: 'minor',
         summary: 'Repeated content pattern with no heading introducing the group',
     };
 
@@ -79,7 +78,19 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<
         const flagged = allPatterns.filter((p) => !this.hasHeadingBefore(arrowResult.navigationSteps, p.startIndex));
 
         for (const pattern of flagged) {
-            violations.push(this.createViolation(pattern, ctx.screenReader));
+            const first = pattern.occurrences[0]!;
+            violations.push(
+                buildViolation({
+                    ruleId: 'repeated-pattern-without-heading',
+                    impact: 'minor',
+                    stepId: `repeated-pattern-${first.identifier}`,
+                    message: `Repeated content pattern detected: ${pattern.occurrences.length} similar "${pattern.pattern}" without a preceding section heading. Consider adding a heading to group this content (e.g., "Products", "Results", "Items").`,
+                    timestamp: first.timestamp,
+                    context: createScreenReaderContext(first, 'arrow', pattern.startIndex, ctx.screenReader),
+                    htmlSnippet: first.htmlSnippet,
+                    screenReader: ctx.screenReader,
+                })
+            );
         }
 
         return {
@@ -160,25 +171,6 @@ export class RepeatedPatternWithoutHeadingRule implements Rule<
             }
         }
         return false;
-    }
-
-    private createViolation(pattern: RepeatedPattern, screenReader: ScreenReaderName): ScreenReaderViolation {
-        const first = pattern.occurrences[0]!;
-
-        return {
-            id: `repeated-pattern-${first.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Repeated content pattern detected: ${pattern.occurrences.length} similar "${pattern.pattern}" without a preceding section heading. Consider adding a heading to group this content (e.g., "Products", "Results", "Items").`,
-            ...(first.htmlSnippet != null ? { element: { htmlSnippet: first.htmlSnippet } } : {}),
-            tool: 'screen-reader-audit',
-            timestamp: first.timestamp,
-            context: createScreenReaderContext(first, 'arrow', pattern.startIndex, screenReader),
-        };
     }
 }
 

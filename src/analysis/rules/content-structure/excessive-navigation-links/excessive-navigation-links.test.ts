@@ -33,7 +33,7 @@ describe('excessive-navigation-links rule', () => {
     it('anchors the violation on the first link', async () => {
         const result = await rule.run(mockContext([strategyResult('link', links(50))]));
 
-        expect(result.violations[0]!.id).toBe('excessive-navigation-step-0');
+        expect(result.violations[0]!.id).toBe('excessive-navigation-links-step-0');
         expect(result.violations[0]!.context).toMatchObject({ source: { strategy: 'link', stepIndex: 0 } });
     });
 

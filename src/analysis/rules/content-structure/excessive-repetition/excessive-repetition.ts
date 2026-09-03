@@ -1,13 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { getRule } from '../../rule-catalog';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
-import type {
-    NavigationStep,
-    StrategyResult,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 export interface RepetitionInfo {
     phrase: string;
@@ -24,25 +20,6 @@ export interface ExcessiveRepetitionStats {
 
 function getArrowStrategyResult(transcript: StrategyResult[]): StrategyResult | undefined {
     return transcript.find((r) => r.meta.name === 'arrow');
-}
-
-function createViolation(
-    ruleId: Parameters<typeof getRule>[0],
-    message: string,
-    step: NavigationStep,
-    strategyName: string,
-    screenReader: ScreenReaderName,
-    impactOverride?: Parameters<typeof getRule>[1]
-): ScreenReaderViolation {
-    return {
-        id: `${ruleId}-${step.identifier}`,
-        rule: getRule(ruleId, impactOverride),
-        message,
-        ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'screen-reader-audit',
-        timestamp: step.timestamp,
-        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
-    };
 }
 
 /**
@@ -71,7 +48,6 @@ export class ExcessiveRepetitionRule implements Rule<ScreenReaderContext, Excess
 
     readonly meta: RuleMeta = {
         wcag: { primary: { criterion: '1.3.1', level: 'A' } },
-        impact: 'minor',
         summary: 'Same phrase announced many times consecutively',
     };
 
@@ -134,13 +110,16 @@ export class ExcessiveRepetitionRule implements Rule<ScreenReaderContext, Excess
         for (const rep of repetitions) {
             const step = steps[rep.startStep]!;
             violations.push(
-                createViolation(
-                    'excessive-repetition',
-                    `"${rep.phrase}" is announced ${rep.count} times consecutively (steps ${rep.startStep}-${rep.endStep}). This repetition may confuse screen reader users or indicate redundant content.`,
-                    step,
-                    arrowResult.meta.name,
-                    screenReader
-                )
+                buildViolation({
+                    ruleId: 'excessive-repetition',
+                    impact: 'minor',
+                    stepId: `excessive-repetition-${step.identifier}`,
+                    message: `"${rep.phrase}" is announced ${rep.count} times consecutively (steps ${rep.startStep}-${rep.endStep}). This repetition may confuse screen reader users or indicate redundant content.`,
+                    timestamp: step.timestamp,
+                    context: createScreenReaderContext(step, arrowResult.meta.name, step.index, screenReader),
+                    htmlSnippet: step.htmlSnippet,
+                    screenReader,
+                })
             );
         }
 

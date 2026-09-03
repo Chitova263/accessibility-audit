@@ -1,7 +1,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { collectHeadings, createHeadingContext, type HeadingInfo } from '../../utils/heading-utils';
+import { buildViolation } from '../../rule-catalog';
+import { collectHeadings, createHeadingContext } from '../../utils/heading-utils';
 
 export interface EmptyHeadingStats {
     totalHeadings: number;
@@ -15,7 +16,6 @@ export class EmptyHeadingRule implements Rule<ScreenReaderContext, EmptyHeadingS
         wcag: {
             primary: { criterion: '1.3.1', level: 'A' },
         },
-        impact: 'serious',
         summary: 'Heading has no text content',
     };
 
@@ -28,7 +28,18 @@ export class EmptyHeadingRule implements Rule<ScreenReaderContext, EmptyHeadingS
 
             const context = createHeadingContext(heading, ctx.screenReader);
 
-            violations.push(this.createViolation(heading, context));
+            violations.push(
+                buildViolation({
+                    ruleId: 'empty-heading',
+                    impact: 'serious',
+                    stepId: heading.identifier,
+                    message: `H${heading.level} heading has no text content. Empty headings confuse screen reader users navigating by heading.`,
+                    timestamp: heading.timestamp,
+                    context,
+                    htmlSnippet: heading.htmlSnippet,
+                    screenReader: ctx.screenReader,
+                })
+            );
         }
 
         return {
@@ -37,23 +48,6 @@ export class EmptyHeadingRule implements Rule<ScreenReaderContext, EmptyHeadingS
                 totalHeadings: headings.length,
                 violationsFound: violations.length,
             },
-        };
-    }
-
-    private createViolation(heading: HeadingInfo, context: ScreenReaderContext): ScreenReaderViolation {
-        return {
-            id: `empty-heading-${heading.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `H${heading.level} heading has no text content. Empty headings confuse screen reader users navigating by heading.`,
-            ...(heading.htmlSnippet != null && { element: { htmlSnippet: heading.htmlSnippet } }),
-            tool: 'nvda-audit',
-            timestamp: heading.timestamp,
-            context,
         };
     }
 }

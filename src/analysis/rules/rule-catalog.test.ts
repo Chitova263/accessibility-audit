@@ -2,12 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { RULES, RULE_IDS, getRule } from './rule-catalog';
 
 describe('getRule', () => {
-    it('supplies the rule id, summary, WCAG mapping and default impact', async () => {
+    it('supplies the rule id, summary, and WCAG mapping', async () => {
         expect(getRule('focus-trap')).toEqual({
             id: 'focus-trap',
             summary: 'Keyboard focus trap where the user cannot escape using Tab',
             wcag: { primary: { criterion: '2.1.2', level: 'A' } },
-            impact: 'critical',
         });
     });
 
@@ -22,11 +21,6 @@ describe('getRule', () => {
         const { wcag } = getRule('multiple-h1');
 
         expect('related' in wcag).toBe(false);
-    });
-
-    it('applies an impact override for rules whose severity varies by context', async () => {
-        expect(getRule('generic-link-text').impact).toBe('serious');
-        expect(getRule('generic-link-text', 'moderate').impact).toBe('moderate');
     });
 
     it('returns copies so a violation cannot mutate the catalog', async () => {
@@ -47,7 +41,6 @@ describe('rule catalog contents', () => {
 
         expect(rule.wcag.primary.criterion).toMatch(/^\d+\.\d+\.\d+$/);
         expect(['A', 'AA', 'AAA']).toContain(rule.wcag.primary.level);
-        expect(['critical', 'serious', 'moderate', 'minor']).toContain(rule.impact);
         expect(rule.summary.trim()).not.toBe('');
     });
 });

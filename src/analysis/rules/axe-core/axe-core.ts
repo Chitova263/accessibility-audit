@@ -42,7 +42,6 @@ export class AxeCoreRule implements Rule<AxeContext, AxeCoreStats> {
         wcag: {
             primary: { criterion: '4.1.2', level: 'A' },
         },
-        impact: 'moderate',
         summary: 'axe-core static accessibility analysis',
     };
 

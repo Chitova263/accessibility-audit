@@ -1,6 +1,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { capitalize } from '../../../utils/string-utils';
 import { getRole, getName } from '../../../../types/ax-utils';
@@ -40,7 +41,6 @@ export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyA
             primary: { criterion: '4.1.2', level: 'A' },
             related: [{ criterion: '1.1.1', level: 'A' }],
         },
-        impact: 'serious',
         summary: 'Interactive element has no accessible name',
     };
 
@@ -70,7 +70,18 @@ export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyA
 
                 const context = createScreenReaderContext(step, result.meta.name, stepIndex, ctx.screenReader);
 
-                violations.push(this.createViolation(step, role, context));
+                violations.push(
+                    buildViolation({
+                        ruleId: 'empty-accessible-name',
+                        impact: 'serious',
+                        stepId: step.identifier,
+                        message: `${capitalize(role)} has no accessible name. Screen readers will announce only "${role}" with no indication of purpose.`,
+                        timestamp: step.timestamp,
+                        context,
+                        htmlSnippet: step.htmlSnippet,
+                        screenReader: ctx.screenReader,
+                    })
+                );
             }
         }
 
@@ -81,27 +92,6 @@ export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyA
                 violationsFound: violations.length,
                 byRole,
             },
-        };
-    }
-
-    private createViolation(
-        step: { identifier: string; htmlSnippet?: string | null; timestamp: number },
-        role: string,
-        context: ScreenReaderContext
-    ): ScreenReaderViolation {
-        return {
-            id: step.identifier,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `${capitalize(role)} has no accessible name. Screen readers will announce only "${role}" with no indication of purpose.`,
-            element: step.htmlSnippet != null ? { htmlSnippet: step.htmlSnippet } : {},
-            tool: 'screen-reader-audit',
-            timestamp: step.timestamp,
-            context,
         };
     }
 }

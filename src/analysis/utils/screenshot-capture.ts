@@ -148,7 +148,7 @@ export async function attachScreenshots<T extends Violation>(
 
         result.push({
             ...violation,
-            context: newContext as T['context'],
+            context: newContext,
         });
     }
 

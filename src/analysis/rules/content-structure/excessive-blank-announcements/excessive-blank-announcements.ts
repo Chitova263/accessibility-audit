@@ -1,13 +1,9 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { getRule } from '../../rule-catalog';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
-import type {
-    NavigationStep,
-    StrategyResult,
-} from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import type { StrategyResult } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
 
 export interface BlankRun {
     startStep: number;
@@ -32,22 +28,6 @@ function isBlank(focusedElementText: string): boolean {
     return normalized === 'blank' || normalized.endsWith(', blank') || normalized.endsWith(' blank');
 }
 
-function createViolation(
-    message: string,
-    step: NavigationStep,
-    strategyName: string,
-    screenReader: ScreenReaderName
-): ScreenReaderViolation {
-    return {
-        id: `excessive-blank-announcements-${step.identifier}`,
-        rule: getRule('excessive-blank-announcements'),
-        message,
-        tool: 'screen-reader-audit',
-        timestamp: step.timestamp,
-        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
-    };
-}
-
 /**
  * Detects long runs of consecutive "blank" announcements in arrow navigation.
  * Excessive blanks indicate empty or improperly structured content that wastes
@@ -65,7 +45,6 @@ export class ExcessiveBlankAnnouncementsRule implements Rule<ScreenReaderContext
 
     readonly meta: RuleMeta = {
         wcag: { primary: { criterion: '1.3.1', level: 'A' } },
-        impact: 'moderate',
         summary: 'Long run of blank announcements in linear reading',
     };
 
@@ -130,13 +109,17 @@ export class ExcessiveBlankAnnouncementsRule implements Rule<ScreenReaderContext
             if (run.afterContext) contextParts.push(`before "${run.afterContext}"`);
             const contextStr = contextParts.length > 0 ? ` (${contextParts.join(', ')})` : '';
 
-            return createViolation(
-                `${run.count} consecutive blank announcements at steps ${run.startStep}-${run.endStep}${contextStr}. ` +
+            return buildViolation({
+                ruleId: 'excessive-blank-announcements',
+                impact: 'moderate',
+                stepId: `excessive-blank-announcements-${step.identifier}`,
+                message:
+                    `${run.count} consecutive blank announcements at steps ${run.startStep}-${run.endStep}${contextStr}. ` +
                     'This indicates empty or improperly structured content that wastes time for screen reader users.',
-                step,
-                arrowResult.meta.name,
-                screenReader
-            );
+                timestamp: step.timestamp,
+                context: createScreenReaderContext(step, arrowResult.meta.name, step.index, screenReader),
+                screenReader,
+            });
         });
 
         return {

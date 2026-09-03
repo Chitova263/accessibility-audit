@@ -14,8 +14,8 @@ import type {
     StrategyResult,
     NavigationStep,
 } from '../../../../screen-reader/navigation-strategy/browse-mode-strategies/navigation-strategy';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import { getRole, getName } from '../../../../types/ax-utils';
 
 const BACKWARDS_JUMP_THRESHOLD = 5;
@@ -49,7 +49,6 @@ export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrd
         wcag: {
             primary: { criterion: '2.4.3', level: 'A' },
         },
-        impact: 'serious',
         summary: 'Focus jumps backwards or skips large sections',
     };
 
@@ -62,7 +61,28 @@ export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrd
         const anomalies = this.detectAnomalies(focusableElements);
 
         for (const anomaly of anomalies) {
-            violations.push(this.createViolation(anomaly, ctx.screenReader));
+            const previousLabel = anomaly.previousElement.name || anomaly.previousElement.role;
+            const currentLabel = anomaly.element.name || anomaly.element.role;
+
+            const context: ScreenReaderContext = createScreenReaderContext(
+                anomaly.element.step,
+                'tab',
+                anomaly.element.tabIndex,
+                ctx.screenReader
+            );
+
+            violations.push(
+                buildViolation({
+                    ruleId: 'focus-order-anomaly',
+                    impact: 'serious',
+                    stepId: `focus-order-${anomaly.element.step.identifier}`,
+                    message: `Focus jumped backwards through the page. After "${previousLabel}", focus moved to "${currentLabel}", which is announced ${anomaly.jumpDistance} positions earlier when reading the page linearly. This can disorient keyboard users.`,
+                    timestamp: anomaly.element.step.timestamp,
+                    context,
+                    htmlSnippet: anomaly.element.htmlSnippet,
+                    screenReader: ctx.screenReader,
+                })
+            );
         }
 
         return {
@@ -149,33 +169,6 @@ export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrd
         }
 
         return anomalies;
-    }
-
-    private createViolation(anomaly: FocusOrderAnomaly, screenReader: ScreenReaderName): ScreenReaderViolation {
-        const previousLabel = anomaly.previousElement.name || anomaly.previousElement.role;
-        const currentLabel = anomaly.element.name || anomaly.element.role;
-
-        const context: ScreenReaderContext = createScreenReaderContext(
-            anomaly.element.step,
-            'tab',
-            anomaly.element.tabIndex,
-            screenReader
-        );
-
-        return {
-            id: `focus-order-${anomaly.element.step.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Focus jumped backwards through the page. After "${previousLabel}", focus moved to "${currentLabel}", which is announced ${anomaly.jumpDistance} positions earlier when reading the page linearly. This can disorient keyboard users.`,
-            ...(anomaly.element.htmlSnippet != null ? { element: { htmlSnippet: anomaly.element.htmlSnippet } } : {}),
-            tool: 'screen-reader-audit',
-            timestamp: anomaly.element.step.timestamp,
-            context,
-        };
     }
 }
 

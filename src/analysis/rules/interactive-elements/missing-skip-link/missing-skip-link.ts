@@ -13,9 +13,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
-import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
 
 /** How many tab stops to check for skip link */
@@ -58,7 +57,6 @@ export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSki
         wcag: {
             primary: { criterion: '2.4.1', level: 'A' },
         },
-        impact: 'serious',
         summary: 'No skip link found in the first tab stops',
     };
 
@@ -93,7 +91,19 @@ export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSki
 
             if (result.navigationSteps.length > 0 && !skipLinkFound) {
                 const firstStep = result.navigationSteps[0]!;
-                violations.push(this.createViolation(firstStep, firstFewTabStops, ctx.screenReader));
+                const context = createScreenReaderContext(firstStep, 'tab', 0, ctx.screenReader);
+
+                violations.push(
+                    buildViolation({
+                        ruleId: 'missing-skip-link',
+                        impact: 'serious',
+                        stepId: `missing-skip-link-${firstStep.identifier}`,
+                        message: `No skip link found in the first ${MAX_TAB_STOPS_TO_CHECK} tab stops. Skip links help keyboard users bypass navigation and jump to main content. First tab stops: ${firstFewTabStops.join(', ')}.`,
+                        timestamp: firstStep.timestamp,
+                        context,
+                        screenReader: ctx.screenReader,
+                    })
+                );
             }
 
             break;
@@ -113,36 +123,6 @@ export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSki
         if (SKIP_LINK_NAME_PATTERNS.some((pattern) => pattern.test(name))) return true;
         if (SKIP_LINK_HREF_PATTERNS.some((pattern) => pattern.test(htmlSnippet))) return true;
         return false;
-    }
-
-    private createViolation(
-        firstStep: {
-            identifier: string;
-            spokenPhrases: string[];
-            focusedElementText: string;
-            timestamp: number;
-            htmlSnippet: string | null;
-            axNode: AXNode | undefined;
-        },
-        firstFewTabStops: string[],
-        screenReader: ScreenReaderName
-    ): ScreenReaderViolation {
-        const context = createScreenReaderContext(firstStep, 'tab', 0, screenReader);
-
-        return {
-            id: `missing-skip-link-${firstStep.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `No skip link found in the first ${MAX_TAB_STOPS_TO_CHECK} tab stops. Skip links help keyboard users bypass navigation and jump to main content. First tab stops: ${firstFewTabStops.join(', ')}.`,
-            element: {},
-            tool: 'screen-reader-audit',
-            timestamp: firstStep.timestamp,
-            context,
-        };
     }
 }
 

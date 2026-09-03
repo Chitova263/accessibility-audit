@@ -10,7 +10,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { getRule } from '../../rule-catalog';
+import { buildViolation } from '../../rule-catalog';
 import {
     collectLinks,
     getReadingSteps,
@@ -18,7 +18,6 @@ import {
     formatSurroundingContext,
     createScreenReaderContextFromLink,
 } from '../../utils/link-utils';
-import type { LinkInfo, SurroundingContext } from '../../utils/link-utils';
 
 const GENERIC_LINK_PATTERNS = [
     /^click\s*here$/i,
@@ -56,7 +55,6 @@ export class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLin
         wcag: {
             primary: { criterion: '2.4.4', level: 'A' },
         },
-        impact: 'serious',
         summary: 'Link uses generic text like "click here" or "read more"',
     };
 
@@ -76,7 +74,23 @@ export class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLin
 
             const context = createScreenReaderContextFromLink(link, ctx.screenReader);
 
-            violations.push(this.createViolation(link, surroundingContext, context));
+            const base = `Link has generic text "${link.name}". Link text should describe the destination or purpose, not use generic phrases like "click here" or "read more".`;
+            const message = surroundingContext
+                ? `${base} Read linearly, it is surrounded by: ${formatSurroundingContext(surroundingContext)}. Check whether that text makes the destination clear.`
+                : `${base} Read linearly, it has no surrounding text to explain where it goes.`;
+
+            violations.push(
+                buildViolation({
+                    ruleId: 'generic-link-text',
+                    impact: surroundingContext ? 'moderate' : 'serious',
+                    stepId: `generic-link-${link.identifier}`,
+                    message,
+                    timestamp: link.timestamp,
+                    context,
+                    htmlSnippet: link.htmlSnippet,
+                    screenReader: ctx.screenReader,
+                })
+            );
         }
 
         return {
@@ -86,28 +100,6 @@ export class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLin
                 violationsFound: violations.length,
                 genericLinksWithSurroundingContext,
             },
-        };
-    }
-
-    private createViolation(
-        link: LinkInfo,
-        surroundingContext: SurroundingContext | null,
-        context: ScreenReaderContext
-    ): ScreenReaderViolation {
-        const base = `Link has generic text "${link.name}". Link text should describe the destination or purpose, not use generic phrases like "click here" or "read more".`;
-
-        const message = surroundingContext
-            ? `${base} Read linearly, it is surrounded by: ${formatSurroundingContext(surroundingContext)}. Check whether that text makes the destination clear.`
-            : `${base} Read linearly, it has no surrounding text to explain where it goes.`;
-
-        return {
-            id: `generic-link-${link.identifier}`,
-            rule: getRule('generic-link-text', surroundingContext ? 'moderate' : 'serious'),
-            message,
-            ...(link.htmlSnippet != null && { element: { htmlSnippet: link.htmlSnippet } }),
-            tool: 'screen-reader-audit',
-            timestamp: link.timestamp,
-            context,
         };
     }
 }

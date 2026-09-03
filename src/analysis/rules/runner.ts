@@ -92,9 +92,6 @@ export const RULES: readonly Rule<unknown, unknown>[] = [
     // Semantic
     filenameAsAlt,
     roleMismatch,
-
-    // axe-core
-    // axeCore,
 ];
 
 export interface RunResult {

@@ -1,9 +1,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { getRule } from '../../rule-catalog';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -93,7 +92,6 @@ export class UnexitedSubtreeRepetitionRule implements Rule<ScreenReaderContext, 
 
     readonly meta: RuleMeta = {
         wcag: { primary: { criterion: '4.1.2', level: 'A' } },
-        impact: 'moderate',
         summary: 'Button with unnamed child nodes causes repeated NVDA announcements during linear reading',
     };
 
@@ -210,10 +208,9 @@ export class UnexitedSubtreeRepetitionRule implements Rule<ScreenReaderContext, 
     private createViolation(
         detection: SubtreeRepetitionInfo,
         arrowResult: StrategyResult,
-        screenReader: ScreenReaderName
+        screenReader: AuditContext['screenReader']
     ): ScreenReaderViolation {
         const step = arrowResult.navigationSteps[detection.startStep]!;
-        const ruleId = 'unexited-subtree-repetition';
 
         const endDescription = detection.reachedStrategyEnd
             ? 'consuming the remainder of the linear reading transcript'
@@ -228,15 +225,16 @@ export class UnexitedSubtreeRepetitionRule implements Rule<ScreenReaderContext, 
             `accessible name each time the virtual cursor enters one. ` +
             `Fix: add aria-hidden="true" to all decorative child containers and set aria-label directly on the button.`;
 
-        return {
-            id: `${ruleId}-${step.identifier}`,
-            rule: getRule(ruleId),
+        return buildViolation({
+            ruleId: 'unexited-subtree-repetition',
+            impact: 'moderate',
+            stepId: `unexited-subtree-repetition-${step.identifier}`,
             message,
-            ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-            tool: 'screen-reader-audit',
             timestamp: step.timestamp,
             context: createScreenReaderContext(step, arrowResult.meta.name, step.index, screenReader),
-        };
+            htmlSnippet: step.htmlSnippet,
+            screenReader,
+        });
     }
 }
 

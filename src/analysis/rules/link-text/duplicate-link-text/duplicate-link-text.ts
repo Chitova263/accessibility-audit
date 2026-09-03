@@ -11,9 +11,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
-import { getRule } from '../../rule-catalog';
+import { buildViolation } from '../../rule-catalog';
 import { collectLinks, createScreenReaderContextFromLink } from '../../utils/link-utils';
-import type { LinkInfo } from '../../utils/link-utils';
 
 export interface DuplicateLinkTextStats {
     totalLinks: number;
@@ -28,7 +27,6 @@ export class DuplicateLinkTextRule implements Rule<ScreenReaderContext, Duplicat
         wcag: {
             primary: { criterion: '2.4.4', level: 'A' },
         },
-        impact: 'moderate',
         summary: 'Multiple links with same text but different destinations',
     };
 
@@ -51,7 +49,18 @@ export class DuplicateLinkTextRule implements Rule<ScreenReaderContext, Duplicat
 
             for (const link of group) {
                 const context = createScreenReaderContextFromLink(link, ctx.screenReader);
-                violations.push(this.createViolation(link, group.length, uniqueHrefs.size, context));
+                violations.push(
+                    buildViolation({
+                        ruleId: 'duplicate-link-text',
+                        impact: 'moderate',
+                        stepId: `duplicate-link-${link.identifier}`,
+                        message: `${group.length} links share the text "${link.name}" but point to ${uniqueHrefs.size} different destinations. Links with the same text should go to the same destination, or have unique text.`,
+                        timestamp: link.timestamp,
+                        context,
+                        htmlSnippet: link.htmlSnippet,
+                        screenReader: ctx.screenReader,
+                    })
+                );
             }
         }
 
@@ -62,23 +71,6 @@ export class DuplicateLinkTextRule implements Rule<ScreenReaderContext, Duplicat
                 violationsFound: violations.length,
                 duplicateGroups,
             },
-        };
-    }
-
-    private createViolation(
-        link: LinkInfo,
-        totalCount: number,
-        uniqueDestinations: number,
-        context: ScreenReaderContext
-    ): ScreenReaderViolation {
-        return {
-            id: `duplicate-link-${link.identifier}`,
-            rule: getRule('duplicate-link-text'),
-            message: `${totalCount} links share the text "${link.name}" but point to ${uniqueDestinations} different destinations. Links with the same text should go to the same destination, or have unique text.`,
-            ...(link.htmlSnippet != null && { element: { htmlSnippet: link.htmlSnippet } }),
-            tool: 'screen-reader-audit',
-            timestamp: link.timestamp,
-            context,
         };
     }
 }

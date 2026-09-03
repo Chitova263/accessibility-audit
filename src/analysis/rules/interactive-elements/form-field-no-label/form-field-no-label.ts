@@ -10,9 +10,10 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { capitalize } from '../../../utils/string-utils';
-import { getScreenReaderDisplayName, type ScreenReaderName } from '../../../../screen-reader/drivers/types';
+import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
 import type { AXNode } from '../../../../types/cdp';
 import { getRole, getName } from '../../../../types/ax-utils';
 
@@ -60,7 +61,6 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
                 { criterion: '4.1.2', level: 'A' },
             ],
         },
-        impact: 'critical',
         summary: 'Form field has no accessible label',
     };
 
@@ -125,7 +125,21 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
                     field.stepIndex,
                     ctx.screenReader
                 );
-                violations.push(this.createViolation(field, context, ctx.screenReader));
+                const roleDesc = this.getRoleDescription(field.role);
+                const screenReaderDisplayName = getScreenReaderDisplayName(ctx.screenReader);
+
+                violations.push(
+                    buildViolation({
+                        ruleId: 'form-field-no-label',
+                        impact: 'critical',
+                        stepId: `unlabeled-form-field-${field.identifier}`,
+                        message: `${capitalize(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. ${screenReaderDisplayName} announced: "${field.focusedElementText || '(nothing)'}"`,
+                        timestamp: field.timestamp,
+                        context,
+                        htmlSnippet: field.htmlSnippet,
+                        screenReader: ctx.screenReader,
+                    })
+                );
             }
         }
 
@@ -167,29 +181,6 @@ export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormField
             switch: 'toggle switch',
         };
         return descriptions[role] ?? role;
-    }
-
-    private createViolation(
-        field: FormFieldInfo,
-        context: ScreenReaderContext,
-        screenReader: ScreenReaderName
-    ): ScreenReaderViolation {
-        const roleDesc = this.getRoleDescription(field.role);
-        const screenReaderDisplayName = getScreenReaderDisplayName(screenReader);
-        return {
-            id: `unlabeled-form-field-${field.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `${capitalize(roleDesc)} has no accessible label. Screen reader users will not know what information to enter. ${screenReaderDisplayName} announced: "${field.focusedElementText || '(nothing)'}"`,
-            ...(field.htmlSnippet != null && { element: { htmlSnippet: field.htmlSnippet } }),
-            tool: 'screen-reader-audit',
-            timestamp: field.timestamp,
-            context,
-        };
     }
 }
 

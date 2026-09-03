@@ -1,9 +1,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import { getRule } from '../../rule-catalog';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 import type {
     NavigationStep,
     StrategyResult,
@@ -54,25 +53,6 @@ function getRole(step: NavigationStep): string | undefined {
     return step.axNode ? getAxRole(step.axNode) : undefined;
 }
 
-function createViolation(
-    ruleId: Parameters<typeof getRule>[0],
-    message: string,
-    step: NavigationStep,
-    strategyName: string,
-    screenReader: ScreenReaderName,
-    impactOverride?: Parameters<typeof getRule>[1]
-): ScreenReaderViolation {
-    return {
-        id: `${ruleId}-${step.identifier}`,
-        rule: getRule(ruleId, impactOverride),
-        message,
-        ...(step.htmlSnippet != null ? { element: { htmlSnippet: step.htmlSnippet } } : {}),
-        tool: 'screen-reader-audit',
-        timestamp: step.timestamp,
-        context: createScreenReaderContext(step, strategyName, step.index, screenReader),
-    };
-}
-
 /**
  * Analyzes content density within each landmark region.
  * Regions with too many items may overwhelm screen reader users.
@@ -96,7 +76,6 @@ export class ContentDensityPerRegionRule implements Rule<ScreenReaderContext, Co
 
     readonly meta: RuleMeta = {
         wcag: { primary: { criterion: '2.4.1', level: 'A' } },
-        impact: 'moderate',
         summary: 'Landmark region contains an overwhelming number of items',
     };
 
@@ -147,13 +126,16 @@ export class ContentDensityPerRegionRule implements Rule<ScreenReaderContext, Co
             if (exceedsThreshold && current.landmark !== 'navigation') {
                 const step = steps[startStep]!;
                 violations.push(
-                    createViolation(
-                        'content-density-per-region',
-                        `${current.landmark} region contains ${itemCount} items (threshold: ${threshold}). This high density may overwhelm screen reader users. Consider breaking into smaller sections or adding sub-headings.`,
-                        step,
-                        arrowResult.meta.name,
-                        screenReader
-                    )
+                    buildViolation({
+                        ruleId: 'content-density-per-region',
+                        impact: 'moderate',
+                        stepId: `content-density-per-region-${step.identifier}`,
+                        message: `${current.landmark} region contains ${itemCount} items (threshold: ${threshold}). This high density may overwhelm screen reader users. Consider breaking into smaller sections or adding sub-headings.`,
+                        timestamp: step.timestamp,
+                        context: createScreenReaderContext(step, arrowResult.meta.name, step.index, screenReader),
+                        htmlSnippet: step.htmlSnippet,
+                        screenReader,
+                    })
                 );
             }
         }

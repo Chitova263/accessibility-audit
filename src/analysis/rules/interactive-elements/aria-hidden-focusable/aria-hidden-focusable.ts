@@ -11,6 +11,7 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getScreenReaderDisplayName } from '../../../../screen-reader/drivers/types';
 
@@ -27,7 +28,6 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
             primary: { criterion: '4.1.2', level: 'A' },
             related: [{ criterion: '1.3.1', level: 'A' }],
         },
-        impact: 'critical',
         summary: 'Focusable element has aria-hidden="true", creating silent focus',
     };
 
@@ -55,7 +55,22 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
 
                 if (this.hasAriaHidden(htmlSnippet)) {
                     const context = createScreenReaderContext(step, 'tab', stepIndex, ctx.screenReader);
-                    violations.push(this.createViolation(step, context, ctx.screenReader));
+                    const spokenText =
+                        step.spokenPhrases.length > 0 ? step.spokenPhrases.join(', ') : '(nothing announced)';
+                    const screenReaderDisplayName = getScreenReaderDisplayName(ctx.screenReader);
+
+                    violations.push(
+                        buildViolation({
+                            ruleId: 'aria-hidden-focusable',
+                            impact: 'critical',
+                            stepId: `aria-hidden-focusable-${step.identifier}`,
+                            message: `Focusable element has aria-hidden="true". Focus landed on this element but screen readers are instructed to ignore it, creating a confusing silent focus. ${screenReaderDisplayName} announced: "${spokenText}"`,
+                            timestamp: step.timestamp,
+                            context,
+                            htmlSnippet: step.htmlSnippet,
+                            screenReader: ctx.screenReader,
+                        })
+                    );
                 }
             }
         }
@@ -71,36 +86,6 @@ export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHi
 
     private hasAriaHidden(htmlSnippet: string): boolean {
         return /aria-hidden\s*=\s*["']true["']/i.test(htmlSnippet);
-    }
-
-    private createViolation(
-        step: {
-            identifier: string;
-            spokenPhrases: string[];
-            focusedElementText: string;
-            timestamp: number;
-            htmlSnippet: string | null;
-        },
-        context: ScreenReaderContext,
-        screenReader: AuditContext['screenReader']
-    ): ScreenReaderViolation {
-        const spokenText = step.spokenPhrases.length > 0 ? step.spokenPhrases.join(', ') : '(nothing announced)';
-        const screenReaderDisplayName = getScreenReaderDisplayName(screenReader);
-
-        return {
-            id: `aria-hidden-focusable-${step.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Focusable element has aria-hidden="true". Focus landed on this element but screen readers are instructed to ignore it, creating a confusing silent focus. ${screenReaderDisplayName} announced: "${spokenText}"`,
-            element: step.htmlSnippet != null ? { htmlSnippet: step.htmlSnippet } : {},
-            tool: 'screen-reader-audit',
-            timestamp: step.timestamp,
-            context,
-        };
     }
 }
 

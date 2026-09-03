@@ -10,8 +10,8 @@
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
+import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
-import type { ScreenReaderName } from '../../../../screen-reader/drivers/types';
 
 export interface FocusTrapStats {
     tabStrategiesChecked: number;
@@ -25,7 +25,6 @@ export class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> 
         wcag: {
             primary: { criterion: '2.1.2', level: 'A' },
         },
-        impact: 'critical',
         summary: 'Keyboard focus trap where the user cannot escape using Tab',
     };
 
@@ -46,7 +45,20 @@ export class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> 
                 const trappedStep = steps[steps.length - 1];
 
                 if (trappedStep) {
-                    violations.push(this.createViolation(trappedStep, steps.length, ctx.screenReader));
+                    const context = createScreenReaderContext(trappedStep, 'tab', steps.length - 1, ctx.screenReader);
+
+                    violations.push(
+                        buildViolation({
+                            ruleId: 'focus-trap',
+                            impact: 'critical',
+                            stepId: `focus-trap-${trappedStep.identifier}`,
+                            message: `Keyboard focus trap detected after ${steps.length} tab presses. Users cannot navigate away from this element using the keyboard. Element text: "${trappedStep.focusedElementText}"`,
+                            timestamp: trappedStep.timestamp,
+                            context,
+                            htmlSnippet: trappedStep.htmlSnippet,
+                            screenReader: ctx.screenReader,
+                        })
+                    );
                 }
             }
         }
@@ -57,36 +69,6 @@ export class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> 
                 tabStrategiesChecked,
                 focusTrapsFound: violations.length,
             },
-        };
-    }
-
-    private createViolation(
-        step: {
-            identifier: string;
-            spokenPhrases: string[];
-            focusedElementText: string;
-            timestamp: number;
-            htmlSnippet: string | null;
-            axNode: unknown;
-        },
-        stepsBeforeTrap: number,
-        screenReader: ScreenReaderName
-    ): ScreenReaderViolation {
-        const context = createScreenReaderContext(step, 'tab', stepsBeforeTrap - 1, screenReader);
-
-        return {
-            id: `focus-trap-${step.identifier}`,
-            rule: {
-                id: this.id,
-                summary: this.meta.summary,
-                wcag: this.meta.wcag,
-                impact: this.meta.impact,
-            },
-            message: `Keyboard focus trap detected after ${stepsBeforeTrap} tab presses. Users cannot navigate away from this element using the keyboard. Element text: "${step.focusedElementText}"`,
-            element: step.htmlSnippet != null ? { htmlSnippet: step.htmlSnippet } : {},
-            tool: 'nvda-audit',
-            timestamp: step.timestamp,
-            context,
         };
     }
 }
