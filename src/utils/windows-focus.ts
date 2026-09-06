@@ -4,10 +4,6 @@ import { Logger } from './logger';
 
 const log = Logger.context('WindowFocus');
 
-/**
- * Brings the Chrome window to the foreground on Windows.
- * Uses CDP to find the exact browser process, falling back to any Chrome window.
- */
 export async function focusChromeWindow(cdp: CDPSession): Promise<void> {
     const pid = await getBrowserPid(cdp);
 
@@ -20,9 +16,6 @@ export async function focusChromeWindow(cdp: CDPSession): Promise<void> {
     }
 }
 
-/**
- * Uses CDP SystemInfo.getProcessInfo to find the browser's main process PID.
- */
 async function getBrowserPid(cdp: CDPSession): Promise<number | undefined> {
     try {
         const result = await cdp.send('SystemInfo.getProcessInfo');
@@ -33,9 +26,6 @@ async function getBrowserPid(cdp: CDPSession): Promise<number | undefined> {
     }
 }
 
-/**
- * Focuses the Chrome window belonging to the specified process ID.
- */
 function focusWindowByPid(pid: number): void {
     execSync(
         `powershell -Command "` +
@@ -67,9 +57,6 @@ function focusWindowByPid(pid: number): void {
     );
 }
 
-/**
- * Fallback: focuses any Chrome window.
- */
 function focusAnyChrome(): void {
     execSync(
         `powershell -Command "` +

@@ -1,12 +1,3 @@
-/**
- * Rule: generic-link-text
- *
- * Detects links whose accessible name uses a generic phrase like "click here"
- * or "read more" that gives no indication of the link's destination or purpose.
- *
- * Maps to WCAG 2.4.4 (Link Purpose in Context), Level A.
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -42,13 +33,13 @@ const GENERIC_LINK_PATTERNS = [
     /^hier$/i, // German "here"
 ];
 
-export interface GenericLinkTextStats {
+interface GenericLinkTextStats {
     totalLinks: number;
     violationsFound: number;
     genericLinksWithSurroundingContext: number;
 }
 
-export class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLinkTextStats> {
+class GenericLinkTextRule implements Rule<ScreenReaderContext, GenericLinkTextStats> {
     readonly id = 'generic-link-text';
 
     readonly meta: RuleMeta = {

@@ -1,12 +1,3 @@
-/**
- * Rule: Role Mismatch
- *
- * Detects when the ARIA/AX role doesn't match the underlying HTML element.
- * For example: <a> with role="button" or <div> acting as a link.
- *
- * Maps to WCAG 4.1.2 (Name, Role, Value).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -53,7 +44,7 @@ const INTERACTIVE_ROLES = [
     'slider',
 ];
 
-export interface RoleMismatchStats {
+interface RoleMismatchStats {
     totalElementsChecked: number;
     violationsFound: number;
     byIssue: Record<string, number>;
@@ -79,7 +70,7 @@ interface MismatchInfo {
     description: string;
 }
 
-export class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchStats> {
+class RoleMismatchRule implements Rule<ScreenReaderContext, RoleMismatchStats> {
     readonly id = 'role-mismatch';
 
     readonly meta: RuleMeta = {

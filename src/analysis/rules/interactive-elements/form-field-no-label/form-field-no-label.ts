@@ -1,12 +1,3 @@
-/**
- * Rule: Form Field No Label
- *
- * Detects form fields that are missing accessible labels.
- *
- * Maps to WCAG 1.3.1 (Info and Relationships),
- * 3.3.2 (Labels or Instructions), and 4.1.2 (Name, Role, Value).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -30,7 +21,7 @@ const FORM_FIELD_ROLES = [
     'switch',
 ] as const;
 
-export interface FormFieldNoLabelStats {
+interface FormFieldNoLabelStats {
     totalFormFields: number;
     fieldsWithoutLabels: number;
     byRole: Record<string, { total: number; unlabeled: number }>;
@@ -50,7 +41,7 @@ interface FormFieldInfo {
     backendNodeId?: number | undefined;
 }
 
-export class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormFieldNoLabelStats> {
+class FormFieldNoLabelRule implements Rule<ScreenReaderContext, FormFieldNoLabelStats> {
     readonly id = 'form-field-no-label';
 
     readonly meta: RuleMeta = {

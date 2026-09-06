@@ -1,12 +1,3 @@
-/**
- * Rule: Positive Tabindex
- *
- * Detects elements with positive tabindex values that disrupt
- * the natural DOM focus order for keyboard users.
- *
- * Maps to WCAG 2.4.3 (Focus Order).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -15,7 +6,7 @@ import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getRole, getName } from '../../../../types/ax-utils';
 
-export interface PositiveTabindexStats {
+interface PositiveTabindexStats {
     totalFocusableElements: number;
     violationsFound: number;
 }
@@ -34,7 +25,7 @@ interface TabindexAnomaly {
     tabindexValue: number;
 }
 
-export class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveTabindexStats> {
+class PositiveTabindexRule implements Rule<ScreenReaderContext, PositiveTabindexStats> {
     readonly id = 'positive-tabindex';
 
     readonly meta: RuleMeta = {

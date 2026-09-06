@@ -1,22 +1,9 @@
-/**
- * Rule Catalog
- *
- * Single source of truth for rule metadata: WCAG mapping, summary, and how the
- * rule compares to axe-core. Violation factories read from here rather than
- * hardcoding the same values, so a rule's WCAG criterion is defined in exactly
- * one place.
- *
- * Impact is NOT defined here — it's a property of each violation, not the rule.
- * Rules specify impact when calling buildViolation().
- *
- * axe-core rules are deliberately absent: axe supplies its own ~90 rule IDs and
- * their metadata at runtime (see `analyzers/axe-core.ts`).
- */
+/** Impact is a property of each violation, not the rule. Rules specify impact when calling buildViolation(). */
 
 import type { WcagCriterion, ScreenReaderContext, ScreenReaderViolation } from '../core/violation';
 import type { ScreenReaderType } from '../../screen-reader/screen-reader-type';
 
-export type Impact = 'critical' | 'serious' | 'moderate' | 'minor';
+type Impact = 'critical' | 'serious' | 'moderate' | 'minor';
 
 export interface RuleDefinition {
     readonly wcag: {
@@ -47,7 +34,7 @@ export const RULES = {
         },
         axeEquivalent: ['page-has-heading-one'],
         summary: 'Page has no H1 heading',
-        supportsScreenshot: false, // absence of element
+        supportsScreenshot: false,
     },
 
     'multiple-h1': {
@@ -81,7 +68,7 @@ export const RULES = {
         },
         axeEquivalent: ['landmark-one-main'],
         summary: 'Page has no main landmark',
-        supportsScreenshot: false, // absence of element
+        supportsScreenshot: false,
     },
 
     'duplicate-landmark': {
@@ -109,14 +96,14 @@ export const RULES = {
         wcag: { primary: { criterion: '2.4.4', level: 'A' } },
         axeEquivalent: [],
         summary: 'Link text is fragmented into individual characters',
-        supportsScreenshot: false, // pattern across multiple elements
+        supportsScreenshot: false,
     },
 
     'focus-trap': {
         wcag: { primary: { criterion: '2.1.2', level: 'A' } },
         axeEquivalent: [],
         summary: 'Keyboard focus trap where the user cannot escape using Tab',
-        supportsScreenshot: false, // navigation flow issue
+        supportsScreenshot: false,
     },
 
     'button-not-in-tab-order': {
@@ -151,7 +138,7 @@ export const RULES = {
         wcag: { primary: { criterion: '2.4.3', level: 'A' } },
         axeEquivalent: [],
         summary: 'Focus jumps backwards or skips large sections',
-        supportsScreenshot: false, // navigation flow issue
+        supportsScreenshot: false,
     },
 
     'positive-tabindex': {
@@ -165,7 +152,7 @@ export const RULES = {
         wcag: { primary: { criterion: '2.4.1', level: 'A' } },
         axeEquivalent: ['bypass', 'skip-link'],
         summary: 'No skip link found in the first tab stops',
-        supportsScreenshot: false, // absence of element
+        supportsScreenshot: false,
     },
 
     'form-field-no-label': {
@@ -202,7 +189,7 @@ export const RULES = {
         wcag: { primary: { criterion: '2.4.1', level: 'A' } },
         axeEquivalent: [],
         summary: 'Page has an excessive number of links',
-        supportsScreenshot: false, // structural/count issue
+        supportsScreenshot: false,
     },
 
     'large-content-gap': {
@@ -212,7 +199,7 @@ export const RULES = {
         },
         axeEquivalent: [],
         summary: 'Long run of content with no heading between items',
-        supportsScreenshot: false, // spans multiple elements
+        supportsScreenshot: false,
     },
 
     'landmark-without-heading': {
@@ -222,7 +209,7 @@ export const RULES = {
         },
         axeEquivalent: [],
         summary: 'Landmark contains many items but no heading',
-        supportsScreenshot: false, // structural issue
+        supportsScreenshot: false,
     },
 
     'repeated-pattern-without-heading': {
@@ -232,28 +219,28 @@ export const RULES = {
         },
         axeEquivalent: [],
         summary: 'Repeated content pattern with no heading introducing the group',
-        supportsScreenshot: false, // spans multiple elements
+        supportsScreenshot: false,
     },
 
     'steps-to-main-content': {
         wcag: { primary: { criterion: '2.4.1', level: 'A' } },
         axeEquivalent: [],
         summary: 'Main content reached only after excessive linear reading steps',
-        supportsScreenshot: false, // navigation flow issue
+        supportsScreenshot: false,
     },
 
     'reading-order-landmark-sequence': {
         wcag: { primary: { criterion: '1.3.2', level: 'A' } },
         axeEquivalent: [],
         summary: 'Landmarks announced out of logical reading order',
-        supportsScreenshot: false, // structural issue
+        supportsScreenshot: false,
     },
 
     'excessive-repetition': {
         wcag: { primary: { criterion: '1.3.1', level: 'A' } },
         axeEquivalent: [],
         summary: 'Same phrase announced many times consecutively',
-        supportsScreenshot: false, // pattern issue
+        supportsScreenshot: false,
     },
 
     'unexited-subtree-repetition': {
@@ -267,14 +254,14 @@ export const RULES = {
         wcag: { primary: { criterion: '1.3.1', level: 'A' } },
         axeEquivalent: [],
         summary: 'Long run of blank announcements in linear reading',
-        supportsScreenshot: false, // no element to capture
+        supportsScreenshot: false,
     },
 
     'content-density-per-region': {
         wcag: { primary: { criterion: '2.4.1', level: 'A' } },
         axeEquivalent: [],
         summary: 'Landmark region contains an overwhelming number of items',
-        supportsScreenshot: false, // structural/count issue
+        supportsScreenshot: false,
     },
 } as const satisfies Record<string, RuleDefinition>;
 
@@ -293,12 +280,7 @@ export function ruleSupportsScreenshot(ruleId: string): boolean {
     return true;
 }
 
-/**
- * Get the rule object for a violation.
- * Returns the rule structure needed by the Violation type (without impact).
- *
- * Impact is specified per-violation via buildViolation(), not from the catalog.
- */
+/** Get the rule object for a violation (without impact, which is specified per-violation). */
 export function getRule(ruleId: RuleId): {
     id: string;
     summary: string;
@@ -335,15 +317,7 @@ export interface BuildViolationOptions {
     screenReader: ScreenReaderType;
 }
 
-/**
- * Build a violation with metadata from the catalog.
- *
- * This is the primary way to create violations. It:
- * - Reads WCAG mapping and summary from the catalog (single source of truth)
- * - Sets the `tool` field from the screen reader name
- * - Generates a consistent violation ID format
- * - Handles optional htmlSnippet
- */
+/** Build a violation with WCAG mapping, summary, tool, and ID read from the catalog. */
 export function buildViolation(options: BuildViolationOptions): ScreenReaderViolation {
     const { ruleId, impact, stepId, message, timestamp, context, htmlSnippet, screenReader } = options;
     const rule = getRule(ruleId);

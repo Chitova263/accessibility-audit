@@ -46,7 +46,7 @@ export interface StrategyResult {
     completionReason: CompletionReason;
 }
 
-export interface AccessibilityContext {
+interface AccessibilityContext {
     tree: GetFullAXTreeResult;
     getNodeOuterHtml(backendDOMNodeId: number): Promise<string>;
     getFocusedHtmlElementBackendNodeId(): Promise<number | null>;

@@ -40,8 +40,11 @@ export class TabNavigationStrategy implements NavigationStrategy {
 
         this.endDetector.reset();
 
-        for await (const { phrase, focusedElementText } of ctx.virtualCursor.focusableElements()) {
-            const backendNodeId = await ctx.accessibility.getFocusedHtmlElementBackendNodeId();
+        for await (const { phrase, focusedElementText, backendDOMNodeId } of ctx.virtualCursor.focusableElements()) {
+            // Prefer backendDOMNodeId from the driver (CDP virtual) over querying the DOM
+            // The driver knows exactly which AX node it's on; querying the DOM can give
+            // a different element if focus didn't move correctly
+            const backendNodeId = backendDOMNodeId ?? (await ctx.accessibility.getFocusedHtmlElementBackendNodeId());
             const documentHasFocus = await ctx.accessibility.getDocumentHasFocus();
 
             // Check if focus has left the document (e.g., moved to browser UI)
@@ -62,7 +65,9 @@ export class TabNavigationStrategy implements NavigationStrategy {
             }
 
             // Cycle detection: focus returned to a previously visited DOM node
-            if (backendNodeId != null && visitedNodeIds.has(backendNodeId)) {
+            // Skip this check if we have a backendDOMNodeId from the driver - it knows
+            // the true position in the AX tree, which may have multiple nodes for similar elements
+            if (backendDOMNodeId === undefined && backendNodeId != null && visitedNodeIds.has(backendNodeId)) {
                 return NavigationStrategyResult.cycleComplete(
                     `tab focus returned to previously visited element (backendNodeId: ${backendNodeId})`,
                     this.meta,

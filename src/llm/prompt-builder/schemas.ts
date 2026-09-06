@@ -39,15 +39,12 @@ export const promptNavigationStepSchema = z.object({
 
 export type PromptNavigationStep = z.infer<typeof promptNavigationStepSchema>;
 
-export const completionReasonKindSchema = z.enum(['exhausted', 'limit-reached', 'cycle-complete', 'trapped']);
+const completionReasonKindSchema = z.enum(['exhausted', 'limit-reached', 'cycle-complete', 'trapped']);
 
-export const completionReasonSchema = z.object({
+const completionReasonSchema = z.object({
     kind: completionReasonKindSchema,
     detail: z.string(),
 });
-
-export type CompletionReasonKind = z.infer<typeof completionReasonKindSchema>;
-export type PromptCompletionReason = z.infer<typeof completionReasonSchema>;
 
 export const promptStrategySectionSchema = z.object({
     strategyName: z.string(),

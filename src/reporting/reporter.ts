@@ -1,10 +1,3 @@
-/**
- * Reporter Interface and Base Types
- *
- * Pluggable architecture for generating accessibility audit reports
- * in various formats (HTML, JSON, PDF, etc.)
- */
-
 import type { LlmCompleteResponse } from '../llm/prompt-builder';
 import type { Violation } from '../analysis/core/violation';
 import type { StrategyResult } from '../screen-reader/strategies/navigation-strategy';
@@ -38,38 +31,8 @@ export interface ReporterOptions {
     screenshotsBasePath?: string;
 }
 
-/**
- * Reporter interface.
- *
- * Implement this interface to create custom report formats.
- *
- * @example
- * ```typescript
- * class SlackReporter implements Reporter {
- *     readonly name = 'slack';
- *
- *     async generate(data: ReportData): Promise<ReportOutput> {
- *         // Generate Slack-formatted message
- *         return {
- *             format: 'json',
- *             content: JSON.stringify(slackPayload),
- *             filename: 'slack-report.json',
- *             mimeType: 'application/json',
- *         };
- *     }
- * }
- * ```
- */
 export interface Reporter {
     readonly name: string;
-
-    /**
-     * Generate a report from audit data.
-     *
-     * @param data - Complete audit data including LLM analysis and violations
-     * @param options - Reporter-specific options
-     * @returns Generated report content and metadata
-     */
     generate(data: ReportData, options?: ReporterOptions): Promise<ReportOutput>;
 }
 

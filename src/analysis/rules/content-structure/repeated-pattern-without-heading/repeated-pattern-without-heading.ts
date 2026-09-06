@@ -1,13 +1,3 @@
-/**
- * Rule: Repeated Pattern Without Heading
- *
- * Detects runs of structurally similar content (e.g., many consecutive
- * clickable items, buttons, or links) that have no preceding section heading,
- * making it hard for screen reader users to understand what the group represents.
- *
- * Maps to WCAG 1.3.1 (Info and Relationships).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';

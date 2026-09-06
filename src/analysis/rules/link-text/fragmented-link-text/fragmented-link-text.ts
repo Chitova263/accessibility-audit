@@ -50,10 +50,6 @@ function isSingleCharLink(focusedElementText: string): { isLink: boolean; char: 
 }
 
 /**
- * Detects sequences of single-character links that form words or numbers.
- * This typically indicates improper markup where text is fragmented into
- * individual linked characters, making content unusable for screen reader users.
- *
  * Common causes:
  * 1. Separate <a> tags wrapping individual characters (CSS letter-spacing effects)
  * 2. Web components with shadow DOM containing sr-only text slotted inside a link

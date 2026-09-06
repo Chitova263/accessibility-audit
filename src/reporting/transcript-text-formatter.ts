@@ -1,8 +1,5 @@
 import type { PromptTranscript, PromptStrategySection } from '../llm/prompt-builder/schemas';
 
-/**
- * Format a strategy section into flat text.
- */
 function formatStrategySection(section: PromptStrategySection): string {
     const lines: string[] = [];
 
@@ -24,9 +21,6 @@ function formatStrategySection(section: PromptStrategySection): string {
     return lines.join('\n');
 }
 
-/**
- * Format the complete transcript into simple flat text.
- */
 export function formatTranscriptAsText(transcript: PromptTranscript): string {
     const lines: string[] = [];
 

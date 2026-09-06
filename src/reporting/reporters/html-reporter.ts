@@ -91,16 +91,8 @@ function renderStepRefsOnly(text: string): string {
     return parts.join('');
 }
 
-/**
- * Replaces [ruleId:violationId] tokens in prose text with anchor links.
- * The input should already be HTML (e.g., output of renderStepRefsOnly).
- */
 function renderViolationRefsOnly(html: string): string {
-    // Token format: [ruleId:violationId] where violationId is ruleId + "-" + uuid
-    // Examples: [multiple-h1:multiple-h1-da2c0148-7d23-438b-9ed5-2fc3d38671d2]
-    //           [focus-trap:focus-trap-7f958390-ff16-4903-93c6-a58e6db7723f]
-    // ViolationId format: {ruleId}-{uuid} where uuid is 8-4-4-4-12 hex chars
-    // Note: This must NOT match step refs which have format [strategy:number:uuid]
+    // Token format: [ruleId:violationId] - must NOT match step refs [strategy:number:uuid]
     const TOKEN =
         /\[([a-z][a-z0-9_-]*):([a-z][a-z0-9_-]+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
 
@@ -113,11 +105,7 @@ function renderViolationRefsOnly(html: string): string {
     });
 }
 
-/**
- * Replaces both [strategy:stepIndex:stepId] and [ruleId:violationId] tokens in prose text
- * with anchor links, then HTML-escapes the remaining text. Must be used instead of plain
- * escapeHtml for any LLM-generated free-text field that may contain references.
- */
+/** Must be used instead of plain escapeHtml for LLM-generated text that may contain references. */
 function renderStepRefs(text: string): string {
     // First render step refs (which also escapes plain text)
     const withStepRefs = renderStepRefsOnly(text);
@@ -653,7 +641,6 @@ ${impactSections}
 </section>`;
         }
 
-        // Build a map from ruleId to first violation ID for linking relatedRuleId
         const ruleToViolationId = new Map<string, string>();
         for (const v of data.violations) {
             const ruleId = v.rule?.id;
@@ -693,7 +680,6 @@ ${impactSections}
             ? pill(finding.classification.replace(/-/g, ' '), '#4a5568')
             : '';
 
-        // Make relatedRuleId a clickable link if we have a matching violation
         let relatedRulePill = '';
         if (finding.relatedRuleId) {
             const violationId = ruleToViolationId.get(finding.relatedRuleId);
@@ -757,7 +743,6 @@ ${impactSections}
 
         const patternCaption = pattern ? `<p class="evidence-excerpt__pattern">${renderStepRefs(pattern)}</p>` : '';
 
-        // Single step — inline row, no surrounding box
         if (steps.length === 1) {
             const step = steps[0]!;
             return `

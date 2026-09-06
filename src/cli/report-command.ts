@@ -3,10 +3,10 @@ import { program } from 'commander';
 import * as path from 'path';
 import { generateReportFromFiles } from '../reporting/from-files';
 import { Logger } from '../utils/logger';
-import { reportOptionsSchema, parseOptions } from './schemas';
+import { parseReportOptions } from './schemas';
 
 program
-    .name('a11y report')
+    .name('ally report')
     .description('Generate an accessibility report from existing audit data files')
     .option('--dir <dir>', 'Audit run directory (sets default paths for all files below)')
     .option('--llm-response <path>', 'Path to LLM response JSON')
@@ -17,7 +17,7 @@ program
     .option('-v, --verbose', 'Enable verbose output')
     .parse();
 
-const options = parseOptions(reportOptionsSchema, program.opts(), 'a11y report');
+const options = parseReportOptions(program.opts());
 
 Logger.setLevel(options.verbose ? 'debug' : 'info');
 

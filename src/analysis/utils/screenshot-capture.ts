@@ -104,14 +104,6 @@ export async function ensureScreenshotsDir(outputDir: string): Promise<string> {
  *
  * This function separates screenshot capture (effectful I/O) from rule analysis (pure).
  * Rules return violations without screenshots; this function adds them.
- *
- * Violations without a `context.axNode.backendDOMNodeId` are returned unchanged.
- *
- * @param violations - Violations from rule analysis (without screenshots)
- * @param page - Playwright Page for screenshot capture
- * @param cdp - CDP session for DOM operations
- * @param outputDir - Output directory (screenshots saved to `outputDir/screenshots/`)
- * @returns New array of violations with screenshots attached
  */
 export async function attachScreenshots<T extends Violation>(
     violations: T[],

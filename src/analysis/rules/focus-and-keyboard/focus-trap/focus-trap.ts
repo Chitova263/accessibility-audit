@@ -1,24 +1,15 @@
-/**
- * Rule: Focus Trap
- *
- * Detects keyboard focus traps where users cannot escape
- * using standard keyboard navigation.
- *
- * Maps to WCAG 2.1.2 (No Keyboard Trap).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 
-export interface FocusTrapStats {
+interface FocusTrapStats {
     tabStrategiesChecked: number;
     focusTrapsFound: number;
 }
 
-export class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> {
+class FocusTrapRule implements Rule<ScreenReaderContext, FocusTrapStats> {
     readonly id = 'focus-trap';
 
     readonly meta: RuleMeta = {

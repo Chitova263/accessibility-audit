@@ -5,12 +5,12 @@ import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { collectLandmarks } from '../../utils/landmark-utils';
 
-export interface MissingMainLandmarkStats {
+interface MissingMainLandmarkStats {
     totalLandmarks: number;
     violationsFound: number;
 }
 
-export class MissingMainLandmarkRule implements Rule<ScreenReaderContext, MissingMainLandmarkStats> {
+class MissingMainLandmarkRule implements Rule<ScreenReaderContext, MissingMainLandmarkStats> {
     readonly id = 'missing-main-landmark';
 
     readonly meta: RuleMeta = {

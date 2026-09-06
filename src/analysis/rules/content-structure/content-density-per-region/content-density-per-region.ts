@@ -51,15 +51,10 @@ function getRole(step: NavigationStep): string | undefined {
 }
 
 /**
- * Analyzes content density within each landmark region.
- * Regions with too many items may overwhelm screen reader users.
- *
  * Oversized navigation regions are already reported by the navigation-size
  * analyzer, which counts links rather than steps. Recording the region in the
  * stats but skipping the violation for `navigation` keeps the two from
  * double-reporting.
- *
- * WCAG 2.4.1: Bypass Blocks (Level A)
  */
 export class ContentDensityPerRegionRule implements Rule<ScreenReaderContext, ContentDensityPerRegionStats> {
     readonly id = 'content-density-per-region';

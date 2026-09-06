@@ -23,7 +23,7 @@ const createViolation = (overrides: Partial<Violation<AxeContext>> = {}): Violat
         htmlSnippet: '<button class="submit-btn"></button>',
         selector: 'button.submit-btn',
     },
-    tool: 'axe-core',
+    tool: 'external-tool',
     timestamp: 1234567890,
     context: {
         nodes: [],

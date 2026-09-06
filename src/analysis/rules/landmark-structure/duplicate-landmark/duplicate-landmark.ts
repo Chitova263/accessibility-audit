@@ -5,13 +5,13 @@ import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { collectLandmarks } from '../../utils/landmark-utils';
 
-export interface DuplicateLandmarkStats {
+interface DuplicateLandmarkStats {
     totalLandmarks: number;
     violationsFound: number;
     byRole: Record<string, number>;
 }
 
-export class DuplicateLandmarkRule implements Rule<ScreenReaderContext, DuplicateLandmarkStats> {
+class DuplicateLandmarkRule implements Rule<ScreenReaderContext, DuplicateLandmarkStats> {
     readonly id = 'duplicate-landmark';
 
     readonly meta: RuleMeta = {

@@ -11,13 +11,13 @@ import {
     isLikelyInTabOrder,
 } from '../../../utils/tab-order-helpers';
 
-export interface LinkNotInTabOrderStats {
+interface LinkNotInTabOrderStats {
     linksInBrowseMode: number;
     linksInFocusMode: number;
     violationsFound: number;
 }
 
-export class LinkNotInTabOrderRule implements Rule<ScreenReaderContext, LinkNotInTabOrderStats> {
+class LinkNotInTabOrderRule implements Rule<ScreenReaderContext, LinkNotInTabOrderStats> {
     readonly id = 'link-not-in-tab-order';
 
     readonly meta: RuleMeta = {

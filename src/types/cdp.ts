@@ -9,7 +9,7 @@
  * If playwright-core updates the protocol types, run `npm run typecheck` to catch drift.
  */
 
-export namespace CDP {
+namespace CDP {
     export namespace Accessibility {
         export type AXNodeId = string;
 

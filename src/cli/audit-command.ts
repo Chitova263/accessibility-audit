@@ -18,7 +18,7 @@ import { HeadingNavigationStrategy } from '../screen-reader/strategies/heading-n
 import { DownArrowNavigationStrategy } from '../screen-reader/strategies/down-arrow-navigation-strategy';
 
 program
-    .name('a11y audit')
+    .name('ally audit')
     .description('Run accessibility audit on a given URL')
     .argument('<url>', 'URL to audit')
     .option('-o, --output-dir <dir>', 'Output directory for audit files')
@@ -82,7 +82,6 @@ try {
 
     const result = await session.run();
 
-    // Write results to files
     const fs = await import('fs/promises');
     const path = await import('path');
 
@@ -96,7 +95,6 @@ try {
     Logger.info(`  - ${violationsPath}`);
     Logger.info(`  - ${transcriptPath}`);
 
-    // Generate LLM prompts
     const promptBuilder = createPromptBuilder({
         screenReader: options.reader,
         transcript: {

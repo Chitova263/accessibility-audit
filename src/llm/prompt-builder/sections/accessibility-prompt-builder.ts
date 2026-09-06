@@ -80,10 +80,6 @@ const ALL_CATEGORIES: AnalysisCategory[] = [
     'missing-context',
 ];
 
-/**
- * Concise guidance for what ONLY the LLM can analyze.
- * Rules detect patterns; LLM judges whether patterns are problematic in context.
- */
 const LLM_UNIQUE_ANALYSIS_GUIDANCE = `
 ## YOUR UNIQUE VALUE: SEMANTIC JUDGMENT
 
@@ -301,7 +297,7 @@ Your role is to identify accessibility issues that deterministic rules cannot ca
 
 You will receive:
 1. A transcript of ${screenReaderDisplayName} screen reader navigation through a web page
-2. Violations already found by static analyzers (axe-core and ${screenReaderDisplayName} rules)
+2. Violations already found by automated ${screenReaderDisplayName} rules
 
 Your task is to:
 1. Analyze the transcript for issues rules cannot detect (reading order, cognitive load, consistency, context, semantic)

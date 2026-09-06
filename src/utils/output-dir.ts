@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-export function slugifyUrl(url: string): string {
+function slugifyUrl(url: string): string {
     let parsed: URL;
     try {
         parsed = new URL(url);
@@ -21,7 +21,7 @@ export function slugifyUrl(url: string): string {
         .slice(0, 80);
 }
 
-export function formatTimestamp(date: Date = new Date()): string {
+function formatTimestamp(date: Date = new Date()): string {
     const pad = (n: number) => String(n).padStart(2, '0');
     const year = date.getFullYear();
     const month = pad(date.getMonth() + 1);
@@ -31,10 +31,6 @@ export function formatTimestamp(date: Date = new Date()): string {
     return `${year}-${month}-${day}T${hours}-${minutes}`;
 }
 
-/**
- * Resolves and creates the output directory for an audit run.
- * If no explicit dir is given, auto-generates audit-results/<url-slug>-<timestamp>.
- */
 export async function resolveOutputDir(options: {
     explicitDir?: string;
     url: string;

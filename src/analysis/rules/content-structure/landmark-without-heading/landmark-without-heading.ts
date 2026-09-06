@@ -1,12 +1,3 @@
-/**
- * Rule: Landmark Without Heading
- *
- * Detects landmark regions that contain many items but no heading, making it
- * difficult for screen reader users to understand the section's purpose.
- *
- * Maps to WCAG 1.3.1 (Info and Relationships).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';

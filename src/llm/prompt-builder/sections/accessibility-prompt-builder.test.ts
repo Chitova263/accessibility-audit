@@ -11,7 +11,7 @@ describe('AccessibilityPromptBuilder', () => {
             const prompt = createPromptBuilder({ screenReader }).build();
 
             expect(prompt.system).toContain(`A transcript of ${expected} screen reader navigation`);
-            expect(prompt.system).toContain(`axe-core and ${expected} rules`);
+            expect(prompt.system).toContain(`automated ${expected} rules`);
         });
 
         it('withScreenReader overrides the screen reader from config', () => {

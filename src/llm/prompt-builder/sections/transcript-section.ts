@@ -15,7 +15,7 @@ import { mergeTranscriptConfig } from '../schemas';
 function cleanAndTruncateHtml(html: string, maxLength: number): string {
     try {
         const root = parse(html, {
-            comment: false, // Remove comments
+            comment: false,
         });
 
         root.querySelectorAll('script, style, noscript, svg').forEach((el) => el.remove());
@@ -88,9 +88,6 @@ function cleanAndTruncateHtml(html: string, maxLength: number): string {
     }
 }
 
-/**
- * Extracts relevant properties from full AX node.
- */
 function simplifyAxNode(axNode: unknown): PromptAxNode | null {
     if (!axNode || typeof axNode !== 'object') {
         return null;
@@ -184,9 +181,6 @@ function simplifyAxNode(axNode: unknown): PromptAxNode | null {
     };
 }
 
-/**
- * Transforms a NavigationStep into prompt-ready format.
- */
 function transformStep(step: NavigationStep, config: ResolvedTranscriptConfig): PromptNavigationStep {
     const spoken = step.spokenPhrases.join(' ').trim();
 
@@ -210,9 +204,6 @@ function transformStep(step: NavigationStep, config: ResolvedTranscriptConfig): 
     };
 }
 
-/**
- * Transforms a StrategyResult into a prompt section.
- */
 function transformStrategy(result: StrategyResult, config: ResolvedTranscriptConfig): PromptStrategySection {
     return {
         strategyName: result.meta.name,
@@ -223,16 +214,11 @@ function transformStrategy(result: StrategyResult, config: ResolvedTranscriptCon
     };
 }
 
-/**
- * Filters strategies based on config.
- */
 function shouldIncludeStrategy(strategyName: string, config: ResolvedTranscriptConfig): boolean {
-    // If include list is specified, only include those
     if (config.includeStrategies.length > 0) {
         return config.includeStrategies.includes(strategyName);
     }
 
-    // If exclude list is specified, exclude those
     if (config.excludeStrategies.length > 0) {
         return !config.excludeStrategies.includes(strategyName);
     }
@@ -240,9 +226,6 @@ function shouldIncludeStrategy(strategyName: string, config: ResolvedTranscriptC
     return true;
 }
 
-/**
- * Builds the transcript data structure from strategy results.
- */
 export function buildTranscriptData(
     transcript: StrategyResult[],
     config: TranscriptSectionConfig = {}
@@ -262,9 +245,6 @@ export function buildTranscriptData(
     };
 }
 
-/**
- * Adds a navigation step to the parent XML element using xmlbuilder2.
- */
 function addStepXml(
     parent: XMLBuilder,
     step: PromptNavigationStep,
@@ -329,9 +309,6 @@ function addStepXml(
     }
 }
 
-/**
- * Adds a strategy section to the parent XML element using xmlbuilder2.
- */
 function addSectionXml(parent: XMLBuilder, section: PromptStrategySection, config: ResolvedTranscriptConfig): void {
     const strategyEle = parent.ele('strategy', {
         name: section.strategyName,
@@ -347,9 +324,6 @@ function addSectionXml(parent: XMLBuilder, section: PromptStrategySection, confi
     }
 }
 
-/**
- * Renders the complete transcript as XML for prompt inclusion using xmlbuilder2.
- */
 export function renderTranscriptXml(transcript: PromptTranscript, config: TranscriptSectionConfig = {}): string {
     const mergedConfig = mergeTranscriptConfig(config);
 
@@ -365,9 +339,6 @@ export function renderTranscriptXml(transcript: PromptTranscript, config: Transc
     return root.end({ prettyPrint: true, indent: '    ', headless: true });
 }
 
-/**
- * Convenience function: builds and renders transcript XML in one call.
- */
 export function buildTranscriptSection(transcript: StrategyResult[], config: TranscriptSectionConfig = {}): string {
     const data = buildTranscriptData(transcript, config);
     return renderTranscriptXml(data, config);

@@ -13,7 +13,7 @@ export interface MatchResult {
  * Skips ignored nodes in output since screen reader virtual cursor won't stop on them,
  * but still traverses their children to capture the full accessible content.
  */
-export function flattenAxTree(nodes: AXNode[]): AXNode[] {
+function flattenAxTree(nodes: AXNode[]): AXNode[] {
     const byId = new Map<string, AXNode>(nodes.map((node) => [node.nodeId, node]));
     const order: AXNode[] = [];
 
@@ -93,11 +93,8 @@ export class AxTreeCursor {
     }
 
     /**
-     * Find the next node matching the spoken phrase, without filtering by role.
+     * Find the next node matching the spoken phrase without role filtering.
      * Used for arrow key navigation which can land on any element type.
-     *
-     * @param spokenPhrase - The phrase NVDA spoke
-     * @returns The matched node and its index, or null if no match found
      */
     matchNextAny(spokenPhrase: string): MatchResult | null {
         const normalizedPhrase = spokenPhrase.toLowerCase();
@@ -118,12 +115,8 @@ export class AxTreeCursor {
     }
 
     /**
-     * Find the next node with a specific role after the current cursor position.
-     * Useful for heading/landmark navigation where NVDA announces the role.
-     *
-     * @param spokenPhrase - The phrase NVDA spoke
-     * @param roles - Array of roles to match (e.g. ['heading'] for H key navigation)
-     * @returns The matched node and its index, or null if no match found
+     * Find the next node matching the spoken phrase and one of the given roles.
+     * Used for heading/landmark navigation where NVDA announces the role.
      */
     matchNextByRoles(spokenPhrase: string, roles: string[]): MatchResult | null {
         const normalizedPhrase = spokenPhrase.toLowerCase();
@@ -146,11 +139,8 @@ export class AxTreeCursor {
     }
 
     /**
-     * Find the next node with an exact role after the current cursor position.
-     * Does NOT require a name match — useful for landmarks which often have no accessible name.
-     *
-     * @param role - The exact role to match (e.g. 'banner', 'navigation', 'main')
-     * @returns The matched node and its index, or null if no match found
+     * Find the next node with an exact role, without requiring a name match.
+     * Useful for landmarks which often have no accessible name.
      */
     matchNextByRole(role: string): MatchResult | null {
         const index = this.flat.findIndex((n, i) => {
@@ -167,9 +157,6 @@ export class AxTreeCursor {
         return { node, index };
     }
 
-    /**
-     * Manually set the cursor position (useful for testing or recovery).
-     */
     setCursorIndex(index: number): void {
         if (index >= -1 && index < this.flat.length) {
             this.cursorIndex = index;
@@ -178,14 +165,7 @@ export class AxTreeCursor {
 
     /**
      * Find an AX node by its backendDOMNodeId.
-     * Useful for focus mode navigation where we know the focused DOM element
-     * but need to find its corresponding AX node.
-     *
-     * NOTE: This does NOT advance the cursor since focus mode navigation
-     * doesn't follow document order like browse mode.
-     *
-     * @param backendDOMNodeId - The backend DOM node ID from CDP
-     * @returns The matched AX node or null if not found
+     * Does NOT advance the cursor — focus mode navigation doesn't follow document order.
      */
     findByBackendDOMNodeId(backendDOMNodeId: number): AXNode | null {
         return this.flat.find((n) => n.backendDOMNodeId === backendDOMNodeId) ?? null;

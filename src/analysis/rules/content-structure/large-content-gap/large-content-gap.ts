@@ -1,14 +1,5 @@
-/**
- * Rule: Large Content Gap
- *
- * Detects large sections of content within the main landmark that have no
- * heading, making it hard for screen reader users to orient themselves.
- *
- * Only analyzes content inside the main landmark region to avoid false
- * positives from navigation, header, and footer elements.
- *
- * Maps to WCAG 1.3.1 (Info and Relationships).
- */
+// Only analyzes content inside the main landmark region to avoid false
+// positives from navigation, header, and footer elements.
 
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';

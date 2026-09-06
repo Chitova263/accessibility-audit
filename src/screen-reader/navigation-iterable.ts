@@ -24,14 +24,14 @@ export class NavigationIterable implements AsyncIterable<NavigationItem> {
         this.config.navigationEndDetector.reset();
 
         while (true) {
-            const { spokenPhrases, focusedElementText } = await this.sr.press(this.config.key);
+            const { spokenPhrases, focusedElementText, backendDOMNodeId } = await this.sr.press(this.config.key);
             const phrase = spokenPhrases.length > 0 ? spokenPhrases[spokenPhrases.length - 1]! : '';
 
             if (!this.config.navigationEndDetector.hasNext({ phrase, focusedElementText })) {
                 return;
             }
 
-            yield { phrase, focusedElementText };
+            yield { phrase, focusedElementText, backendDOMNodeId };
         }
     }
 }

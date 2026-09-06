@@ -11,13 +11,13 @@ import {
     isLikelyInTabOrder,
 } from '../../../utils/tab-order-helpers';
 
-export interface ButtonNotInTabOrderStats {
+interface ButtonNotInTabOrderStats {
     buttonsInBrowseMode: number;
     buttonsInFocusMode: number;
     violationsFound: number;
 }
 
-export class ButtonNotInTabOrderRule implements Rule<ScreenReaderContext, ButtonNotInTabOrderStats> {
+class ButtonNotInTabOrderRule implements Rule<ScreenReaderContext, ButtonNotInTabOrderStats> {
     readonly id = 'button-not-in-tab-order';
 
     readonly meta: RuleMeta = {

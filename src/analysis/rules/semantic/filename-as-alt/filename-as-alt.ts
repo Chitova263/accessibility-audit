@@ -1,12 +1,3 @@
-/**
- * Rule: Filename as Alt Text
- *
- * Detects images where the alt text is a filename or auto-generated identifier
- * (e.g., "IMG_1234.jpg") rather than a meaningful description.
- *
- * Maps to WCAG 1.1.1 (Non-text Content).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -38,7 +29,7 @@ const STOCK_PHOTO_PATTERNS = [
     /^pexels/i,
 ];
 
-export interface FilenameAsAltStats {
+interface FilenameAsAltStats {
     totalImages: number;
     violationsFound: number;
     byIssue: Record<'filename-as-alt', number>;
@@ -56,7 +47,7 @@ interface ImageInfo {
     backendNodeId?: number | undefined;
 }
 
-export class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAltStats> {
+class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAltStats> {
     readonly id = 'filename-as-alt';
 
     readonly meta: RuleMeta = {

@@ -6,13 +6,13 @@ import { createScreenReaderContext } from '../../../utils/tool-details';
 import type { NavigationStep, StrategyResult } from '../../../../screen-reader/strategies/navigation-strategy';
 import { getRole as getAxRole } from '../../../../types/ax-utils';
 
-export interface LandmarkSequenceInfo {
+interface LandmarkSequenceInfo {
     landmark: string;
     stepIndex: number;
     spokenPhrase: string;
 }
 
-export interface ReadingOrderLandmarkSequenceStats {
+interface ReadingOrderLandmarkSequenceStats {
     landmarkSequence: LandmarkSequenceInfo[];
     hasMainBeforeFooter: boolean;
     hasMainBeforeAside: boolean;
@@ -55,7 +55,7 @@ function getRole(step: NavigationStep): string | undefined {
  *
  * WCAG 1.3.2: Meaningful Sequence (Level A)
  */
-export class ReadingOrderLandmarkSequenceRule implements Rule<ScreenReaderContext, ReadingOrderLandmarkSequenceStats> {
+class ReadingOrderLandmarkSequenceRule implements Rule<ScreenReaderContext, ReadingOrderLandmarkSequenceStats> {
     readonly id = 'reading-order-landmark-sequence';
 
     readonly meta: RuleMeta = {

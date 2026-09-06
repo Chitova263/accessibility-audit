@@ -4,13 +4,13 @@ import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { collectHeadings, createHeadingContext } from '../../utils/heading-utils';
 
-export interface MissingH1Stats {
+interface MissingH1Stats {
     totalHeadings: number;
     h1Count: number;
     violationsFound: number;
 }
 
-export class MissingH1Rule implements Rule<ScreenReaderContext, MissingH1Stats> {
+class MissingH1Rule implements Rule<ScreenReaderContext, MissingH1Stats> {
     readonly id = 'missing-h1';
 
     readonly meta: RuleMeta = {

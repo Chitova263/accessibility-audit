@@ -105,9 +105,9 @@ describe('attachScreenshots', () => {
     });
 
     it('passes non-ScreenReaderViolation through unchanged', async () => {
-        // An axe-core violation has a different context shape
-        const axeViolation: Violation<{ nodes: unknown[]; tags: string[] }> = {
-            id: 'axe-1',
+        // An external violation has a different context shape
+        const externalViolation: Violation<{ nodes: unknown[]; tags: string[] }> = {
+            id: 'external-1',
             rule: {
                 id: 'color-contrast',
                 summary: 'Elements must have sufficient color contrast',
@@ -115,7 +115,7 @@ describe('attachScreenshots', () => {
                 impact: 'serious',
             },
             message: 'Element has insufficient color contrast',
-            tool: 'axe-core',
+            tool: 'external-tool',
             timestamp: Date.now(),
             context: {
                 nodes: [],
@@ -123,10 +123,10 @@ describe('attachScreenshots', () => {
             },
         };
 
-        const result = await attachScreenshots([axeViolation], mockPage as never, mockCdp as never, '/tmp/output');
+        const result = await attachScreenshots([externalViolation], mockPage as never, mockCdp as never, '/tmp/output');
 
         expect(result).toHaveLength(1);
-        expect(result[0]).toEqual(axeViolation);
+        expect(result[0]).toEqual(externalViolation);
         expect(mockPage.screenshot).not.toHaveBeenCalled();
     });
 

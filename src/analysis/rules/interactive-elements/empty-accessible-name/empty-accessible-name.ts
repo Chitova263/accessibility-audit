@@ -27,13 +27,13 @@ const ROLES_REQUIRING_NAME = [
     'img',
 ] as const;
 
-export interface EmptyAccessibleNameStats {
+interface EmptyAccessibleNameStats {
     totalElementsChecked: number;
     violationsFound: number;
     byRole: Record<string, number>;
 }
 
-export class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyAccessibleNameStats> {
+class EmptyAccessibleNameRule implements Rule<ScreenReaderContext, EmptyAccessibleNameStats> {
     readonly id = 'empty-accessible-name';
 
     readonly meta: RuleMeta = {

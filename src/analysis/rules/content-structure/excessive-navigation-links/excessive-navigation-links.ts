@@ -1,13 +1,3 @@
-/**
- * Rule: Excessive Navigation Links
- *
- * Detects pages with too many links, which overwhelm keyboard and screen
- * reader users by forcing them to tab through dozens of items before
- * reaching main content.
- *
- * Maps to WCAG 2.4.1 (Bypass Blocks) - related concern.
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -21,13 +11,13 @@ const EXCESSIVE_NAV_LINKS_THRESHOLD = 40;
 /** Threshold for "very excessive" - definitely problematic */
 const VERY_EXCESSIVE_NAV_LINKS_THRESHOLD = 75;
 
-export interface ExcessiveNavigationLinksStats {
+interface ExcessiveNavigationLinksStats {
     totalLinks: number;
     navigationLandmarks: number;
     linksPerNavigation: Record<string, number>;
 }
 
-export class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, ExcessiveNavigationLinksStats> {
+class ExcessiveNavigationLinksRule implements Rule<ScreenReaderContext, ExcessiveNavigationLinksStats> {
     readonly id = 'excessive-navigation-links';
 
     readonly meta: RuleMeta = {

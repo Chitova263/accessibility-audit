@@ -4,13 +4,13 @@ import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { collectHeadings, createHeadingContext } from '../../utils/heading-utils';
 
-export interface HeadingLevelSkippedStats {
+interface HeadingLevelSkippedStats {
     totalHeadings: number;
     headingSequence: number[];
     violationsFound: number;
 }
 
-export class HeadingLevelSkippedRule implements Rule<ScreenReaderContext, HeadingLevelSkippedStats> {
+class HeadingLevelSkippedRule implements Rule<ScreenReaderContext, HeadingLevelSkippedStats> {
     readonly id = 'heading-level-skipped';
 
     readonly meta: RuleMeta = {

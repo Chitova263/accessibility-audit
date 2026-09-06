@@ -63,10 +63,8 @@ describe('createScreenReaderContext', () => {
 describe('context shape across all rules', () => {
     const transcript = broadTranscript();
 
-    const screenReaderRules = RULES.filter((rule) => rule.id !== 'axe-core');
-
     it('reports axNode.role as a string, never a raw AXValue', async () => {
-        const { violations } = await runRules(mockContext(transcript), screenReaderRules);
+        const { violations } = await runRules(mockContext(transcript), RULES);
 
         const withNodes = (violations as ScreenReaderViolation[]).filter(
             (violation) => violation.context?.axNode !== undefined
@@ -82,8 +80,8 @@ describe('context shape across all rules', () => {
     it('produces the same violations on repeated runs', async () => {
         const context = mockContext(transcript);
 
-        const first = await runRules(context, screenReaderRules);
-        const second = await runRules(context, screenReaderRules);
+        const first = await runRules(context, RULES);
+        const second = await runRules(context, RULES);
 
         expect(JSON.stringify(second.violations)).toBe(JSON.stringify(first.violations));
     });

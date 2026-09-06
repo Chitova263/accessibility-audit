@@ -1,26 +1,16 @@
-/**
- * Rule: duplicate-link-text
- *
- * Detects when multiple links share the same accessible name but point to
- * different destinations, making it impossible for screen reader users to
- * distinguish them when navigating by links.
- *
- * Maps to WCAG 2.4.4 (Link Purpose in Context), Level A.
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { collectLinks, createScreenReaderContextFromLink } from '../../utils/link-utils';
 
-export interface DuplicateLinkTextStats {
+interface DuplicateLinkTextStats {
     totalLinks: number;
     violationsFound: number;
     duplicateGroups: number;
 }
 
-export class DuplicateLinkTextRule implements Rule<ScreenReaderContext, DuplicateLinkTextStats> {
+class DuplicateLinkTextRule implements Rule<ScreenReaderContext, DuplicateLinkTextStats> {
     readonly id = 'duplicate-link-text';
 
     readonly meta: RuleMeta = {

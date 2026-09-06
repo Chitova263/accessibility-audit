@@ -1,6 +1,8 @@
 export interface NavigationItem {
     phrase: string;
     focusedElementText: string;
+    /** Backend DOM node ID of the current element (for CDP virtual driver) */
+    backendDOMNodeId?: number | undefined;
 }
 
 export interface NavigatorConfig {

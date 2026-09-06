@@ -4,12 +4,12 @@ import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { collectHeadings, createHeadingContext } from '../../utils/heading-utils';
 
-export interface EmptyHeadingStats {
+interface EmptyHeadingStats {
     totalHeadings: number;
     violationsFound: number;
 }
 
-export class EmptyHeadingRule implements Rule<ScreenReaderContext, EmptyHeadingStats> {
+class EmptyHeadingRule implements Rule<ScreenReaderContext, EmptyHeadingStats> {
     readonly id = 'empty-heading';
 
     readonly meta: RuleMeta = {

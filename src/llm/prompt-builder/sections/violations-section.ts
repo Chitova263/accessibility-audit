@@ -13,9 +13,6 @@ import type {
 } from '../schemas';
 import { mergeViolationsConfig } from '../schemas';
 
-/**
- * Cleans HTML snippet for prompt inclusion.
- */
 function cleanHtmlSnippet(html: string, maxLength: number): string {
     try {
         const root = parse(html, { comment: false });
@@ -38,32 +35,24 @@ function cleanHtmlSnippet(html: string, maxLength: number): string {
     }
 }
 
-/**
- * Extracts correlation from NVDA violation.
- */
 function extractCorrelation(violation: ScreenReaderViolation): TranscriptCorrelation {
     const context = violation.context;
     return {
         strategyName: context.source.strategy,
         stepIndex: context.source.stepIndex,
         spoken: context.source.spokenPhrase,
-        confidence: 'high', // Direct from same audit run
+        confidence: 'high',
     };
 }
 
-/**
- * Tries to find correlation by matching HTML snippet or selector to transcript steps.
- */
 function findCorrelation(
     violation: Violation,
     strategySections: PromptStrategySection[]
 ): TranscriptCorrelation | undefined {
-    // NVDA violations have direct correlation
     if (isScreenReaderViolation(violation)) {
         return extractCorrelation(violation);
     }
 
-    // For other tools, try to match by selector or content
     const selector = violation.element?.selector;
     const htmlSnippet = violation.element?.htmlSnippet;
 
@@ -73,7 +62,6 @@ function findCorrelation(
 
     for (const section of strategySections) {
         for (const step of section.steps) {
-            // Try to match by HTML content similarity
             if (htmlSnippet && step.htmlSnippet) {
                 const violationText = extractTextFromHtml(htmlSnippet);
                 if (
@@ -90,7 +78,6 @@ function findCorrelation(
                 }
             }
 
-            // Try to match by role + name
             if (step.axNode && violation.rule.id.includes(step.axNode.role)) {
                 return {
                     strategyName: section.strategyName,
@@ -105,9 +92,6 @@ function findCorrelation(
     return undefined;
 }
 
-/**
- * Extracts text content from HTML string.
- */
 function extractTextFromHtml(html: string): string {
     try {
         const root = parse(html);
@@ -117,9 +101,6 @@ function extractTextFromHtml(html: string): string {
     }
 }
 
-/**
- * Transforms a violation into prompt-ready format.
- */
 function transformViolation(
     violation: Violation,
     strategySections: PromptStrategySection[],
@@ -150,9 +131,6 @@ function transformViolation(
     };
 }
 
-/**
- * Groups violations by rule ID.
- */
 function groupViolations(violations: PromptViolation[], config: ResolvedViolationsConfig): PromptViolationGroup[] {
     const groups = new Map<string, PromptViolation[]>();
 
@@ -180,9 +158,6 @@ function groupViolations(violations: PromptViolation[], config: ResolvedViolatio
         });
 }
 
-/**
- * Filters violations based on config.
- */
 function filterViolations(violations: Violation[], config: ResolvedViolationsConfig): Violation[] {
     return violations.filter((v) => {
         if (config.includeImpacts.length > 0 && !config.includeImpacts.includes(v.rule.impact)) {
@@ -195,9 +170,6 @@ function filterViolations(violations: Violation[], config: ResolvedViolationsCon
     });
 }
 
-/**
- * Builds violations data structure from violation array.
- */
 export function buildViolationsData(
     violations: Violation[],
     strategySections: PromptStrategySection[] = [],
@@ -232,9 +204,6 @@ export function buildViolationsData(
     };
 }
 
-/**
- * Renders violations data as XML for prompt inclusion using xmlbuilder2.
- */
 export function renderViolationsXml(data: PromptViolationsData): string {
     if (data.totalViolations === 0) {
         return `<violations total="0" rules="0" />\n<!-- No violations found by static analyzers -->`;
@@ -294,9 +263,6 @@ export function renderViolationsXml(data: PromptViolationsData): string {
     return root.end({ prettyPrint: true, indent: '    ', headless: true });
 }
 
-/**
- * Convenience function: builds and renders violations XML in one call.
- */
 export function buildViolationsSection(
     violations: Violation[],
     strategySections: PromptStrategySection[] = [],

@@ -14,7 +14,7 @@ const scripts = {
 };
 
 if (!subcommand || !scripts[subcommand]) {
-    console.error(`Usage: a11y <command> [options]
+    console.error(`Usage: ally <command> [options]
 
 Commands:
   audit   Drive a screen reader through a page and collect violations

@@ -1,12 +1,3 @@
-/**
- * Rule: Focus Order Anomaly
- *
- * Detects focus order anomalies where the tab order significantly
- * differs from the reading order, potentially confusing users.
- *
- * Maps to WCAG 2.4.3 (Focus Order).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -17,7 +8,7 @@ import { getRole, getName } from '../../../../types/ax-utils';
 
 const BACKWARDS_JUMP_THRESHOLD = 5;
 
-export interface FocusOrderAnomalyStats {
+interface FocusOrderAnomalyStats {
     totalFocusableElements: number;
     elementsWithReadingPosition: number;
     anomaliesFound: number;
@@ -39,7 +30,7 @@ interface FocusOrderAnomaly {
     jumpDistance: number;
 }
 
-export class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrderAnomalyStats> {
+class FocusOrderAnomalyRule implements Rule<ScreenReaderContext, FocusOrderAnomalyStats> {
     readonly id = 'focus-order-anomaly';
 
     readonly meta: RuleMeta = {

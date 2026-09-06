@@ -1,9 +1,3 @@
-/**
- * Violation Utilities
- *
- * Helper functions for summarizing and analyzing violations.
- */
-
 import type { Violation } from '../core/violation';
 
 export interface ViolationTotals {

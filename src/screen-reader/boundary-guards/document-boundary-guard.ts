@@ -29,14 +29,12 @@ export class DocumentBoundaryGuard implements NavigationEndDetector {
     }
 
     hasNext(ctx: NavigationEndContext): boolean {
-        // Primary signal: document.hasFocus() is the authoritative API
-        // Returns false when focus is on browser chrome (toolbar, address bar, etc.)
+        // document.hasFocus() is most reliable: false when focus is on browser chrome
         if (ctx.documentHasFocus === false) {
             return false;
         }
 
-        // Fallback: check NVDA announcement patterns
-        // Useful when documentHasFocus is not available or as defense in depth
+        // Fallback: match NVDA phrase against browser chrome patterns
         const phraseLower = ctx.phrase.toLowerCase();
         const isAtBoundary = this.patterns.some((pattern) => phraseLower.includes(pattern));
         return !isAtBoundary;

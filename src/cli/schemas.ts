@@ -1,17 +1,12 @@
 import { z } from 'zod';
 import type { ScreenReaderType } from '../screen-reader/screen-reader-type';
-export type { ScreenReaderType } from '../screen-reader/screen-reader-type';
 
-export const screenReaderTypeSchema = z.enum([
-    'nvda',
-    'virtual',
-    'voiceover',
-] as const satisfies readonly ScreenReaderType[]);
+const screenReaderTypeSchema = z.enum(['nvda', 'virtual', 'voiceover'] as const satisfies readonly ScreenReaderType[]);
 
-export const reportFormatSchema = z.enum(['html', 'json']);
-export const urlSchema = z.string().url('Must be a valid URL');
+const reportFormatSchema = z.enum(['html', 'json']);
+const urlSchema = z.string().url('Must be a valid URL');
 
-export const auditOptionsSchema = z
+const auditOptionsSchema = z
     .object({
         outputDir: z.string().optional(),
         maxSteps: z.coerce.number().int().positive().default(500),
@@ -24,15 +19,14 @@ export const auditOptionsSchema = z
         message: '--port cannot be combined with --launch (a launched browser needs no debugging port)',
         path: ['port'],
     });
-export type AuditOptions = z.infer<typeof auditOptionsSchema>;
 
-export const auditInputSchema = z.object({
+const auditInputSchema = z.object({
     url: urlSchema,
     options: auditOptionsSchema,
 });
 export type AuditInput = z.infer<typeof auditInputSchema>;
 
-export const reportOptionsSchema = z.object({
+const reportOptionsSchema = z.object({
     dir: z.string().optional(),
     llmResponse: z.string().optional(),
     violations: z.string().optional(),
@@ -41,10 +35,10 @@ export const reportOptionsSchema = z.object({
     output: z.string().optional(),
     verbose: z.boolean().default(false),
 });
-export type ReportOptions = z.infer<typeof reportOptionsSchema>;
+type ReportOptions = z.infer<typeof reportOptionsSchema>;
 
-export function parseOptions<T>(schema: z.ZodSchema<T>, rawOptions: unknown, commandName: string): T {
-    const result = schema.safeParse(rawOptions);
+export function parseReportOptions(rawOptions: unknown): ReportOptions {
+    const result = reportOptionsSchema.safeParse(rawOptions);
 
     if (!result.success) {
         const errors = result.error.issues
@@ -54,7 +48,7 @@ export function parseOptions<T>(schema: z.ZodSchema<T>, rawOptions: unknown, com
                 return `  ${prefix}${e.message}`;
             })
             .join('\n');
-        console.error(`Invalid options for '${commandName}':\n${errors}`);
+        console.error(`Invalid options for 'ally report':\n${errors}`);
         process.exit(1);
     }
 
@@ -73,7 +67,7 @@ export function parseAuditInput(url: string | undefined, rawOptions: unknown): A
                 return `  ${e.message}`;
             })
             .join('\n');
-        console.error(`Invalid input for 'a11y audit':\n${errors}`);
+        console.error(`Invalid input for 'ally audit':\n${errors}`);
         process.exit(1);
     }
 

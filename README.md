@@ -2,16 +2,14 @@
 
 An automated accessibility auditing tool that uses screen reader navigation to detect WCAG violations. The tool drives screen readers through multiple navigation strategies (headings, landmarks, links, tab order, arrow keys) and analyzes the output to identify accessibility issues.
 
-Static analyzers like axe-core and Lighthouse can only inspect the DOM - they cannot detect issues that require actual user interaction. This tool bridges that gap by using a screen reader to find focus traps, tab order problems, missing skip links in practice, and content structure issues that only become apparent when navigating a page.
+Static analyzers can only inspect the DOM - they cannot detect issues that require actual user interaction. This tool bridges that gap by using a screen reader to find focus traps, tab order problems, missing skip links in practice, and content structure issues that only become apparent when navigating a page.
 
 ## Features
 
 - **Real screen reader testing** with three driver options:
-    - **NVDA** (default) - Uses the real NVDA screen reader via [@guidepup/guidepup](https://github.com/guidepup/guidepup). Requires Windows with NVDA installed.
+    - **NVDA** - Uses the real NVDA screen reader via [@guidepup/guidepup](https://github.com/guidepup/guidepup). Requires Windows with NVDA installed.
     - **VoiceOver** - Uses the real VoiceOver screen reader via [@guidepup/guidepup](https://github.com/guidepup/guidepup). Requires macOS.
-    - **Virtual** - Uses [@guidepup/virtual-screen-reader](https://github.com/guidepup/virtual-screen-reader) which runs headless in the browser. Works on any platform, no screen reader installation required.
-
-    > **Note:** The virtual screen reader has a known limitation: it [does not traverse shadow DOM](https://github.com/guidepup/virtual-screen-reader/issues/182). Pages using web components with shadow DOM (e.g., Lit, Stencil, or custom design systems) will show significantly fewer elements. Landmarks, buttons, and links inside shadow roots are invisible to the virtual reader. For accurate results on such pages, use NVDA or VoiceOver instead.
+    - **Virtual** - Uses Chrome's accessibility tree via the Chrome DevTools Protocol. Works on any platform, no screen reader installation required. Fully supports shadow DOM and web components.
 
 - **Multiple navigation strategies** (headings, landmarks, links, buttons, tab order, arrow keys) that mimic how visually impaired people navigate websites
 - **Automated violation detection** with WCAG criterion mapping
@@ -85,7 +83,7 @@ Passing `--launch` makes the tool start its own throwaway browser instead of att
 to yours. No debugging port, no profile, no setup:
 
 ```bash
-a11y audit https://example.com --reader virtual --launch
+ally audit https://example.com --reader virtual --launch
 ```
 
 The trade-off is that a launched browser has no cookies or logins, so it cannot reach
@@ -104,8 +102,8 @@ npm link
 
 This makes two commands available:
 
-- `a11y audit` - Run accessibility audits
-- `a11y report` - Generate HTML reports
+- `ally audit` - Run accessibility audits
+- `ally report` - Generate HTML reports
 
 To uninstall:
 
@@ -118,7 +116,7 @@ npm unlink -g accessibility-audit
 ### 1. Run Accessibility Audit
 
 ```bash
-a11y audit <url> [options]
+ally audit <url> [options]
 ```
 
 **Arguments:**
@@ -139,36 +137,36 @@ a11y audit <url> [options]
 
 ```bash
 # Using NVDA (requires Windows)
-a11y audit https://example.com --reader nvda --verbose
+ally audit https://example.com --reader nvda --verbose
 
 # Using virtual screen reader (works on any platform)
-a11y audit https://example.com --reader virtual
+ally audit https://example.com --reader virtual
 
 # Using VoiceOver (requires macOS)
-a11y audit https://example.com --reader voiceover
+ally audit https://example.com --reader voiceover
 
 # Specify a custom output directory
-a11y audit https://example.com --reader nvda -o ./my-audit
+ally audit https://example.com --reader nvda -o ./my-audit
 ```
 
 **Output files (inside the run directory):**
 
-| File                      | Description                                                       | Example                                     |
-| ------------------------- | ----------------------------------------------------------------- | ------------------------------------------- |
-| `violations.json`         | All detected violations with rule metadata and element context    | [example](examples/violations.json)         |
-| `transcript.json`         | Screen reader navigation transcript with accessibility tree nodes | [example](examples/transcript.json)         |
-| `transcript-readable.txt` | Human-readable transcript for quick review                        | [example](examples/transcript-readable.txt) |
-| `llm-prompt-system.txt`   | System prompt for LLM API                                         | [example](examples/llm-prompt-system.txt)   |
-| `llm-prompt-user.txt`     | User prompt for LLM API                                           | [example](examples/llm-prompt-user.txt)     |
-| `llm-prompt-combined.txt` | Combined prompt for chat interfaces                               | [example](examples/llm-prompt-combined.txt) |
-| `screenshots/`            | Element screenshots highlighting the violation location           | -                                           |
-| `llm-response.json`       | Drop your LLM response here before generating the report          | [example](examples/llm-response.json)       |
-| `report.html`             | Generated by `a11y report`                                        | -                                           |
+| File                      | Description                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| `violations.json`         | All detected violations with rule metadata and element context    |
+| `transcript.json`         | Screen reader navigation transcript with accessibility tree nodes |
+| `transcript-readable.txt` | Human-readable transcript for quick review                        |
+| `llm-prompt-system.txt`   | System prompt for LLM API                                         |
+| `llm-prompt-user.txt`     | User prompt for LLM API                                           |
+| `llm-prompt-combined.txt` | Combined prompt for chat interfaces                               |
+| `screenshots/`            | Element screenshots highlighting the violation location           |
+| `llm-response.json`       | Drop your LLM response here before generating the report          |
+| `report.html`             | Generated by `ally report`                                        |
 
 ### 2. Generate Report
 
 ```bash
-a11y report [options]
+ally report [options]
 ```
 
 **Options:**
@@ -187,10 +185,10 @@ a11y report [options]
 
 ```bash
 # Point at a run directory - all paths resolved automatically
-a11y report --dir ./audit-results/example.com-2026-09-01T13-09
+ally report --dir ./audit-results/example.com-2026-09-01T13-09
 
 # Or specify individual file paths
-a11y report \
+ally report \
   --violations ./my-audit/violations.json \
   --transcript ./my-audit/transcript.json \
   -o report.html
@@ -201,7 +199,7 @@ a11y report \
 1. Run the audit to collect violations and generate LLM prompts:
 
     ```bash
-    a11y audit https://example.com --reader virtual
+    ally audit https://example.com --reader virtual
     # Output goes to audit-results/example.com-2026-09-01T13-09/
     ```
 
@@ -209,7 +207,7 @@ a11y report \
 
 3. Generate the HTML report:
     ```bash
-    a11y report --dir ./audit-results/example.com-2026-09-01T13-09
+    ally report --dir ./audit-results/example.com-2026-09-01T13-09
     ```
 
 ## Navigation Strategies
@@ -226,11 +224,9 @@ The tool navigates web pages using multiple strategies that mimic how visually i
 | **Tab**               | Navigates through focusable elements. Reveals tab order issues, focus traps, positive tabindex problems, missing skip links, and elements that aren't keyboard accessible. | Tab  | Tab       |
 | **Arrow**             | Reads content linearly from top to bottom. Reveals reading order issues, content gaps without headings, excessive repetition, and how the page actually sounds to a user.  | ↓    | VO+↓      |
 
-Example transcript entry: [examples/transcript-entry.jsonc](examples/transcript-entry.jsonc)
-
 ## Rules
 
-The tool includes custom rules that detect violations beyond what axe-core covers. Each rule maps to specific WCAG success criteria.
+The tool includes custom rules that detect accessibility violations through screen reader navigation. Each rule maps to specific WCAG success criteria.
 
 ### Rule Reference
 
@@ -528,5 +524,3 @@ Fix: Replace filename alt text with a description of what the image shows or wha
 During navigation, checks whether the ARIA `role` applied to an element matches the element's native HTML semantics. For example, a `<div role="button">` that behaves as a link, or a `<button role="link">`. Mismatched roles tell screen readers to treat the element as something it is not, leading to incorrect keyboard interaction expectations (e.g. users press Space to activate a "button" that is actually a link and expects Enter).
 
 Fix: Use the correct native HTML element for the intended role wherever possible (`<a>` for links, `<button>` for buttons). If a custom element is necessary, ensure the applied ARIA role exactly matches the interaction pattern implemented.
-
-In addition to the above rules, the tool also runs **axe-core** (90+ rules) for industry-standard automated checks.

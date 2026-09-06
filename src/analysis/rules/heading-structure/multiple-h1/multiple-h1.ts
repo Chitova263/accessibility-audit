@@ -4,13 +4,13 @@ import type { AuditContext } from '../../../core/context';
 import { buildViolation } from '../../rule-catalog';
 import { collectHeadings, createHeadingContext } from '../../utils/heading-utils';
 
-export interface MultipleH1Stats {
+interface MultipleH1Stats {
     totalHeadings: number;
     h1Count: number;
     violationsFound: number;
 }
 
-export class MultipleH1Rule implements Rule<ScreenReaderContext, MultipleH1Stats> {
+class MultipleH1Rule implements Rule<ScreenReaderContext, MultipleH1Stats> {
     readonly id = 'multiple-h1';
 
     readonly meta: RuleMeta = {

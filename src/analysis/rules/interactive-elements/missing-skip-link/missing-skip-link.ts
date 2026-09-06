@@ -1,15 +1,3 @@
-/**
- * Rule: Missing Skip Link
- *
- * Detects whether the page has a skip link (skip to main content)
- * that appears early in the tab order.
- *
- * Skip links help keyboard users bypass repetitive navigation
- * and jump directly to main content.
- *
- * Maps to WCAG 2.4.1 (Bypass Blocks).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -44,13 +32,13 @@ const SKIP_LINK_HREF_PATTERNS = [
     /#contenu/i, // French
 ];
 
-export interface MissingSkipLinkStats {
+interface MissingSkipLinkStats {
     skipLinkFound: boolean;
     skipLinkPosition: number | null;
     firstFewTabStops: string[];
 }
 
-export class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSkipLinkStats> {
+class MissingSkipLinkRule implements Rule<ScreenReaderContext, MissingSkipLinkStats> {
     readonly id = 'missing-skip-link';
 
     readonly meta: RuleMeta = {

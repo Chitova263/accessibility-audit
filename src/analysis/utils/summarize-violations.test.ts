@@ -40,7 +40,7 @@ describe('summarizeViolations', () => {
                 },
             }),
             violation({
-                tool: 'axe-core',
+                tool: 'external-tool',
                 rule: {
                     id: 'color-contrast',
                     summary: '',
@@ -52,7 +52,7 @@ describe('summarizeViolations', () => {
 
         expect(totals).toEqual({
             total: 3,
-            byTool: { 'screen-reader-audit': 2, 'axe-core': 1 },
+            byTool: { 'screen-reader-audit': 2, 'external-tool': 1 },
             byImpact: { serious: 2, critical: 1 },
             byRule: { 'empty-accessible-name': 1, 'focus-trap': 1, 'color-contrast': 1 },
         });

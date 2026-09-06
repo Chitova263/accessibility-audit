@@ -1,13 +1,3 @@
-/**
- * Rule: aria-hidden on Focusable
- *
- * Detects elements with aria-hidden="true" that received keyboard focus.
- * This creates a confusing experience where focus lands on an element
- * but the screen reader announces nothing.
- *
- * Maps to WCAG 4.1.2 (Name, Role, Value) and 1.3.1 (Info and Relationships).
- */
-
 import type { Rule, RuleMeta, RuleResult } from '../../../core/rule';
 import type { ScreenReaderContext, ScreenReaderViolation } from '../../../core/violation';
 import type { AuditContext } from '../../../core/context';
@@ -15,12 +5,12 @@ import { buildViolation } from '../../rule-catalog';
 import { createScreenReaderContext } from '../../../utils/tool-details';
 import { getScreenReaderDisplayName } from '../../../../screen-reader/screen-reader-type';
 
-export interface AriaHiddenFocusableStats {
+interface AriaHiddenFocusableStats {
     totalFocusableElements: number;
     ariaHiddenFocusableCount: number;
 }
 
-export class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHiddenFocusableStats> {
+class AriaHiddenFocusableRule implements Rule<ScreenReaderContext, AriaHiddenFocusableStats> {
     readonly id = 'aria-hidden-focusable';
 
     readonly meta: RuleMeta = {
