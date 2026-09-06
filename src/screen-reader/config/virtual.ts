@@ -1,5 +1,6 @@
 import type { ScreenReaderProfile } from '../types';
 import { LoopGuard } from '../boundary-guards/loop-guard';
+import { DocumentBoundaryGuard } from '../boundary-guards/document-boundary-guard';
 
 /**
  * Virtual screen reader profile.
@@ -18,7 +19,7 @@ export const virtualProfile: ScreenReaderProfile = {
         link: { key: '__vsr:moveToNextLink', endDetector: new LoopGuard('phrase') },
         landmark: { key: '__vsr:moveToNextLandmark', endDetector: new LoopGuard('phrase') },
         button: { key: '__vsr:moveToNextButton', endDetector: new LoopGuard('phrase') },
-        focusable: { key: 'Tab', endDetector: new LoopGuard('phrase') },
+        focusable: { key: 'Tab', endDetector: new DocumentBoundaryGuard() },
         linear: { key: '__vsr:next', endDetector: new LoopGuard('phrase') },
     },
     documentStart: '__vsr:documentStart',

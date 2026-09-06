@@ -36,6 +36,7 @@ export class TabNavigationStrategy implements NavigationStrategy {
 
         let lastBackendNodeId: number | null = null;
         let consecutiveSameCount = 0;
+        const visitedNodeIds = new Set<number>();
 
         this.endDetector.reset();
 
@@ -60,6 +61,15 @@ export class TabNavigationStrategy implements NavigationStrategy {
                 );
             }
 
+            // Cycle detection: focus returned to a previously visited DOM node
+            if (backendNodeId != null && visitedNodeIds.has(backendNodeId)) {
+                return NavigationStrategyResult.cycleComplete(
+                    `tab focus returned to previously visited element (backendNodeId: ${backendNodeId})`,
+                    this.meta,
+                    navigationSteps
+                );
+            }
+
             if (backendNodeId != null && backendNodeId === lastBackendNodeId) {
                 consecutiveSameCount++;
                 // Find the sweet spot for consecutive count, some repetitions are due to bad HTML
@@ -74,6 +84,10 @@ export class TabNavigationStrategy implements NavigationStrategy {
                 consecutiveSameCount = 0;
             }
             lastBackendNodeId = backendNodeId;
+
+            if (backendNodeId != null) {
+                visitedNodeIds.add(backendNodeId);
+            }
 
             const axNode =
                 backendNodeId != null ? (cursor.findByBackendDOMNodeId(backendNodeId) ?? undefined) : undefined;

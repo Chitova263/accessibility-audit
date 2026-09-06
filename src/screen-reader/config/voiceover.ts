@@ -33,7 +33,7 @@ export const voiceOverProfile: ScreenReaderProfile = {
         landmark: { key: 'Control+Option+Command+l', endDetector: new LoopGuard('focusedElementText') },
         // VO+Command+J = next form element (closest to "button")
         button: { key: 'Control+Option+Command+j', endDetector: new LoopGuard('focusedElementText') },
-        focusable: { key: 'Tab', endDetector: new LoopGuard('focusedElementText') },
+        focusable: { key: 'Tab', endDetector: new DocumentBoundaryGuard() },
         // VO+Right = next item (linear navigation)
         linear: { key: 'Control+Option+Right', endDetector: new DocumentBoundaryGuard() },
     },

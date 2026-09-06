@@ -3,19 +3,19 @@ import { program } from 'commander';
 import { AuditSession } from '../screen-reader/audit-session';
 import { DEFAULT_CDP_PORT, type BrowserSource } from '../screen-reader/browser-target';
 import type { NavigationStrategy } from '../screen-reader/strategies/navigation-strategy';
-import { HeadingNavigationStrategy } from '../screen-reader/strategies/heading-navigation-strategy';
-import { LandmarkNavigationStrategy } from '../screen-reader/strategies/landmark-navigation-strategy';
-import { ButtonNavigationStrategy } from '../screen-reader/strategies/button-navigation-strategy';
-import { LinkNavigationStrategy } from '../screen-reader/strategies/link-navigation-strategy';
-import { HeadingHierarchyNavigationStrategy } from '../screen-reader/strategies/heading-hierarchy-navigation-strategy';
 import { TabNavigationStrategy } from '../screen-reader/strategies/tab-navigation-strategy';
-import { DownArrowNavigationStrategy } from '../screen-reader/strategies/down-arrow-navigation-strategy';
 import { summarizeViolations } from '../analysis/utils/summarize-violations';
 import { createPromptBuilder } from '../llm/prompt-builder';
 import { formatTranscriptAsText } from '../reporting/transcript-text-formatter';
 import { Logger } from '../utils/logger';
 import { resolveOutputDir } from '../utils/output-dir';
 import { parseAuditInput } from './schemas';
+import { HeadingHierarchyNavigationStrategy } from '../screen-reader/strategies/heading-hierarchy-navigation-strategy';
+import { LinkNavigationStrategy } from '../screen-reader/strategies/link-navigation-strategy';
+import { ButtonNavigationStrategy } from '../screen-reader/strategies/button-navigation-strategy';
+import { LandmarkNavigationStrategy } from '../screen-reader/strategies/landmark-navigation-strategy';
+import { HeadingNavigationStrategy } from '../screen-reader/strategies/heading-navigation-strategy';
+import { DownArrowNavigationStrategy } from '../screen-reader/strategies/down-arrow-navigation-strategy';
 
 program
     .name('a11y audit')
@@ -58,17 +58,17 @@ try {
     Logger.debug(`Max steps per strategy: ${options.maxSteps}`);
 
     const strategies: NavigationStrategy[] = [
-        // new HeadingNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
-        // new LandmarkNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
-        // new ButtonNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
-        // new LinkNavigationStrategy({ maxSteps: options.maxSteps }),
-        // new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 1 }),
-        // new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 2 }),
-        // new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 3 }),
-        // new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 4 }),
-        // new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 5 }),
-        // new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 6 }),
-        // new DownArrowNavigationStrategy({ maxSteps: 1000 }),
+        new HeadingNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
+        new LandmarkNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
+        new ButtonNavigationStrategy({ maxSteps: Math.min(100, options.maxSteps) }),
+        new LinkNavigationStrategy({ maxSteps: options.maxSteps }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 1 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 2 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 3 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 4 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 5 }),
+        new HeadingHierarchyNavigationStrategy({ maxSteps: options.maxSteps, level: 6 }),
+        new DownArrowNavigationStrategy({ maxSteps: 1000 }),
         new TabNavigationStrategy({ maxSteps: options.maxSteps }),
     ];
 

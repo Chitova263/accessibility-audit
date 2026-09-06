@@ -1,9 +1,9 @@
 import type { ScreenReaderProfile } from '../types';
 import { PhraseContainsGuard } from '../boundary-guards/phrase-contains-guard';
-import { LoopGuard } from '../boundary-guards/loop-guard';
 import { SilentGuard } from '../boundary-guards/silent-guard';
 import { RepeatGuard } from '../boundary-guards/repeat-guard';
 import { CompositeAnyGuard } from '../boundary-guards/composite-any-guard';
+import { DocumentBoundaryGuard } from '../boundary-guards/document-boundary-guard';
 
 /**
  * NVDA screen reader profile.
@@ -56,7 +56,7 @@ export const nvdaProfile: ScreenReaderProfile = {
         },
         focusable: {
             key: 'Tab',
-            endDetector: new LoopGuard('phrase'),
+            endDetector: new DocumentBoundaryGuard(),
         },
         linear: {
             key: 'Down',
