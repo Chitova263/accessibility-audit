@@ -10,6 +10,9 @@ Static analyzers like axe-core and Lighthouse can only inspect the DOM - they ca
     - **NVDA** (default) - Uses the real NVDA screen reader via [@guidepup/guidepup](https://github.com/guidepup/guidepup). Requires Windows with NVDA installed.
     - **VoiceOver** - Uses the real VoiceOver screen reader via [@guidepup/guidepup](https://github.com/guidepup/guidepup). Requires macOS.
     - **Virtual** - Uses [@guidepup/virtual-screen-reader](https://github.com/guidepup/virtual-screen-reader) which runs headless in the browser. Works on any platform, no screen reader installation required.
+
+    > **Note:** The virtual screen reader has a known limitation: it [does not traverse shadow DOM](https://github.com/guidepup/virtual-screen-reader/issues/182). Pages using web components with shadow DOM (e.g., Lit, Stencil, or custom design systems) will show significantly fewer elements. Landmarks, buttons, and links inside shadow roots are invisible to the virtual reader. For accurate results on such pages, use NVDA or VoiceOver instead.
+
 - **Multiple navigation strategies** (headings, landmarks, links, buttons, tab order, arrow keys) that mimic how visually impaired people navigate websites
 - **Automated violation detection** with WCAG criterion mapping
 - **LLM prompt generation** for AI-assisted accessibility analysis

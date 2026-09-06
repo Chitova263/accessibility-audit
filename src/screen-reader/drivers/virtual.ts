@@ -19,7 +19,7 @@ interface BrowserWindow {
         previous(): Promise<void>;
         perform(command: string): Promise<void>;
         lastSpokenPhrase(): Promise<string>;
-        focusedElementText(): Promise<string>;
+        itemText(): Promise<string>;
     };
 }
 
@@ -159,7 +159,7 @@ export class VirtualScreenReader implements ScreenReader {
             const vsr = (globalThis as unknown as BrowserWindow).__vsr;
             return {
                 lastPhrase: await vsr.lastSpokenPhrase(),
-                focusedElementText: await vsr.focusedElementText(),
+                focusedElementText: await vsr.itemText(),
             };
         });
         return {
