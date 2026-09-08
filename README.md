@@ -326,6 +326,24 @@ Same logic as `button-not-in-tab-order` but for links. Compares links found via 
 
 Fix: Same as above - ensure links have a natural tab stop. Common causes are `tabindex="-1"` being set on `<a>` elements or links inside `aria-hidden` containers.
 
+---
+
+**`excessive-tab-stop-content`** - WCAG 2.4.6 AA - serious
+
+During Tab navigation, inspects each focused element's announcement. If a single Tab stop announces more than 500 characters, or contains 2+ headings, or contains 2+ buttons, the rule fires. This indicates a container element (carousel, card grid, custom widget) is focusable and the screen reader reads its entire subtree as one continuous stream.
+
+Users cannot parse hundreds of words attached to a single focusable element. They cannot pause, navigate within, or understand the structure of what they're hearing. The experience is like being handed a 500-word paragraph and told "this is a button."
+
+**Common causes:**
+
+1. **Carousel/slider containers with tabindex** - A wrapper `<div tabindex="0">` around an entire carousel causes NVDA to announce every slide, card title, price, and button as one stream when Tab lands on it.
+
+2. **Card grids inside focusable containers** - A product grid wrapped in a focusable element announces all products at once instead of letting users Tab to each card.
+
+3. **Custom widgets that don't manage focus properly** - Custom dropdown menus, accordions, or tabs where the parent container receives focus instead of the individual items.
+
+Fix: Remove `tabindex` from container elements. Make individual items within the container focusable instead. For carousels, each slide or card should be a Tab stop; for grids, each card should be focusable. Use `aria-describedby` or `aria-label` if the container needs a brief accessible name, but focus must land on individual interactive children.
+
 #### Link Text
 
 ---

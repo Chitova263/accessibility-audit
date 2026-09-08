@@ -14,6 +14,7 @@ import { rule as missingMainLandmark } from './landmark-structure/missing-main-l
 
 // Focus and Keyboard
 import { rule as buttonNotInTabOrder } from './focus-and-keyboard/button-not-in-tab-order/button-not-in-tab-order';
+import { rule as excessiveTabStopContent } from './focus-and-keyboard/excessive-tab-stop-content/excessive-tab-stop-content';
 import { rule as focusOrderAnomaly } from './focus-and-keyboard/focus-order-anomaly/focus-order-anomaly';
 import { rule as focusTrap } from './focus-and-keyboard/focus-trap/focus-trap';
 import { rule as linkNotInTabOrder } from './focus-and-keyboard/link-not-in-tab-order/link-not-in-tab-order';
@@ -21,6 +22,7 @@ import { rule as positiveTabindex } from './focus-and-keyboard/positive-tabindex
 
 // Link Text
 import { rule as duplicateLinkText } from './link-text/duplicate-link-text/duplicate-link-text';
+import { rule as duplicateButtonText } from './link-text/duplicate-button-text/duplicate-button-text';
 import { rule as fragmentedLinkText } from './link-text/fragmented-link-text/fragmented-link-text';
 import { rule as genericLinkText } from './link-text/generic-link-text/generic-link-text';
 
@@ -60,12 +62,14 @@ export const RULES: readonly Rule<unknown, unknown>[] = [
 
     // Focus and Keyboard
     buttonNotInTabOrder,
+    excessiveTabStopContent,
     focusOrderAnomaly,
     focusTrap,
     linkNotInTabOrder,
     positiveTabindex,
 
     // Link Text
+    duplicateButtonText,
     duplicateLinkText,
     fragmentedLinkText,
     genericLinkText,

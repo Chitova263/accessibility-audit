@@ -41,4 +41,111 @@ describe('empty-accessible-name rule', () => {
 
         expect(result.violations).toHaveLength(1);
     });
+
+    describe('clickable generic elements', () => {
+        it('reports a clickable generic element with no accessible name', async () => {
+            const transcript = [
+                strategyResult('arrow', createSteps([{ role: 'generic', name: '', focusedElementText: 'clickable' }])),
+            ];
+
+            const result = await rule.run(mockContext(transcript));
+
+            expect(result.violations).toHaveLength(1);
+            expect(result.violations[0]!.rule.id).toBe('empty-accessible-name');
+            expect(result.violations[0]!.message).toContain('Clickable element has no accessible name');
+            expect(result.violations[0]!.message).toContain('announce only "clickable"');
+            expect(result.stats).toMatchObject({
+                totalElementsChecked: 1,
+                violationsFound: 1,
+                byRole: { generic: 1 },
+            });
+        });
+
+        it('reports clickable group elements with no accessible name', async () => {
+            const transcript = [
+                strategyResult(
+                    'arrow',
+                    createSteps([
+                        { role: 'group', name: '', focusedElementText: 'Product 1 of 4, grouping, clickable' },
+                    ])
+                ),
+            ];
+
+            const result = await rule.run(mockContext(transcript));
+
+            expect(result.violations).toHaveLength(1);
+            expect(result.violations[0]!.message).toContain('Clickable element has no accessible name');
+        });
+
+        it('ignores generic elements that are not clickable', async () => {
+            const transcript = [
+                strategyResult('arrow', createSteps([{ role: 'generic', name: '', focusedElementText: 'some text' }])),
+            ];
+
+            const result = await rule.run(mockContext(transcript));
+
+            expect(result.violations).toHaveLength(0);
+        });
+
+        it('ignores clickable generic elements with an accessible name', async () => {
+            const transcript = [
+                strategyResult(
+                    'arrow',
+                    createSteps([{ role: 'generic', name: 'Product Card', focusedElementText: 'clickable' }])
+                ),
+            ];
+
+            const result = await rule.run(mockContext(transcript));
+
+            expect(result.violations).toHaveLength(0);
+        });
+
+        it('deduplicates violations for the same element across strategies', async () => {
+            const transcript = [
+                strategyResult(
+                    'arrow',
+                    createSteps([{ role: 'generic', name: '', focusedElementText: 'clickable', backendDOMNodeId: 123 }])
+                ),
+                strategyResult(
+                    'tab',
+                    createSteps([{ role: 'generic', name: '', focusedElementText: 'clickable', backendDOMNodeId: 123 }])
+                ),
+            ];
+
+            const result = await rule.run(mockContext(transcript));
+
+            expect(result.violations).toHaveLength(1);
+        });
+
+        it('reports multiple distinct clickable elements with no name', async () => {
+            const transcript = [
+                strategyResult(
+                    'arrow',
+                    createSteps([
+                        { role: 'generic', name: '', focusedElementText: 'clickable', backendDOMNodeId: 100 },
+                        { role: 'generic', name: '', focusedElementText: 'clickable', backendDOMNodeId: 101 },
+                        { role: 'group', name: '', focusedElementText: 'grouping, clickable', backendDOMNodeId: 102 },
+                    ])
+                ),
+            ];
+
+            const result = await rule.run(mockContext(transcript));
+
+            expect(result.violations).toHaveLength(3);
+            expect(result.stats!.byRole).toMatchObject({ generic: 2, group: 1 });
+        });
+
+        it('handles case-insensitive clickable detection', async () => {
+            const transcript = [
+                strategyResult(
+                    'arrow',
+                    createSteps([{ role: 'generic', name: '', focusedElementText: 'CLICKABLE element' }])
+                ),
+            ];
+
+            const result = await rule.run(mockContext(transcript));
+
+            expect(result.violations).toHaveLength(1);
+        });
+    });
 });

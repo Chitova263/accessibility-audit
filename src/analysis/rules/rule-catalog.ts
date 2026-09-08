@@ -92,6 +92,13 @@ export const RULES = {
         supportsScreenshot: true,
     },
 
+    'duplicate-button-text': {
+        wcag: { primary: { criterion: '2.4.6', level: 'AA' } },
+        axeEquivalent: [],
+        summary: 'Multiple buttons with identical text may confuse users',
+        supportsScreenshot: true,
+    },
+
     'fragmented-link-text': {
         wcag: { primary: { criterion: '2.4.4', level: 'A' } },
         axeEquivalent: [],
@@ -262,6 +269,19 @@ export const RULES = {
         axeEquivalent: [],
         summary: 'Landmark region contains an overwhelming number of items',
         supportsScreenshot: false,
+    },
+
+    'excessive-tab-stop-content': {
+        wcag: {
+            primary: { criterion: '2.4.6', level: 'AA' },
+            related: [
+                { criterion: '1.3.1', level: 'A' },
+                { criterion: '2.1.1', level: 'A' },
+            ],
+        },
+        axeEquivalent: [],
+        summary: 'Single tab stop announces excessive content that users cannot navigate within',
+        supportsScreenshot: true,
     },
 } as const satisfies Record<string, RuleDefinition>;
 

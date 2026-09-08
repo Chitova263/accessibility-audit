@@ -336,28 +336,47 @@ VIOLATION REFERENCE FORMAT:
 - The token will be rendered as a clickable anchor link in the report, allowing users to jump to the specific violation
 - When a finding relates to multiple violations, reference all of them: "Related to [multiple-h1:multiple-h1-da2c0148-7d23-438b-9ed5-2fc3d38671d2], [multiple-h1:multiple-h1-2159ced1-bc52-43e0-82fd-cb9e836d99d5], and [repeated-pattern-without-heading:repeated-pattern-934b7c40-d5d1-4017-a91c-2d0351bb2668]"
 
-ARROW NAVIGATION ANALYSIS CONSTRAINTS (v1.0):
+ARROW NAVIGATION ANALYSIS CONSTRAINTS (v2.0):
 When analyzing arrow (Down Arrow) navigation transcripts, apply these constraints:
 
-DO NOT flag as issues:
-1. **Normal element-by-element announcements** — Each DOM element (image, heading, paragraph, price, badge) being announced separately is CORRECT browser/screen reader behavior. This is how browse mode works.
+ALWAYS FLAG (these are genuine bugs):
+1. **Identical phrase repeated 5+ times consecutively** — The SAME string announced repeatedly with no variation between steps. This indicates a DOM architecture bug where child nodes inherit a parent's accessible name (typically missing aria-hidden on decorative internals).
 
-2. **Subjective reading order preferences** — Do not flag patterns like "category appears between product name and price" unless the order is OBJECTIVELY broken (e.g., a price announced before the product it belongs to, or an error message before the field it describes).
+2. **Single-character link announcements in sequence** — Consecutive steps where each announces a single character as a separate link, spelling out a word when read together (e.g., "link, 2", "link, 2", "link, f", "link, r", "link, a"...). This is fragmented link text caused by web components or shadow DOM rendering.
 
-3. **Consistent patterns across repeated items** — If all product cards, list items, or similar components follow the same announcement structure, the structure is intentional design, not a bug. Consistency is good.
+3. **Long runs of blank announcements (10+)** — Structural DOM elements the screen reader traverses with no content to announce.
 
-4. **Semantic elements being "verbose"** — A heading followed by a paragraph followed by spans is normal, semantic HTML. More announcements ≠ worse accessibility.
+4. **Content announced in objectively wrong order** — Price before its product, answer before question, error message before the field it describes.
 
-5. **Information density in structured content** — Product cards, data tables, and forms naturally have multiple pieces of information announced in sequence.
+5. **Related content separated by unrelated content** — Clearly associated information broken apart by content from a different section or context.
 
-ONLY flag arrow navigation issues when:
-- Same phrase repeats 5+ times consecutively with no user action between (indicates DOM bug, not content repetition)
-- Long runs of blank/empty announcements (indicates structural DOM problems like empty divs)
-- Content is announced in OBJECTIVELY wrong order (price before its product, answer before question, error before the field it describes)
-- Clearly related content is separated by UNRELATED content (not just multiple attributes of the same item)
-- Reading order completely contradicts visual layout in a way that would confuse users
+DO NOT FLAG (normal screen reader behavior):
+1. **Multi-step varied content** — Related information announced across multiple steps (e.g., name, description, price as separate nodes) is normal DOM rendering when the content differs between steps.
 
-When in doubt about arrow navigation findings, DO NOT create a finding. The bar for arrow-based findings should be HIGH because users typically navigate by headings, landmarks, or tab — not by reading every element sequentially.
+2. **Verbose semantic structure** — Headings, images, paragraphs, and controls announced separately is correct HTML, not a problem.
+
+3. **Consistent structure across repeated items** — Multiple similar items following the same announcement pattern is intentional design.
+
+4. **Subjective reading order preferences** — Do not flag patterns unless the order is objectively broken.
+
+The key distinction: **sameness = bug, variation = normal**.
+
+When in doubt about other arrow navigation findings, DO NOT create a finding. The bar for arrow-based findings should be HIGH because users typically navigate by headings, landmarks, or tab — not by reading every element sequentially.
+
+TAB NAVIGATION ANALYSIS:
+When analyzing tab navigation transcripts, watch for these patterns:
+
+ALWAYS FLAG:
+1. **Mega-announcements** — A single Tab stop that announces excessive content (>500 characters) or multiple distinct interactive elements (2+ headings, 2+ buttons, entire carousels or card grids). Users cannot parse or navigate within such dense content. The container should not be focusable; focus should move to individual items.
+
+2. **Container focus with nested interactives** — A focusable container that reads its entire subtree including multiple nested buttons, links, or headings. The screen reader announces all content in one stream, but the user cannot Tab to the individual controls inside without first leaving the container.
+
+3. **Carousel/slider mega-read** — Tab lands on a carousel or content slider and the screen reader announces every slide, card, or item as one continuous stream. Each card should be independently focusable, not bundled into a parent.
+
+DO NOT FLAG:
+1. **Normal verbose buttons/links** — A button that announces its visible label plus some context (e.g., "Add to cart, Product Name, $29.99 button") is correct when all that text is the element's accessible name.
+
+2. **Expanded combo boxes or menus** — When a dropdown is expanded, content may be announced; this is expected behavior during interaction states.
 
 STEPS TO REPRODUCE:
 - For each finding, provide clear step-by-step instructions to reproduce the issue
