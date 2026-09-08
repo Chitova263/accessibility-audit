@@ -1,5 +1,6 @@
 import type { Reporter, ReportData, ReportOutput, ReporterOptions } from '../reporter';
 import { generateFilename } from '../reporter';
+import { isLlmFinding, isLlmEnhancement } from '../../llm/prompt-builder';
 
 export interface JsonReporterOptions extends ReporterOptions {
     pretty?: boolean;
@@ -26,12 +27,14 @@ export class JsonReporter implements Reporter {
         let output: object;
 
         if (opts.summaryOnly) {
+            const findings = data.analysis.issues.filter(isLlmFinding);
+            const enhancements = data.analysis.issues.filter(isLlmEnhancement);
             output = {
                 meta: data.meta,
-                summary: data.analysis.analysis.summary,
+                summary: data.analysis.summary,
                 counts: {
-                    findings: data.analysis.analysis.findings.length,
-                    enhancements: data.analysis.enhancements.length,
+                    findings: findings.length,
+                    enhancements: enhancements.length,
                     violations: data.violations.length,
                 },
             };

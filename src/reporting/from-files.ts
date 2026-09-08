@@ -128,5 +128,5 @@ export async function generateReport(options: {
 }
 
 function isLlmCompleteResponse(value: unknown): value is LlmCompleteResponse {
-    return typeof value === 'object' && value !== null && 'analysis' in value && 'enhancements' in value;
+    return typeof value === 'object' && value !== null && 'issues' in value && 'summary' in value;
 }

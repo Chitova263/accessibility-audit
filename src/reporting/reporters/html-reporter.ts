@@ -2,7 +2,8 @@ import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import type { Reporter, ReportData, ReportOutput, ReporterOptions } from '../reporter';
 import { generateFilename, formatTimestamp, escapeHtml, truncate } from '../reporter';
-import type { LlmFinding, LlmViolationEnhancement, LlmEvidence } from '../../llm/prompt-builder';
+import type { LlmIssue, LlmEvidence } from '../../llm/prompt-builder';
+import { isLlmFinding, isLlmEnhancement } from '../../llm/prompt-builder';
 
 export interface HtmlReporterOptions extends ReporterOptions {
     screenshotsBasePath?: string;
@@ -260,9 +261,10 @@ export class HtmlReporter implements Reporter {
         opts: Required<HtmlReporterOptions>,
         screenshotCache: Map<string, string>
     ): string {
-        const { summary } = data.analysis.analysis;
+        const { summary } = data.analysis;
         const aColor = assessmentColor(summary.overallAssessment);
         const impactCounts = this.impactBreakdown(data);
+        const findings = data.analysis.issues.filter(isLlmFinding);
 
         return `<!DOCTYPE html>
 <html lang="en">
@@ -279,7 +281,7 @@ ${this.buildHeader(data, opts, aColor)}
     <ul>
       <li><a href="#summary">Summary</a></li>
       <li><a href="#violations">Violations <span class="toc-count">${data.violations.length}</span></a></li>
-      ${data.analysis.analysis.findings.length > 0 ? `<li><a href="#findings">LLM Findings <span class="toc-count">${data.analysis.analysis.findings.length}</span></a></li>` : ''}
+      ${findings.length > 0 ? `<li><a href="#findings">LLM Findings <span class="toc-count">${findings.length}</span></a></li>` : ''}
       ${opts.includeTranscript && data.transcript && data.transcript.length > 0 ? `<li><a href="#transcript">Transcript</a></li>` : ''}
     </ul>
   </nav>
@@ -301,7 +303,7 @@ ${this.getScripts()}
     }
 
     private buildHeader(data: ReportData, opts: Required<HtmlReporterOptions>, aColor: string): string {
-        const { summary } = data.analysis.analysis;
+        const { summary } = data.analysis;
         const label = summary.overallAssessment.replace(/-/g, ' ');
 
         return `
@@ -333,7 +335,8 @@ ${this.getScripts()}
     }
 
     private buildSummary(data: ReportData, impactCounts: Record<string, number>): string {
-        const { summary } = data.analysis.analysis;
+        const { summary } = data.analysis;
+        const findings = data.analysis.issues.filter(isLlmFinding);
         const total = data.violations.length;
 
         const segments = Object.entries(impactCounts)
@@ -377,7 +380,7 @@ ${this.getScripts()}
       <span class="big-num__label">Violations</span>
     </div>
     <div class="summary-card summary-card--stat">
-      <span class="big-num">${data.analysis.analysis.findings.length}</span>
+      <span class="big-num">${findings.length}</span>
       <span class="big-num__label">LLM Findings</span>
     </div>
     <div class="summary-card summary-card--stat">
@@ -414,7 +417,9 @@ ${this.getScripts()}
 </section>`;
         }
 
-        const enhancementMap = new Map(data.analysis.enhancements.map((e) => [e.violationId, e]));
+        const enhancementMap = new Map(
+            data.analysis.issues.filter(isLlmEnhancement).map((e) => [e.violationId, e])
+        );
 
         const byImpact: Record<string, typeof violations> = { critical: [], serious: [], moderate: [], minor: [] };
         for (const v of violations) {
@@ -478,7 +483,7 @@ ${impactSections}
 
     private buildViolationRow(
         violation: ReportData['violations'][0],
-        enhancement: LlmViolationEnhancement | undefined,
+        enhancement: LlmIssue | undefined,
         screenshotCache: Map<string, string>
     ): string {
         const ctx = violation.context as
@@ -581,10 +586,10 @@ ${impactSections}
         const enhancementBlock = enhancement
             ? `<div class="enhancement">
               ${
-                  enhancement.userImpactDescription
+                  enhancement.impact
                       ? `<div class="finding-section">
                 <h4>Impact</h4>
-                <p>${renderStepRefs(enhancement.userImpactDescription)}</p>
+                <p>${renderStepRefs(enhancement.impact)}</p>
               </div>`
                       : ''
               }
@@ -631,7 +636,7 @@ ${impactSections}
     }
 
     private buildFindings(data: ReportData): string {
-        const { findings } = data.analysis.analysis;
+        const findings = data.analysis.issues.filter(isLlmFinding);
 
         if (findings.length === 0) {
             return `
@@ -649,7 +654,7 @@ ${impactSections}
             }
         }
 
-        const byCategory = groupBy(findings, (f) => f.category);
+        const byCategory = groupBy(findings, (f) => f.category!);
 
         const categoryBlocks = Object.entries(byCategory)
             .map(([category, items]) => {
@@ -672,7 +677,7 @@ ${impactSections}
 </section>`;
     }
 
-    private buildFindingCard(finding: LlmFinding, ruleToViolationId: Map<string, string>): string {
+    private buildFindingCard(finding: LlmIssue, ruleToViolationId: Map<string, string>): string {
         const cColor = confidenceColor(finding.confidence);
         const needsReview = finding.requiresHumanReview ? `<span class="review-flag">⚠ Needs review</span>` : '';
 
@@ -731,6 +736,15 @@ ${impactSections}
                 ? `<div class="finding-section">
           <h4>Justification</h4>
           <p>${renderStepRefs(finding.semanticJustification)}</p>
+        </div>`
+                : ''
+        }
+
+        ${
+            finding.remediationSuggestion
+                ? `<div class="finding-section">
+          <h4>Remediation</h4>
+          <p>${renderStepRefs(finding.remediationSuggestion)}</p>
         </div>`
                 : ''
         }
@@ -840,8 +854,10 @@ ${impactSections}
 
     private citedStepIds(data: ReportData): Set<string> {
         const ids = new Set<string>();
-        for (const finding of data.analysis.analysis.findings) {
-            for (const step of finding.evidence.steps) ids.add(step.identifier);
+        for (const issue of data.analysis.issues) {
+            if (issue.evidence) {
+                for (const step of issue.evidence.steps) ids.add(step.identifier);
+            }
         }
         return ids;
     }
@@ -886,7 +902,7 @@ ${impactSections}
     }
 
     private buildLimitations(data: ReportData): string {
-        const { limitations } = data.analysis.analysis;
+        const { limitations } = data.analysis;
         if (limitations.length === 0) return '';
 
         return `

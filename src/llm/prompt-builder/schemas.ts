@@ -127,6 +127,20 @@ export const confidenceLevelSchema = z
 
 export type ConfidenceLevel = z.infer<typeof confidenceLevelSchema>;
 
+export const falsePositiveRiskSchema = z
+    .enum(['low', 'medium', 'high'])
+    .describe(
+        'Risk that this is a false positive: low (definitely an issue), medium (likely an issue), high (may not be an issue)'
+    );
+
+export type FalsePositiveRisk = z.infer<typeof falsePositiveRiskSchema>;
+
+export const llmIssueTypeSchema = z
+    .enum(['finding', 'enhancement'])
+    .describe('Type of issue: finding (new issue discovered by LLM) or enhancement (augments existing rule violation)');
+
+export type LlmIssueType = z.infer<typeof llmIssueTypeSchema>;
+
 export const llmEvidenceStepSchema = z
     .object({
         strategy: z.string().describe('The navigation strategy name (e.g. "tab", "heading", "link", "landmark")'),
@@ -150,20 +164,44 @@ export const llmEvidenceSchema = z
             ),
         pattern: z.string().optional().describe('Description of the pattern if this finding spans multiple steps'),
     })
-    .describe('Evidence from the transcript supporting this finding');
+    .describe('Evidence from the transcript supporting this issue');
 
 export type LlmEvidence = z.infer<typeof llmEvidenceSchema>;
 
-export const llmFindingSchema = z
+/**
+ * Unified schema for LLM-identified accessibility issues.
+ *
+ * Two types:
+ * - `finding`: New issue discovered by LLM (not found by rules)
+ * - `enhancement`: Augments an existing rule-based violation with additional context
+ *
+ * Field applicability:
+ * - `violationId`: Required for enhancements, absent for findings
+ * - `category`: Required for findings, absent for enhancements
+ * - `classification`: Optional, primarily for findings
+ * - `severityRationale`: Optional, primarily for enhancements
+ */
+export const llmIssueSchema = z
     .object({
-        category: findingCategorySchema,
-        classification: findingClassificationSchema
+        // Discriminator
+        type: llmIssueTypeSchema,
+
+        // Identity - one of these identifies what this issue is about
+        violationId: z
+            .string()
             .optional()
             .describe(
-                'Optional classification. Omit if unsure. Use contextually-acceptable ONLY with strong justification.'
+                'For enhancements: The ID of the rule violation being enhanced (from the violations section). Absent for findings.'
             ),
+        category: findingCategorySchema
+            .optional()
+            .describe(
+                'For findings: Category of accessibility issue (reading-order, cognitive, semantic, consistency, context). Absent for enhancements.'
+            ),
+
+        // Core fields (present on both types)
         confidence: confidenceLevelSchema,
-        issue: z.string().min(10).describe('Clear description of the accessibility issue found'),
+        issue: z.string().min(10).describe('Clear description of the accessibility issue'),
         evidence: llmEvidenceSchema,
         stepsToReproduce: z
             .array(z.string())
@@ -172,21 +210,65 @@ export const llmFindingSchema = z
                 'Step-by-step instructions to reproduce this issue using a screen reader. Include specific keys to press (e.g., "Press H to navigate to next heading", "Press Tab 5 times"). Reference exact step numbers from the transcript.'
             ),
         impact: z.string().min(10).describe('How this issue affects screen reader users in plain language'),
-        relatedRuleId: z
+        remediationSuggestion: z
             .string()
             .optional()
-            .describe('Rule ID if this finding relates to an existing violation (e.g., "empty-accessible-name")'),
+            .describe('Specific code or content change to fix this issue'),
+
+        // Finding-specific fields
+        classification: findingClassificationSchema
+            .optional()
+            .describe(
+                'For findings: Optional classification. Use contextually-acceptable ONLY with strong justification.'
+            ),
         semanticJustification: z
             .string()
             .optional()
             .describe(
-                'REQUIRED if contextually-acceptable: strong justification why page context makes this okay. For llm-only-finding: why rules could not detect this.'
+                'For findings: REQUIRED if contextually-acceptable. Explains why page context makes this okay, or why rules could not detect this.'
             ),
-        requiresHumanReview: z.boolean().default(true).describe('Whether this finding needs human verification'),
-    })
-    .describe('An accessibility issue identified from transcript analysis');
+        relatedRuleId: z
+            .string()
+            .optional()
+            .describe(
+                'For findings: Rule ID if this finding relates to an existing rule (e.g., "empty-accessible-name"), but is not directly enhancing a specific violation.'
+            ),
+        requiresHumanReview: z
+            .boolean()
+            .default(true)
+            .describe('Whether this issue needs human verification. Defaults to true.'),
 
-export type LlmFinding = z.infer<typeof llmFindingSchema>;
+        // Enhancement-specific fields
+        severityRationale: z
+            .string()
+            .optional()
+            .describe(
+                'For enhancements: Explanation of why the severity level is appropriate given the context'
+            ),
+        falsePositiveRisk: falsePositiveRiskSchema
+            .optional()
+            .describe(
+                'For enhancements: Risk that this is a false positive. Required for enhancements.'
+            ),
+    })
+    .describe('An accessibility issue identified by LLM analysis - either a new finding or an enhancement to a rule violation');
+
+export type LlmIssue = z.infer<typeof llmIssueSchema>;
+
+// Type guards for discriminating issue types
+export function isLlmFinding(issue: LlmIssue): issue is LlmIssue & { type: 'finding'; category: FindingCategory } {
+    return issue.type === 'finding';
+}
+
+export function isLlmEnhancement(issue: LlmIssue): issue is LlmIssue & { type: 'enhancement'; violationId: string } {
+    return issue.type === 'enhancement';
+}
+
+// Legacy type aliases for backward compatibility during migration
+/** @deprecated Use LlmIssue with type: 'finding' instead */
+export type LlmFinding = LlmIssue & { type: 'finding'; category: FindingCategory };
+/** @deprecated Use LlmIssue with type: 'enhancement' instead */
+export type LlmViolationEnhancement = LlmIssue & { type: 'enhancement'; violationId: string };
 
 export const overallAssessmentSchema = z
     .enum(['good', 'needs-review', 'problematic'])
@@ -220,7 +302,11 @@ export type LlmAnalysisSummary = z.infer<typeof llmAnalysisSummarySchema>;
 
 export const llmAnalysisResponseSchema = z
     .object({
-        findings: z.array(llmFindingSchema).describe('List of accessibility issues found from transcript analysis'),
+        issues: z
+            .array(llmIssueSchema)
+            .describe(
+                'All accessibility issues: both new findings (type: "finding") and enhancements to existing violations (type: "enhancement")'
+            ),
         summary: llmAnalysisSummarySchema,
         limitations: z
             .array(z.string())
@@ -228,56 +314,22 @@ export const llmAnalysisResponseSchema = z
                 'What could not be determined from the transcript alone (e.g., "Cannot verify color contrast", "Visual layout unknown")'
             ),
     })
-    .describe('Analysis of the screen reader transcript');
+    .describe('Complete LLM accessibility analysis');
 
 export type LlmAnalysisResponse = z.infer<typeof llmAnalysisResponseSchema>;
 
-export const llmViolationEnhancementSchema = z
-    .object({
-        violationId: z.string().describe('The ID of the violation being enhanced (from the violations section)'),
-        confidence: z
-            .enum(['confirmed', 'likely', 'uncertain'])
-            .describe(
-                'Your confidence that this is a real issue: confirmed (clear evidence), likely (probable), uncertain (may be false positive)'
-            ),
-        evidence: llmEvidenceSchema
-            .optional()
-            .describe('Evidence from the transcript supporting this violation enhancement'),
-        severityRationale: z
-            .string()
-            .optional()
-            .describe('Explanation of why this severity level is appropriate given the context'),
-        stepsToReproduce: z
-            .array(z.string())
-            .optional()
-            .describe(
-                'Step-by-step instructions to reproduce this violation using a screen reader. Include specific keys to press (e.g., "Press H to navigate to next heading", "Press Tab 5 times"). Reference exact step numbers from the transcript where applicable.'
-            ),
-        remediationSuggestion: z.string().optional().describe('Specific code or content change to fix this issue'),
-        userImpactDescription: z
-            .string()
-            .optional()
-            .describe('How this specific issue affects users in plain language'),
-        falsePositiveRisk: z
-            .enum(['low', 'medium', 'high'])
-            .describe(
-                'Risk that this is a false positive: low (definitely an issue), medium (likely an issue), high (may not be an issue)'
-            ),
-    })
-    .describe('Enhancement to an existing rule-based violation');
-
-export type LlmViolationEnhancement = z.infer<typeof llmViolationEnhancementSchema>;
-
-export const llmCompleteResponseSchema = z
-    .object({
-        analysis: llmAnalysisResponseSchema.describe('New findings from analyzing the screen reader transcript'),
-        enhancements: z
-            .array(llmViolationEnhancementSchema)
-            .describe('Enhancements to the existing violations found by static analyzers'),
-    })
-    .describe('Complete accessibility analysis response');
+export const llmCompleteResponseSchema = llmAnalysisResponseSchema.describe('Complete accessibility analysis response');
 
 export type LlmCompleteResponse = z.infer<typeof llmCompleteResponseSchema>;
+
+// Helper functions to filter issues by type
+export function getFindings(response: LlmCompleteResponse): LlmFinding[] {
+    return response.issues.filter(isLlmFinding);
+}
+
+export function getEnhancements(response: LlmCompleteResponse): LlmViolationEnhancement[] {
+    return response.issues.filter(isLlmEnhancement);
+}
 
 export const transcriptSectionConfigSchema = z.object({
     includeHtmlSnippets: z.boolean().optional(),

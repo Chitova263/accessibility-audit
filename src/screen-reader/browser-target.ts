@@ -91,7 +91,7 @@ export class BrowserTarget {
 
         const context = await browser.newContext();
         const page = await context.newPage();
-        await page.goto(target.href, { timeout });
+        await page.goto(target.href, { timeout: 50000 });
         return BrowserTarget.attach(browser, page, { browser: false, page: true });
     }
 
@@ -109,7 +109,7 @@ export class BrowserTarget {
         try {
             const context = await browser.newContext();
             const page = await context.newPage();
-            await page.goto(url, { timeout });
+            await page.goto(url, { timeout: 50000 });
             return await BrowserTarget.attach(browser, page, { browser: true, page: true });
         } catch (error) {
             await browser.close().catch(() => {});

@@ -29,6 +29,13 @@ const STOCK_PHOTO_PATTERNS = [
     /^pexels/i,
 ];
 
+/**
+ * Pattern to extract image name from NVDA spoken phrases.
+ * NVDA announces images as "graphic, [alt text]" or just "graphic" if no alt.
+ * This pattern captures the alt text after "graphic, " or "graphic " prefix.
+ */
+const GRAPHIC_ANNOUNCEMENT_PATTERN = /\bgraphic,?\s+(.+)/i;
+
 interface FilenameAsAltStats {
     totalImages: number;
     violationsFound: number;
@@ -45,6 +52,7 @@ interface ImageInfo {
     timestamp: number;
     axNode: AXNode | undefined;
     backendNodeId?: number | undefined;
+    strategyName: string;
 }
 
 class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAltStats> {
@@ -65,28 +73,52 @@ class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAltStats>
         const images: ImageInfo[] = [];
 
         for (const result of transcript) {
+            const strategyName = result.meta.name;
+
             for (let stepIndex = 0; stepIndex < result.navigationSteps.length; stepIndex++) {
                 const step = result.navigationSteps[stepIndex]!;
                 const node = step.axNode;
+                const role = node ? getRole(node) : undefined;
 
-                if (!node) continue;
+                // Method 1: Check AX node role
+                const hasImageRole = role === 'img' || role === 'image';
 
-                const role = getRole(node);
-                const isImage = role === 'img' || role === 'image' || step.htmlSnippet?.toLowerCase().includes('<img');
+                // Method 2: Check htmlSnippet for <img> tags
+                const hasImgInSnippet = step.htmlSnippet?.toLowerCase().includes('<img');
 
-                if (!isImage) continue;
+                // Method 3: Check spoken phrases for "graphic" announcements (NVDA pattern)
+                const graphicName = this.extractGraphicNameFromSpoken(step.spokenPhrases);
 
-                images.push({
-                    name: getName(node) ?? '',
-                    stepIndex,
-                    htmlSnippet: step.htmlSnippet,
-                    spokenPhrases: step.spokenPhrases,
-                    focusedElementText: step.focusedElementText,
-                    identifier: step.identifier,
-                    timestamp: step.timestamp,
-                    axNode: node,
-                    backendNodeId: node.backendDOMNodeId,
-                });
+                if (hasImageRole || hasImgInSnippet || graphicName !== null) {
+                    // Determine the image name from available sources
+                    let imageName: string;
+                    if (hasImageRole && node) {
+                        imageName = getName(node) ?? '';
+                    } else if (graphicName !== null) {
+                        imageName = graphicName;
+                    } else if (hasImgInSnippet && node) {
+                        // For images inside links/buttons, try to get name from AX node
+                        imageName = getName(node) ?? '';
+                    } else if (hasImgInSnippet && step.htmlSnippet) {
+                        // Extract alt from htmlSnippet as fallback
+                        imageName = this.extractAltFromSnippet(step.htmlSnippet) ?? '';
+                    } else {
+                        imageName = '';
+                    }
+
+                    images.push({
+                        name: imageName,
+                        stepIndex,
+                        htmlSnippet: step.htmlSnippet,
+                        spokenPhrases: step.spokenPhrases,
+                        focusedElementText: step.focusedElementText,
+                        identifier: step.identifier,
+                        timestamp: step.timestamp,
+                        axNode: node,
+                        backendNodeId: node?.backendDOMNodeId,
+                        strategyName,
+                    });
+                }
             }
         }
 
@@ -104,7 +136,7 @@ class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAltStats>
                         focusedElementText: image.focusedElementText,
                         axNode: image.axNode,
                     },
-                    'graphics',
+                    image.strategyName,
                     image.stepIndex,
                     ctx.screenReader
                 );
@@ -131,6 +163,33 @@ class FilenameAsAltRule implements Rule<ScreenReaderContext, FilenameAsAltStats>
                 byIssue,
             },
         };
+    }
+
+    /**
+     * Extract image name from NVDA spoken phrases.
+     * NVDA announces images as "graphic, [alt text]" or "graphic [alt text]".
+     * Returns the extracted name, or null if no graphic announcement found.
+     */
+    private extractGraphicNameFromSpoken(spokenPhrases: string[]): string | null {
+        for (const phrase of spokenPhrases) {
+            const match = GRAPHIC_ANNOUNCEMENT_PATTERN.exec(phrase);
+            if (match && match[1]) {
+                // Clean up the extracted name - remove trailing punctuation, "link", etc.
+                let name = match[1].trim();
+                // Remove common suffixes that are role announcements, not alt text
+                name = name.replace(/,?\s*(link|button|clickable)$/i, '').trim();
+                return name;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extract alt attribute value from an HTML snippet containing an <img> tag.
+     */
+    private extractAltFromSnippet(snippet: string): string | null {
+        const altMatch = /alt=["']([^"']*)["']/i.exec(snippet);
+        return altMatch ? (altMatch[1] ?? null) : null;
     }
 
     private isFilenameAlt(text: string): boolean {
